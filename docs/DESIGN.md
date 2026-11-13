@@ -58,31 +58,39 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: design (not started).
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 Rust facade API
+### 2.1 Rust bridge API (`rust/src/api/`, crate `xhandler_bridge`)
 
 ```rust
-fn build_document(kind: DocKind, json: String) -> Result<Built>          // Built { xml, enriched_json }
-fn sign(xml: String, pfx: Vec<u8>, password: String) -> Result<Signed>   // Signed { xml, digest_value }
-fn inspect_certificate(pfx: Vec<u8>, password: String) -> Result<CertInfo> // ruc, holder, not_after
-async fn send(xml: String, env: SunatEnv, creds: Credentials) -> Result<SendOutcome, Transport>
-async fn verify_ticket(ticket: String, env: SunatEnv, creds: Credentials) -> Result<SendOutcome, Transport>
-async fn get_status_cdr(doc: ConsultDocument, creds: Credentials) -> Result<SendOutcome, Transport>
+// document.rs
+fn build_document(document_json: String, defaults: DocumentDefaults) -> Result<BuiltDocument>
+    // DocumentDefaults { igv_tasa, icb_tasa, ivap_tasa, fecha_emision }  (strings)
+    // BuiltDocument { xml, enriched_json }
+// signer.rs
+fn sign_document(xml: String, certificate: Vec<u8>, password: String) -> Result<SignedDocument>
+    // SignedDocument { xml, digest_value }
+fn inspect_certificate(certificate: Vec<u8>, password: String) -> Result<CertificateInfo>
+    // CertificateInfo { subject, issuer, ruc, valid_from, valid_until }
+// sunat.rs
+async fn send_document(xml, environment: SunatEnvironment, credentials) -> Result<SunatResponse>
+async fn verify_ticket(xml, ticket, environment, credentials) -> Result<SunatResponse>
 
-enum SendOutcome {
-    Cdr { status: Status, code: String, description: String, notes: Vec<String>, cdr_zip: Vec<u8> },
-    Ticket(String),
-    Fault { status: Status, code: String, message: String },
-    NoCdr { status: Status, code: String },   // e.g. 98, still processing
-}
-// Status = xsender::models::Status: Accepted | Rejected | Exception | InProgress | Unknown
-// Err(Transport) = no answer from SUNAT (offline, timeout, HTTP error)
+enum SunatStatus { Accepted, Rejected, Exception, InProgress, Unknown, NotDelivered }
+struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 ```
 
-- The document JSON uses the xbuilder serde models (the same input the `cli` accepts).
-- `enriched_json` is the document after the enrichment pipeline (totals, legends); the PDF
-  is rendered from it so it never re-implements tax math in Dart.
-- Dependency: `xhandler` as a git dependency pinned by `rev`; `[patch]` to
-  `../../xhandler-rust` for local development.
+- The document JSON is `xbuilder::document::Document`:
+  `{"kind": "Invoice", "spec": {...}}` (the same input the `openubl` CLI reads).
+- `enriched_json` is the document after the enrichment pipeline (totals,
+  legends); the PDF is rendered from it so tax math is never re-implemented
+  in Dart.
+- `SunatStatus` is xsender's `Status` plus `NotDelivered`: SUNAT couldn't be
+  reached (network or HTTP error), retry later. Other errors (e.g. a guia in
+  beta, which SUNAT doesn't have) are returned as errors.
+- The FFI types are flat structs and field-less enums, so the Dart side needs
+  no code generation besides flutter_rust_bridge's.
+- `get_status_cdr` (recovering a CDR after code 1033) will be added with the
+  outbox in Phase 3.
+- Dependency: `xhandler` as a git dependency pinned by `rev`.
 
 ---
 
@@ -335,7 +343,7 @@ Every delivery is logged in `delivery`.
 
 ```
 xhandler-mobile/
-├── rust/                    Cargo crate xhandler_mobile (facade)
+├── rust/                    Cargo crate xhandler_bridge (the Rust API the app calls)
 ├── rust_builder/            cargokit glue (flutter_rust_bridge)
 ├── flutter_rust_bridge.yaml
 ├── lib/
