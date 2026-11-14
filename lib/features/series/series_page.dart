@@ -134,16 +134,10 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (!editing) ...[
-              DropdownButtonFormField(
-                initialValue: _tipoComprobante,
-                decoration: const InputDecoration(
-                  labelText: Strings.tipoComprobante,
-                ),
-                items: [
-                  for (final MapEntry(:key, :value)
-                      in Catalogs.tiposComprobante.entries)
-                    DropdownMenuItem(value: key, child: Text(value)),
-                ],
+              CatalogDropdown(
+                label: Strings.tipoComprobante,
+                value: _tipoComprobante,
+                options: Catalogs.tiposComprobante,
                 onChanged: (tipo) {
                   setState(() => _tipoComprobante = tipo!);
                   if (_serie.text.isNotEmpty) _form.currentState!.validate();

@@ -24,41 +24,49 @@ class CustomerFormPage extends ConsumerStatefulWidget {
 
 class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
   final _form = GlobalKey<FormState>();
+  final _controllers = <TextEditingController>[];
   late String _tipo = widget.customer?.tipoDocumentoIdentidad ?? '6';
-  late final _numero = TextEditingController(
-    text: widget.customer?.numeroDocumentoIdentidad,
-  );
-  late final _nombre = TextEditingController(text: widget.customer?.nombre);
-  late final _direccion = TextEditingController(
-    text: widget.customer?.direccion,
-  );
-  late final _email = TextEditingController(text: widget.customer?.email);
-  late final _telefono = TextEditingController(text: widget.customer?.telefono);
+  late final _numero = _controller(widget.customer?.numeroDocumentoIdentidad);
+  late final _nombre = _controller(widget.customer?.nombre);
+  late final _direccion = _controller(widget.customer?.direccion);
+  late final _distrito = _controller(widget.customer?.distrito);
+  late final _provincia = _controller(widget.customer?.provincia);
+  late final _departamento = _controller(widget.customer?.departamento);
+  late final _ubigeo = _controller(widget.customer?.ubigeo);
+  late final _email = _controller(widget.customer?.email);
+  late final _telefono = _controller(widget.customer?.telefono);
   bool _lookingUp = false;
+
+  TextEditingController _controller(String? text) {
+    final controller = TextEditingController(text: text);
+    _controllers.add(controller);
+    return controller;
+  }
 
   @override
   void dispose() {
-    for (final controller in [
-      _numero,
-      _nombre,
-      _direccion,
-      _email,
-      _telefono,
-    ]) {
+    for (final controller in _controllers) {
       controller.dispose();
     }
     super.dispose();
   }
 
-  bool get _canLookUp =>
-      widget.company.lookupProvider != LookupProvider.none &&
-      (_tipo == '6' || _tipo == '1');
+  bool get _numeric => _tipo == '6' || _tipo == '1';
 
-  String? _validateNumero(String numero) => switch (_tipo) {
-    '6' => isRuc(digits: numero) ? null : Strings.invalidRuc,
-    '1' => RegExp(r'^\d{8}$').hasMatch(numero) ? null : Strings.invalidDni,
-    _ => numero.isEmpty ? Strings.required : null,
-  };
+  bool get _canLookUp =>
+      widget.company.lookupProvider != LookupProvider.none && _numeric;
+
+  String? _validateNumero(String numero) {
+    final length = Catalogs.numeroDocumentoLength[_tipo] ?? 15;
+    return switch (_tipo) {
+      '6' => isRuc(digits: numero) ? null : Strings.invalidRuc,
+      '1' => RegExp(r'^\d{8}$').hasMatch(numero) ? null : Strings.invalidDni,
+      _ =>
+        RegExp('^[A-Za-z0-9]{1,$length}\$').hasMatch(numero)
+            ? null
+            : Strings.invalidNumeroDocumento(length),
+    };
+  }
 
   Future<void> _lookUp() async {
     final numero = _numero.text.trim();
@@ -66,37 +74,45 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
       _form.currentState!.validate();
       return;
     }
-    final secrets = ref
-        .read(companyRepositoryProvider)
-        .readSecrets(widget.company.id);
+    final repository = ref.read(companyRepositoryProvider);
     final lookup = ref.read(customerLookupProvider);
     setState(() => _lookingUp = true);
     String? message;
     try {
       final result = await lookup.lookup(
         company: widget.company,
-        secrets: await secrets,
+        secrets: await repository.readSecrets(widget.company.id),
         tipoDocumentoIdentidad: _tipo,
         numero: numero,
       );
+      // The user may have typed another number meanwhile
+      if (_numero.text.trim() != numero) return;
       if (result == null) {
         message = Strings.lookupNotFound;
       } else {
         _nombre.text = result.nombre;
-        if (result.direccion != null) _direccion.text = result.direccion!;
+        _direccion.text = result.direccion ?? '';
+        _distrito.text = result.distrito ?? '';
+        _provincia.text = result.provincia ?? '';
+        _departamento.text = result.departamento ?? '';
+        _ubigeo.text = result.ubigeo ?? '';
       }
-    } on Exception {
-      message = Strings.lookupFailed;
+    } on LookupError catch (error) {
+      message = switch (error.kind) {
+        LookupErrorKind.authentication => Strings.lookupAuthentication,
+        LookupErrorKind.quota => Strings.lookupQuota,
+        LookupErrorKind.other => Strings.lookupFailed,
+      };
+    } finally {
+      if (mounted) setState(() => _lookingUp = false);
     }
-    if (!mounted) return;
-    setState(() => _lookingUp = false);
-    if (message != null) showMessage(context, message);
+    if (mounted && message != null) showMessage(context, message);
   }
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     final repository = ref.read(customerRepositoryProvider);
-    final numero = _numero.text.trim();
+    final numero = _numero.text.trim().toUpperCase();
     final duplicate = await repository.findByDocument(
       widget.company.id,
       _tipo,
@@ -112,6 +128,10 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
       numeroDocumentoIdentidad: Value(numero),
       nombre: Value(_nombre.text.trim()),
       direccion: Value(optionalText(_direccion)),
+      distrito: Value(optionalText(_distrito)),
+      provincia: Value(optionalText(_provincia)),
+      departamento: Value(optionalText(_departamento)),
+      ubigeo: Value(optionalText(_ubigeo)),
       email: Value(optionalText(_email)),
       telefono: Value(optionalText(_telefono)),
     );
@@ -124,34 +144,20 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _delete() async {
-    final repository = ref.read(customerRepositoryProvider);
-    if (!await confirm(
-      context,
-      message: Strings.deleteCustomerConfirm,
-      accept: Strings.delete,
-    )) {
-      return;
-    }
-    await repository.delete(widget.customer!.id);
-    if (mounted) Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final existing = widget.customer;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.customer == null ? Strings.newCustomer : Strings.customer,
-        ),
+        title: Text(existing == null ? Strings.newCustomer : Strings.customer),
         actions: [
-          if (widget.customer != null)
-            IconButton(
-              tooltip: Strings.delete,
-              icon: const Icon(Icons.delete),
-              onPressed: _delete,
+          if (existing != null)
+            DeleteButton(
+              message: Strings.deleteCustomerConfirm,
+              onDelete: () =>
+                  ref.read(customerRepositoryProvider).delete(existing.id),
             ),
-          SaveButton(onPressed: _save),
+          SaveButton(onPressed: _lookingUp ? null : _save),
         ],
       ),
       body: Form(
@@ -159,19 +165,15 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            DropdownButtonFormField(
-              initialValue: _tipo,
-              decoration: const InputDecoration(
-                labelText: Strings.tipoDocumentoIdentidad,
-              ),
-              items: [
-                for (final MapEntry(:key, :value)
-                    in Catalogs.tiposDocumentoIdentidad.entries)
-                  DropdownMenuItem(value: key, child: Text(value)),
-              ],
-              onChanged: (tipo) => setState(() => _tipo = tipo!),
+            CatalogDropdown(
+              label: Strings.tipoDocumentoIdentidad,
+              value: _tipo,
+              options: Catalogs.tiposDocumentoIdentidad,
+              onChanged: (tipo) {
+                setState(() => _tipo = tipo!);
+                if (_numero.text.isNotEmpty) _form.currentState!.validate();
+              },
             ),
-            const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -179,8 +181,9 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                   child: FormTextField(
                     _numero,
                     Strings.numeroDocumento,
-                    digitsOnly: _tipo == '6' || _tipo == '1',
-                    maxLength: 15,
+                    key: ValueKey(_tipo),
+                    digitsOnly: _numeric,
+                    maxLength: Catalogs.numeroDocumentoLength[_tipo],
                     validator: _validateNumero,
                   ),
                 ),
@@ -208,11 +211,29 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
               Strings.nombre,
               validator: (nombre) => nombre.isEmpty ? Strings.required : null,
             ),
+            const FormSection(Strings.direccion),
             FormTextField(_direccion, Strings.direccion),
+            FormTextField(_distrito, Strings.distrito),
+            FormTextField(_provincia, Strings.provincia),
+            FormTextField(_departamento, Strings.departamento),
+            FormTextField(
+              _ubigeo,
+              Strings.ubigeo,
+              digitsOnly: true,
+              maxLength: 6,
+              validator: (ubigeo) => ubigeo.isEmpty || ubigeo.length == 6
+                  ? null
+                  : Strings.invalidUbigeo,
+            ),
+            const FormSection(Strings.contacto),
             FormTextField(
               _email,
               Strings.email,
               keyboardType: TextInputType.emailAddress,
+              validator: (email) =>
+                  email.isEmpty || RegExp(r'^\S+@\S+\.\S+$').hasMatch(email)
+                  ? null
+                  : Strings.invalidEmail,
             ),
             FormTextField(
               _telefono,

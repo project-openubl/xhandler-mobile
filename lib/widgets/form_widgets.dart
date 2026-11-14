@@ -76,6 +76,71 @@ class _FormTextFieldState extends State<FormTextField> {
   }
 }
 
+/// Dropdown of a SUNAT catalog (code → name). With [noneLabel], the first
+/// option is `null`.
+class CatalogDropdown extends StatelessWidget {
+  const CatalogDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.noneLabel,
+  });
+
+  final String label;
+  final String? value;
+  final Map<String, String> options;
+  final ValueChanged<String?> onChanged;
+  final String? noneLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String?>(
+        // Long catalog names are cut instead of overflowing narrow phones
+        isExpanded: true,
+        initialValue: value,
+        decoration: InputDecoration(labelText: label),
+        items: [
+          if (noneLabel != null) DropdownMenuItem(child: Text(noneLabel!)),
+          for (final MapEntry(:key, :value) in options.entries)
+            DropdownMenuItem(value: key, child: Text(value)),
+        ],
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+/// App bar button that deletes after asking, then closes the page
+class DeleteButton extends StatelessWidget {
+  const DeleteButton({
+    super.key,
+    required this.message,
+    required this.onDelete,
+  });
+
+  final String message;
+  final Future<void> Function() onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: Strings.delete,
+      icon: const Icon(Icons.delete),
+      onPressed: () async {
+        if (!await confirm(context, message: message, accept: Strings.delete)) {
+          return;
+        }
+        await onDelete();
+        if (context.mounted) Navigator.of(context).pop();
+      },
+    );
+  }
+}
+
 class FormSection extends StatelessWidget {
   const FormSection(this.title, {super.key});
 

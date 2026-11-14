@@ -2,13 +2,12 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import 'product_repository.dart';
-
-final _decimal = RegExp(r'^\d+(\.\d{1,10})?$');
 
 /// Creates a product of [company], or edits [product]
 class ProductFormPage extends ConsumerStatefulWidget {
@@ -23,30 +22,31 @@ class ProductFormPage extends ConsumerStatefulWidget {
 
 class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   final _form = GlobalKey<FormState>();
-  late final Product? _product = widget.product;
-  late final _descripcion = TextEditingController(text: _product?.descripcion);
-  late final _codigo = TextEditingController(text: _product?.codigo);
-  late final _precio = TextEditingController(text: _product?.precio);
-  late final _iscTasa = TextEditingController(text: _product?.iscTasa);
-  late final _detraccionCodigo = TextEditingController(
-    text: _product?.detraccionCodigo,
-  );
-  late String _unidadMedida = _product?.unidadMedida ?? 'NIU';
-  late String _igvTipo = _product?.igvTipo ?? widget.company.igvTipo;
-  late String? _iscTipo = _product?.iscTipo;
-  late bool _precioIncluyeIgv = _product?.precioIncluyeIgv ?? true;
-  late bool _esBolsa = _product?.esBolsa ?? false;
-  late bool _favorito = _product?.favorito ?? false;
+  final _controllers = <TextEditingController>[];
+  late final _descripcion = _controller(widget.product?.descripcion);
+  late final _codigo = _controller(widget.product?.codigo);
+  late final _codigoSunat = _controller(widget.product?.codigoSunat);
+  late final _precio = _controller(widget.product?.precio);
+  late final _iscTasa = _controller(widget.product?.iscTasa);
+  late final _detraccionCodigo = _controller(widget.product?.detraccionCodigo);
+  late String _unidadMedida = widget.product?.unidadMedida ?? 'NIU';
+
+  /// `null`: the company's IGV type, which may change later
+  late String? _igvTipo = widget.product?.igvTipo;
+  late String? _iscTipo = widget.product?.iscTipo;
+  late bool _precioIncluyeIgv = widget.product?.precioIncluyeIgv ?? true;
+  late bool _esBolsa = widget.product?.esBolsa ?? false;
+  late bool _favorito = widget.product?.favorito ?? false;
+
+  TextEditingController _controller(String? text) {
+    final controller = TextEditingController(text: text);
+    _controllers.add(controller);
+    return controller;
+  }
 
   @override
   void dispose() {
-    for (final controller in [
-      _descripcion,
-      _codigo,
-      _precio,
-      _iscTasa,
-      _detraccionCodigo,
-    ]) {
+    for (final controller in _controllers) {
       controller.dispose();
     }
     super.dispose();
@@ -58,18 +58,19 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       companyId: Value(widget.company.id),
       descripcion: Value(_descripcion.text.trim()),
       codigo: Value(optionalText(_codigo)),
+      codigoSunat: Value(optionalText(_codigoSunat)),
       unidadMedida: Value(_unidadMedida),
-      precio: Value(_precio.text.trim()),
+      precio: Value(parseAmount(_precio.text)!),
       precioIncluyeIgv: Value(_precioIncluyeIgv),
       igvTipo: Value(_igvTipo),
       iscTipo: Value(_iscTipo),
-      iscTasa: Value(_iscTipo == null ? null : optionalText(_iscTasa)),
+      iscTasa: Value(_iscTipo == null ? null : parseAmount(_iscTasa.text)),
       esBolsa: Value(_esBolsa),
       detraccionCodigo: Value(optionalText(_detraccionCodigo)),
       favorito: Value(_favorito),
     );
     final repository = ref.read(productRepositoryProvider);
-    final existing = _product;
+    final existing = widget.product;
     if (existing == null) {
       await repository.create(product);
     } else {
@@ -78,50 +79,27 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  Future<void> _delete() async {
-    final repository = ref.read(productRepositoryProvider);
-    if (!await confirm(
-      context,
-      message: Strings.deleteProductConfirm,
-      accept: Strings.delete,
-    )) {
-      return;
-    }
-    await repository.delete(_product!.id);
-    if (mounted) Navigator.of(context).pop();
-  }
-
-  Widget _dropdown(
-    String label,
-    String? value,
-    Map<String, String> options,
-    ValueChanged<String?> onChanged, {
-    bool optional = false,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: DropdownButtonFormField<String?>(
-      initialValue: value,
-      decoration: InputDecoration(labelText: label),
-      items: [
-        if (optional) const DropdownMenuItem(child: Text('—')),
-        for (final MapEntry(:key, :value) in options.entries)
-          DropdownMenuItem(value: key, child: Text(value)),
-      ],
-      onChanged: onChanged,
-    ),
-  );
+  Widget _switch(String title, bool value, ValueChanged<bool> onChanged) =>
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(title),
+        value: value,
+        onChanged: onChanged,
+      );
 
   @override
   Widget build(BuildContext context) {
+    final existing = widget.product;
+    final companyIgv = Catalogs.igvTipos[widget.company.igvTipo];
     return Scaffold(
       appBar: AppBar(
-        title: Text(_product == null ? Strings.newProduct : Strings.product),
+        title: Text(existing == null ? Strings.newProduct : Strings.product),
         actions: [
-          if (_product != null)
-            IconButton(
-              tooltip: Strings.delete,
-              icon: const Icon(Icons.delete),
-              onPressed: _delete,
+          if (existing != null)
+            DeleteButton(
+              message: Strings.deleteProductConfirm,
+              onDelete: () =>
+                  ref.read(productRepositoryProvider).delete(existing.id),
             ),
           SaveButton(onPressed: _save),
         ],
@@ -137,11 +115,11 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
               validator: (text) => text.isEmpty ? Strings.required : null,
             ),
             FormTextField(_codigo, Strings.codigo),
-            _dropdown(
-              Strings.unidadMedida,
-              _unidadMedida,
-              Catalogs.unidadesMedida,
-              (unidad) => setState(() => _unidadMedida = unidad!),
+            CatalogDropdown(
+              label: Strings.unidadMedida,
+              value: _unidadMedida,
+              options: Catalogs.unidadesMedida,
+              onChanged: (unidad) => setState(() => _unidadMedida = unidad!),
             ),
             FormTextField(
               _precio,
@@ -150,44 +128,52 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                 decimal: true,
               ),
               validator: (precio) =>
-                  _decimal.hasMatch(precio) ? null : Strings.invalidPrecio,
+                  parseAmount(precio) == null ? Strings.invalidPrecio : null,
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.precioIncluyeIgv),
-              value: _precioIncluyeIgv,
-              onChanged: (value) => setState(() => _precioIncluyeIgv = value),
+            _switch(
+              Strings.precioIncluyeIgv,
+              _precioIncluyeIgv,
+              (value) => setState(() => _precioIncluyeIgv = value),
             ),
-            _dropdown(
-              Strings.igvTipo,
-              _igvTipo,
-              Catalogs.igvTipos,
-              (tipo) => setState(() => _igvTipo = tipo!),
+            CatalogDropdown(
+              label: Strings.igvTipo,
+              value: _igvTipo,
+              options: Catalogs.igvTipos,
+              noneLabel: '${Strings.igvTipoDefault} (${companyIgv ?? '-'})',
+              onChanged: (tipo) => setState(() => _igvTipo = tipo),
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.esBolsa),
-              value: _esBolsa,
-              onChanged: (value) => setState(() => _esBolsa = value),
+            _switch(
+              Strings.esBolsa,
+              _esBolsa,
+              (value) => setState(() => _esBolsa = value),
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.favorito),
-              value: _favorito,
-              onChanged: (value) => setState(() => _favorito = value),
+            _switch(
+              Strings.favorito,
+              _favorito,
+              (value) => setState(() => _favorito = value),
             ),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
+              // Collapsed fields must still be validated
+              maintainState: true,
               title: const Text(Strings.moreOptions),
               initiallyExpanded:
-                  _iscTipo != null || _detraccionCodigo.text.isNotEmpty,
+                  _iscTipo != null ||
+                  _detraccionCodigo.text.isNotEmpty ||
+                  _codigoSunat.text.isNotEmpty,
               children: [
-                _dropdown(
-                  Strings.iscTipo,
-                  _iscTipo,
-                  Catalogs.iscTipos,
-                  (tipo) => setState(() => _iscTipo = tipo),
-                  optional: true,
+                FormTextField(
+                  _codigoSunat,
+                  Strings.codigoSunat,
+                  digitsOnly: true,
+                  maxLength: 8,
+                ),
+                CatalogDropdown(
+                  label: Strings.iscTipo,
+                  value: _iscTipo,
+                  options: Catalogs.iscTipos,
+                  noneLabel: '—',
+                  onChanged: (tipo) => setState(() => _iscTipo = tipo),
                 ),
                 if (_iscTipo != null)
                   FormTextField(
@@ -196,14 +182,18 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    validator: (tasa) =>
-                        _decimal.hasMatch(tasa) ? null : Strings.invalidPrecio,
+                    validator: (tasa) => parseAmount(tasa) == null
+                        ? Strings.invalidIscTasa
+                        : null,
                   ),
                 FormTextField(
                   _detraccionCodigo,
                   Strings.detraccionCodigo,
                   digitsOnly: true,
                   maxLength: 3,
+                  validator: (codigo) => codigo.isEmpty || codigo.length == 3
+                      ? null
+                      : Strings.invalidDetraccionCodigo,
                 ),
               ],
             ),

@@ -71,8 +71,11 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
     final repository = ref.read(companyRepositoryProvider);
     final token = switch (_provider) {
       LookupProvider.none => null,
-      LookupProvider.commercial => optionalText(_token),
-      LookupProvider.searchpe => '${_user.text.trim()}:${_password.text}',
+      LookupProvider.decolecta => optionalText(_token),
+      LookupProvider.searchpe =>
+        _user.text.trim().isEmpty && _password.text.isEmpty
+            ? null
+            : '${_user.text.trim()}:${_password.text}',
     };
     await repository.update(
       widget.company.id,
@@ -114,19 +117,20 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
                     title: Text(Strings.lookupNone),
                   ),
                   RadioListTile(
-                    value: LookupProvider.commercial,
-                    title: Text(Strings.lookupCommercial),
-                    subtitle: Text(Strings.lookupCommercialHelp),
+                    value: LookupProvider.decolecta,
+                    title: Text(Strings.lookupDecolecta),
+                    subtitle: Text(Strings.lookupDecolectaHelp),
                   ),
                   RadioListTile(
                     value: LookupProvider.searchpe,
                     title: Text(Strings.lookupSearchpe),
+                    subtitle: Text(Strings.lookupSearchpeHelp),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
-            if (_provider == LookupProvider.commercial)
+            if (_provider == LookupProvider.decolecta)
               FormTextField(
                 _token,
                 Strings.lookupToken,
@@ -138,9 +142,14 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
                 _url,
                 Strings.lookupUrl,
                 keyboardType: TextInputType.url,
-                validator: (url) => Uri.tryParse(url)?.hasScheme ?? false
-                    ? null
-                    : Strings.required,
+                validator: (url) {
+                  final uri = Uri.tryParse(url);
+                  final valid =
+                      uri != null &&
+                      (uri.scheme == 'https' || uri.scheme == 'http') &&
+                      uri.host.isNotEmpty;
+                  return valid ? null : Strings.invalidUrl;
+                },
               ),
               FormTextField(_user, Strings.lookupUser),
               FormTextField(

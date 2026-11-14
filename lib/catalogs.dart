@@ -51,10 +51,20 @@ abstract final class Catalogs {
     '40': 'Exportación',
   };
 
-  /// Catalog 8, how ISC is calculated
+  /// Catalog 8, how ISC is calculated (fixed amounts, "02", aren't
+  /// supported by xbuilder yet)
   static const iscTipos = {
     '01': 'Sistema al valor',
-    '02': 'Aplicación del monto fijo',
     '03': 'Precios de venta al público',
+  };
+
+  /// Catalog 6 maximum length of each document number
+  static const numeroDocumentoLength = {
+    '6': 11,
+    '1': 8,
+    '4': 12,
+    '7': 12,
+    '0': 15,
+    'A': 15,
   };
 }

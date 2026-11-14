@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../amount_text.dart';
 import '../../data/database.dart';
 
 /// Tax rates the enrichment uses when a line doesn't set them
@@ -21,6 +22,7 @@ class DraftLine {
     this.unidadMedida = 'NIU',
     this.igvTipo = '10',
     this.codigo,
+    this.codigoSunat,
     this.iscTipo,
     this.iscTasa,
     this.esBolsa = false,
@@ -35,6 +37,7 @@ class DraftLine {
         unidadMedida: product.unidadMedida,
         igvTipo: product.igvTipo ?? igvTipo,
         codigo: product.codigo,
+        codigoSunat: product.codigoSunat,
         iscTipo: product.iscTipo,
         iscTasa: product.iscTasa,
         esBolsa: product.esBolsa,
@@ -49,7 +52,10 @@ class DraftLine {
   final String unidadMedida;
   final String igvTipo;
   final String? codigo;
+  final String? codigoSunat;
   final String? iscTipo;
+
+  /// Percentage, e.g. "17"
   final String? iscTasa;
   final bool esBolsa;
 
@@ -61,6 +67,7 @@ class DraftLine {
     unidadMedida: unidadMedida,
     igvTipo: igvTipo,
     codigo: codigo,
+    codigoSunat: codigoSunat,
     iscTipo: iscTipo,
     iscTasa: iscTasa,
     esBolsa: esBolsa,
@@ -73,8 +80,9 @@ class DraftLine {
     if (precioIncluyeIgv) 'precio_con_impuestos': precio else 'precio': precio,
     'igv_tipo': igvTipo,
     'codigo': ?codigo,
+    'codigo_sunat': ?codigoSunat,
     'isc_tipo': ?iscTipo,
-    'isc_tasa': ?iscTasa,
+    if (iscTasa case final tasa?) 'isc_tasa': percentToFraction(tasa),
     'icb_aplica': esBolsa,
   };
 }
@@ -86,6 +94,10 @@ class DraftCustomer {
     required this.numeroDocumentoIdentidad,
     required this.nombre,
     this.direccion,
+    this.distrito,
+    this.provincia,
+    this.departamento,
+    this.ubigeo,
     this.email,
   });
 
@@ -94,6 +106,10 @@ class DraftCustomer {
     numeroDocumentoIdentidad: customer.numeroDocumentoIdentidad,
     nombre: customer.nombre,
     direccion: customer.direccion,
+    distrito: customer.distrito,
+    provincia: customer.provincia,
+    departamento: customer.departamento,
+    ubigeo: customer.ubigeo,
     email: customer.email,
   );
 
@@ -101,15 +117,28 @@ class DraftCustomer {
   final String numeroDocumentoIdentidad;
   final String nombre;
   final String? direccion;
+  final String? distrito;
+  final String? provincia;
+  final String? departamento;
+  final String? ubigeo;
   final String? email;
 
-  Map<String, Object?> toJson() => {
-    'tipo_documento_identidad': tipoDocumentoIdentidad,
-    'numero_documento_identidad': numeroDocumentoIdentidad,
-    'nombre': nombre,
-    if (direccion != null) 'direccion': {'direccion': direccion},
-    if (email != null) 'contacto': {'email': email},
-  };
+  Map<String, Object?> toJson() {
+    final address = {
+      'direccion': ?direccion,
+      'distrito': ?distrito,
+      'provincia': ?provincia,
+      'departamento': ?departamento,
+      'ubigeo': ?ubigeo,
+    };
+    return {
+      'tipo_documento_identidad': tipoDocumentoIdentidad,
+      'numero_documento_identidad': numeroDocumentoIdentidad,
+      'nombre': nombre,
+      if (address.isNotEmpty) 'direccion': address,
+      if (email != null) 'contacto': {'email': email},
+    };
+  }
 }
 
 /// Payment in installments ("crédito")

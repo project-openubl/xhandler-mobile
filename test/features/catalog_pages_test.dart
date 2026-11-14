@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/data/database.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:xhandler_mobile/data/providers.dart';
 import 'package:xhandler_mobile/features/customer/customer_form_page.dart';
+import 'package:xhandler_mobile/features/customer/customer_lookup.dart';
 import 'package:xhandler_mobile/features/customer/customer_repository.dart';
 import 'package:xhandler_mobile/features/customer/lookup_settings_page.dart';
 import 'package:xhandler_mobile/features/product/product_form_page.dart';
@@ -21,7 +26,7 @@ void main() {
     await data.pump(tester, ProductFormPage(company!));
 
     await tester.enterText(_field(Strings.descripcion), 'Café');
-    await tester.enterText(_field('${Strings.precio} (PEN)'), '4,50');
+    await tester.enterText(_field('${Strings.precio} (PEN)'), '0');
     await data.tapAndWait(tester);
     expect(find.text(Strings.invalidPrecio), findsOneWidget);
 
@@ -32,7 +37,28 @@ void main() {
       () => ProductRepository(data.database).watch(company.id).first,
     ))!;
     expect(products.single.precio, '4.50');
-    expect(products.single.igvTipo, '10'); // the company's default
+    expect(products.single.igvTipo, isNull); // follows the company's default
+    await data.unmount(tester);
+  });
+
+  testWidgets('ProductFormPage needs an ISC rate with an ISC type', (
+    tester,
+  ) async {
+    final data = TestData();
+    final company = await tester.runAsync(data.createCompany);
+    await data.pump(tester, ProductFormPage(company!));
+    await tester.enterText(_field(Strings.descripcion), 'Cerveza');
+    await tester.enterText(_field('${Strings.precio} (PEN)'), '7');
+
+    await tester.tap(find.text(Strings.moreOptions));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('—'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sistema al valor').last);
+    await tester.pumpAndSettle();
+    await data.tapAndWait(tester);
+
+    expect(find.text(Strings.invalidIscTasa), findsOneWidget);
     await data.unmount(tester);
   });
 
@@ -70,6 +96,95 @@ void main() {
       await data.unmount(tester);
     });
 
+    testWidgets('editing a customer keeps its own document', (tester) async {
+      final data = TestData();
+      final company = await tester.runAsync(data.createCompany);
+      await data.pump(tester, CustomerFormPage(company!));
+      await fillPassport(tester, 'AB123456');
+      await data.tapAndWait(tester);
+      final customer = await tester.runAsync(
+        () =>
+            CustomerRepository(data.database)
+                .findByDocument(company.id, '7', 'AB123456'),
+      );
+
+      await data.pump(tester, CustomerFormPage(company, customer: customer));
+      await tester.enterText(_field(Strings.nombre), 'John A. Smith');
+      await data.tapAndWait(tester);
+
+      expect(find.text(Strings.customerExists), findsNothing);
+      final edited = await tester.runAsync(
+        () =>
+            CustomerRepository(data.database)
+                .findByDocument(company.id, '7', 'AB123456'),
+      );
+      expect(edited?.nombre, 'John A. Smith');
+      await data.unmount(tester);
+    });
+
+    testWidgets('a DNI has 8 digits', (tester) async {
+      final data = TestData();
+      final company = await tester.runAsync(data.createCompany);
+      await data.pump(tester, CustomerFormPage(company!));
+      await tester.tap(find.text('RUC'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DNI').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(_field(Strings.numeroDocumento), '1234567');
+      await tester.enterText(_field(Strings.nombre), 'Juana');
+      await data.tapAndWait(tester);
+
+      expect(find.text(Strings.invalidDni), findsOneWidget);
+      await data.unmount(tester);
+    });
+
+    testWidgets('the lookup fills name and address', (tester) async {
+      final data = TestData();
+      final company = await tester.runAsync(
+        () => data.createCompany(lookupProvider: LookupProvider.decolecta),
+      );
+      final lookup = CustomerLookup(
+        MockClient(
+          (_) async => http.Response(
+            '{"full_name": "PEREZ RUIZ JUANA", "direccion": "JR. UNION 100", "distrito": "LIMA"}',
+            200,
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(data.database),
+            customerLookupProvider.overrideWithValue(lookup),
+          ],
+          child: MaterialApp(home: CustomerFormPage(company!)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('RUC'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('DNI').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(_field(Strings.numeroDocumento), '46027897');
+
+      await tester.tap(find.byTooltip(Strings.lookup));
+      for (
+        var wait = 0;
+        wait < 50 && find.text('PEREZ RUIZ JUANA').evaluate().isEmpty;
+        wait++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump();
+      }
+
+      expect(find.text('PEREZ RUIZ JUANA'), findsOneWidget);
+      expect(find.text('JR. UNION 100'), findsOneWidget);
+      expect(find.byTooltip(Strings.lookup), findsOneWidget); // spinner gone
+      await data.unmount(tester);
+    });
+
     testWidgets('offers the lookup only when a service is set', (tester) async {
       final data = TestData();
       var company = await tester.runAsync(data.createCompany);
@@ -79,7 +194,7 @@ void main() {
       company = await tester.runAsync(
         () => data.createCompany(
           ruc: '20100070970',
-          lookupProvider: LookupProvider.commercial,
+          lookupProvider: LookupProvider.decolecta,
         ),
       );
       await data.pump(tester, CustomerFormPage(company!));

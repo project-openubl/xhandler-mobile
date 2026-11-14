@@ -2088,6 +2088,48 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _distritoMeta = const VerificationMeta(
+    'distrito',
+  );
+  @override
+  late final GeneratedColumn<String> distrito = GeneratedColumn<String>(
+    'distrito',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _provinciaMeta = const VerificationMeta(
+    'provincia',
+  );
+  @override
+  late final GeneratedColumn<String> provincia = GeneratedColumn<String>(
+    'provincia',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _departamentoMeta = const VerificationMeta(
+    'departamento',
+  );
+  @override
+  late final GeneratedColumn<String> departamento = GeneratedColumn<String>(
+    'departamento',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ubigeoMeta = const VerificationMeta('ubigeo');
+  @override
+  late final GeneratedColumn<String> ubigeo = GeneratedColumn<String>(
+    'ubigeo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
@@ -2119,6 +2161,10 @@ class $CustomersTable extends Customers
     numeroDocumentoIdentidad,
     nombre,
     direccion,
+    distrito,
+    provincia,
+    departamento,
+    ubigeo,
     email,
     telefono,
   ];
@@ -2199,6 +2245,33 @@ class $CustomersTable extends Customers
         direccion.isAcceptableOrUnknown(data['direccion']!, _direccionMeta),
       );
     }
+    if (data.containsKey('distrito')) {
+      context.handle(
+        _distritoMeta,
+        distrito.isAcceptableOrUnknown(data['distrito']!, _distritoMeta),
+      );
+    }
+    if (data.containsKey('provincia')) {
+      context.handle(
+        _provinciaMeta,
+        provincia.isAcceptableOrUnknown(data['provincia']!, _provinciaMeta),
+      );
+    }
+    if (data.containsKey('departamento')) {
+      context.handle(
+        _departamentoMeta,
+        departamento.isAcceptableOrUnknown(
+          data['departamento']!,
+          _departamentoMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ubigeo')) {
+      context.handle(
+        _ubigeoMeta,
+        ubigeo.isAcceptableOrUnknown(data['ubigeo']!, _ubigeoMeta),
+      );
+    }
     if (data.containsKey('email')) {
       context.handle(
         _emailMeta,
@@ -2256,6 +2329,22 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}direccion'],
       ),
+      distrito: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}distrito'],
+      ),
+      provincia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provincia'],
+      ),
+      departamento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}departamento'],
+      ),
+      ubigeo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ubigeo'],
+      ),
       email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}email'],
@@ -2285,6 +2374,10 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String numeroDocumentoIdentidad;
   final String nombre;
   final String? direccion;
+  final String? distrito;
+  final String? provincia;
+  final String? departamento;
+  final String? ubigeo;
   final String? email;
 
   /// With country code, e.g. "+51987654321"
@@ -2299,6 +2392,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.numeroDocumentoIdentidad,
     required this.nombre,
     this.direccion,
+    this.distrito,
+    this.provincia,
+    this.departamento,
+    this.ubigeo,
     this.email,
     this.telefono,
   });
@@ -2319,6 +2416,18 @@ class Customer extends DataClass implements Insertable<Customer> {
     map['nombre'] = Variable<String>(nombre);
     if (!nullToAbsent || direccion != null) {
       map['direccion'] = Variable<String>(direccion);
+    }
+    if (!nullToAbsent || distrito != null) {
+      map['distrito'] = Variable<String>(distrito);
+    }
+    if (!nullToAbsent || provincia != null) {
+      map['provincia'] = Variable<String>(provincia);
+    }
+    if (!nullToAbsent || departamento != null) {
+      map['departamento'] = Variable<String>(departamento);
+    }
+    if (!nullToAbsent || ubigeo != null) {
+      map['ubigeo'] = Variable<String>(ubigeo);
     }
     if (!nullToAbsent || email != null) {
       map['email'] = Variable<String>(email);
@@ -2344,6 +2453,18 @@ class Customer extends DataClass implements Insertable<Customer> {
       direccion: direccion == null && nullToAbsent
           ? const Value.absent()
           : Value(direccion),
+      distrito: distrito == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distrito),
+      provincia: provincia == null && nullToAbsent
+          ? const Value.absent()
+          : Value(provincia),
+      departamento: departamento == null && nullToAbsent
+          ? const Value.absent()
+          : Value(departamento),
+      ubigeo: ubigeo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ubigeo),
       email: email == null && nullToAbsent
           ? const Value.absent()
           : Value(email),
@@ -2372,6 +2493,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       ),
       nombre: serializer.fromJson<String>(json['nombre']),
       direccion: serializer.fromJson<String?>(json['direccion']),
+      distrito: serializer.fromJson<String?>(json['distrito']),
+      provincia: serializer.fromJson<String?>(json['provincia']),
+      departamento: serializer.fromJson<String?>(json['departamento']),
+      ubigeo: serializer.fromJson<String?>(json['ubigeo']),
       email: serializer.fromJson<String?>(json['email']),
       telefono: serializer.fromJson<String?>(json['telefono']),
     );
@@ -2393,6 +2518,10 @@ class Customer extends DataClass implements Insertable<Customer> {
       ),
       'nombre': serializer.toJson<String>(nombre),
       'direccion': serializer.toJson<String?>(direccion),
+      'distrito': serializer.toJson<String?>(distrito),
+      'provincia': serializer.toJson<String?>(provincia),
+      'departamento': serializer.toJson<String?>(departamento),
+      'ubigeo': serializer.toJson<String?>(ubigeo),
       'email': serializer.toJson<String?>(email),
       'telefono': serializer.toJson<String?>(telefono),
     };
@@ -2408,6 +2537,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     String? numeroDocumentoIdentidad,
     String? nombre,
     Value<String?> direccion = const Value.absent(),
+    Value<String?> distrito = const Value.absent(),
+    Value<String?> provincia = const Value.absent(),
+    Value<String?> departamento = const Value.absent(),
+    Value<String?> ubigeo = const Value.absent(),
     Value<String?> email = const Value.absent(),
     Value<String?> telefono = const Value.absent(),
   }) => Customer(
@@ -2422,6 +2555,10 @@ class Customer extends DataClass implements Insertable<Customer> {
         numeroDocumentoIdentidad ?? this.numeroDocumentoIdentidad,
     nombre: nombre ?? this.nombre,
     direccion: direccion.present ? direccion.value : this.direccion,
+    distrito: distrito.present ? distrito.value : this.distrito,
+    provincia: provincia.present ? provincia.value : this.provincia,
+    departamento: departamento.present ? departamento.value : this.departamento,
+    ubigeo: ubigeo.present ? ubigeo.value : this.ubigeo,
     email: email.present ? email.value : this.email,
     telefono: telefono.present ? telefono.value : this.telefono,
   );
@@ -2440,6 +2577,12 @@ class Customer extends DataClass implements Insertable<Customer> {
           : this.numeroDocumentoIdentidad,
       nombre: data.nombre.present ? data.nombre.value : this.nombre,
       direccion: data.direccion.present ? data.direccion.value : this.direccion,
+      distrito: data.distrito.present ? data.distrito.value : this.distrito,
+      provincia: data.provincia.present ? data.provincia.value : this.provincia,
+      departamento: data.departamento.present
+          ? data.departamento.value
+          : this.departamento,
+      ubigeo: data.ubigeo.present ? data.ubigeo.value : this.ubigeo,
       email: data.email.present ? data.email.value : this.email,
       telefono: data.telefono.present ? data.telefono.value : this.telefono,
     );
@@ -2457,6 +2600,10 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('numeroDocumentoIdentidad: $numeroDocumentoIdentidad, ')
           ..write('nombre: $nombre, ')
           ..write('direccion: $direccion, ')
+          ..write('distrito: $distrito, ')
+          ..write('provincia: $provincia, ')
+          ..write('departamento: $departamento, ')
+          ..write('ubigeo: $ubigeo, ')
           ..write('email: $email, ')
           ..write('telefono: $telefono')
           ..write(')'))
@@ -2474,6 +2621,10 @@ class Customer extends DataClass implements Insertable<Customer> {
     numeroDocumentoIdentidad,
     nombre,
     direccion,
+    distrito,
+    provincia,
+    departamento,
+    ubigeo,
     email,
     telefono,
   );
@@ -2490,6 +2641,10 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.numeroDocumentoIdentidad == this.numeroDocumentoIdentidad &&
           other.nombre == this.nombre &&
           other.direccion == this.direccion &&
+          other.distrito == this.distrito &&
+          other.provincia == this.provincia &&
+          other.departamento == this.departamento &&
+          other.ubigeo == this.ubigeo &&
           other.email == this.email &&
           other.telefono == this.telefono);
 }
@@ -2504,6 +2659,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String> numeroDocumentoIdentidad;
   final Value<String> nombre;
   final Value<String?> direccion;
+  final Value<String?> distrito;
+  final Value<String?> provincia;
+  final Value<String?> departamento;
+  final Value<String?> ubigeo;
   final Value<String?> email;
   final Value<String?> telefono;
   final Value<int> rowid;
@@ -2517,6 +2676,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.numeroDocumentoIdentidad = const Value.absent(),
     this.nombre = const Value.absent(),
     this.direccion = const Value.absent(),
+    this.distrito = const Value.absent(),
+    this.provincia = const Value.absent(),
+    this.departamento = const Value.absent(),
+    this.ubigeo = const Value.absent(),
     this.email = const Value.absent(),
     this.telefono = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2531,6 +2694,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     required String numeroDocumentoIdentidad,
     required String nombre,
     this.direccion = const Value.absent(),
+    this.distrito = const Value.absent(),
+    this.provincia = const Value.absent(),
+    this.departamento = const Value.absent(),
+    this.ubigeo = const Value.absent(),
     this.email = const Value.absent(),
     this.telefono = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2548,6 +2715,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? numeroDocumentoIdentidad,
     Expression<String>? nombre,
     Expression<String>? direccion,
+    Expression<String>? distrito,
+    Expression<String>? provincia,
+    Expression<String>? departamento,
+    Expression<String>? ubigeo,
     Expression<String>? email,
     Expression<String>? telefono,
     Expression<int>? rowid,
@@ -2564,6 +2735,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
         'numero_documento_identidad': numeroDocumentoIdentidad,
       if (nombre != null) 'nombre': nombre,
       if (direccion != null) 'direccion': direccion,
+      if (distrito != null) 'distrito': distrito,
+      if (provincia != null) 'provincia': provincia,
+      if (departamento != null) 'departamento': departamento,
+      if (ubigeo != null) 'ubigeo': ubigeo,
       if (email != null) 'email': email,
       if (telefono != null) 'telefono': telefono,
       if (rowid != null) 'rowid': rowid,
@@ -2580,6 +2755,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String>? numeroDocumentoIdentidad,
     Value<String>? nombre,
     Value<String?>? direccion,
+    Value<String?>? distrito,
+    Value<String?>? provincia,
+    Value<String?>? departamento,
+    Value<String?>? ubigeo,
     Value<String?>? email,
     Value<String?>? telefono,
     Value<int>? rowid,
@@ -2596,6 +2775,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           numeroDocumentoIdentidad ?? this.numeroDocumentoIdentidad,
       nombre: nombre ?? this.nombre,
       direccion: direccion ?? this.direccion,
+      distrito: distrito ?? this.distrito,
+      provincia: provincia ?? this.provincia,
+      departamento: departamento ?? this.departamento,
+      ubigeo: ubigeo ?? this.ubigeo,
       email: email ?? this.email,
       telefono: telefono ?? this.telefono,
       rowid: rowid ?? this.rowid,
@@ -2636,6 +2819,18 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (direccion.present) {
       map['direccion'] = Variable<String>(direccion.value);
     }
+    if (distrito.present) {
+      map['distrito'] = Variable<String>(distrito.value);
+    }
+    if (provincia.present) {
+      map['provincia'] = Variable<String>(provincia.value);
+    }
+    if (departamento.present) {
+      map['departamento'] = Variable<String>(departamento.value);
+    }
+    if (ubigeo.present) {
+      map['ubigeo'] = Variable<String>(ubigeo.value);
+    }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
     }
@@ -2660,6 +2855,10 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('numeroDocumentoIdentidad: $numeroDocumentoIdentidad, ')
           ..write('nombre: $nombre, ')
           ..write('direccion: $direccion, ')
+          ..write('distrito: $distrito, ')
+          ..write('provincia: $provincia, ')
+          ..write('departamento: $departamento, ')
+          ..write('ubigeo: $ubigeo, ')
           ..write('email: $email, ')
           ..write('telefono: $telefono, ')
           ..write('rowid: $rowid')
@@ -2736,6 +2935,17 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   late final GeneratedColumn<String> codigo = GeneratedColumn<String>(
     'codigo',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _codigoSunatMeta = const VerificationMeta(
+    'codigoSunat',
+  );
+  @override
+  late final GeneratedColumn<String> codigoSunat = GeneratedColumn<String>(
+    'codigo_sunat',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -2870,6 +3080,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     deletedAt,
     companyId,
     codigo,
+    codigoSunat,
     descripcion,
     unidadMedida,
     precio,
@@ -2926,6 +3137,15 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       context.handle(
         _codigoMeta,
         codigo.isAcceptableOrUnknown(data['codigo']!, _codigoMeta),
+      );
+    }
+    if (data.containsKey('codigo_sunat')) {
+      context.handle(
+        _codigoSunatMeta,
+        codigoSunat.isAcceptableOrUnknown(
+          data['codigo_sunat']!,
+          _codigoSunatMeta,
+        ),
       );
     }
     if (data.containsKey('descripcion')) {
@@ -3037,6 +3257,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}codigo'],
       ),
+      codigoSunat: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}codigo_sunat'],
+      ),
       descripcion: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}descripcion'],
@@ -3093,6 +3317,9 @@ class Product extends DataClass implements Insertable<Product> {
   final DateTime? deletedAt;
   final String companyId;
   final String? codigo;
+
+  /// SUNAT product code (UNSPSC)
+  final String? codigoSunat;
   final String descripcion;
 
   /// Catalog 3, e.g. "NIU" unit, "ZZ" service
@@ -3105,7 +3332,7 @@ class Product extends DataClass implements Insertable<Product> {
   /// Catalog 7; null = the company's default
   final String? igvTipo;
 
-  /// Catalog 8 and its rate
+  /// Catalog 8 and its rate, as a percentage (e.g. "17")
   final String? iscTipo;
   final String? iscTasa;
 
@@ -3124,6 +3351,7 @@ class Product extends DataClass implements Insertable<Product> {
     this.deletedAt,
     required this.companyId,
     this.codigo,
+    this.codigoSunat,
     required this.descripcion,
     required this.unidadMedida,
     required this.precio,
@@ -3147,6 +3375,9 @@ class Product extends DataClass implements Insertable<Product> {
     map['company_id'] = Variable<String>(companyId);
     if (!nullToAbsent || codigo != null) {
       map['codigo'] = Variable<String>(codigo);
+    }
+    if (!nullToAbsent || codigoSunat != null) {
+      map['codigo_sunat'] = Variable<String>(codigoSunat);
     }
     map['descripcion'] = Variable<String>(descripcion);
     map['unidad_medida'] = Variable<String>(unidadMedida);
@@ -3181,6 +3412,9 @@ class Product extends DataClass implements Insertable<Product> {
       codigo: codigo == null && nullToAbsent
           ? const Value.absent()
           : Value(codigo),
+      codigoSunat: codigoSunat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(codigoSunat),
       descripcion: Value(descripcion),
       unidadMedida: Value(unidadMedida),
       precio: Value(precio),
@@ -3214,6 +3448,7 @@ class Product extends DataClass implements Insertable<Product> {
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       companyId: serializer.fromJson<String>(json['companyId']),
       codigo: serializer.fromJson<String?>(json['codigo']),
+      codigoSunat: serializer.fromJson<String?>(json['codigoSunat']),
       descripcion: serializer.fromJson<String>(json['descripcion']),
       unidadMedida: serializer.fromJson<String>(json['unidadMedida']),
       precio: serializer.fromJson<String>(json['precio']),
@@ -3236,6 +3471,7 @@ class Product extends DataClass implements Insertable<Product> {
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'companyId': serializer.toJson<String>(companyId),
       'codigo': serializer.toJson<String?>(codigo),
+      'codigoSunat': serializer.toJson<String?>(codigoSunat),
       'descripcion': serializer.toJson<String>(descripcion),
       'unidadMedida': serializer.toJson<String>(unidadMedida),
       'precio': serializer.toJson<String>(precio),
@@ -3256,6 +3492,7 @@ class Product extends DataClass implements Insertable<Product> {
     Value<DateTime?> deletedAt = const Value.absent(),
     String? companyId,
     Value<String?> codigo = const Value.absent(),
+    Value<String?> codigoSunat = const Value.absent(),
     String? descripcion,
     String? unidadMedida,
     String? precio,
@@ -3273,6 +3510,7 @@ class Product extends DataClass implements Insertable<Product> {
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     companyId: companyId ?? this.companyId,
     codigo: codigo.present ? codigo.value : this.codigo,
+    codigoSunat: codigoSunat.present ? codigoSunat.value : this.codigoSunat,
     descripcion: descripcion ?? this.descripcion,
     unidadMedida: unidadMedida ?? this.unidadMedida,
     precio: precio ?? this.precio,
@@ -3294,6 +3532,9 @@ class Product extends DataClass implements Insertable<Product> {
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       companyId: data.companyId.present ? data.companyId.value : this.companyId,
       codigo: data.codigo.present ? data.codigo.value : this.codigo,
+      codigoSunat: data.codigoSunat.present
+          ? data.codigoSunat.value
+          : this.codigoSunat,
       descripcion: data.descripcion.present
           ? data.descripcion.value
           : this.descripcion,
@@ -3324,6 +3565,7 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('deletedAt: $deletedAt, ')
           ..write('companyId: $companyId, ')
           ..write('codigo: $codigo, ')
+          ..write('codigoSunat: $codigoSunat, ')
           ..write('descripcion: $descripcion, ')
           ..write('unidadMedida: $unidadMedida, ')
           ..write('precio: $precio, ')
@@ -3346,6 +3588,7 @@ class Product extends DataClass implements Insertable<Product> {
     deletedAt,
     companyId,
     codigo,
+    codigoSunat,
     descripcion,
     unidadMedida,
     precio,
@@ -3367,6 +3610,7 @@ class Product extends DataClass implements Insertable<Product> {
           other.deletedAt == this.deletedAt &&
           other.companyId == this.companyId &&
           other.codigo == this.codigo &&
+          other.codigoSunat == this.codigoSunat &&
           other.descripcion == this.descripcion &&
           other.unidadMedida == this.unidadMedida &&
           other.precio == this.precio &&
@@ -3386,6 +3630,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<DateTime?> deletedAt;
   final Value<String> companyId;
   final Value<String?> codigo;
+  final Value<String?> codigoSunat;
   final Value<String> descripcion;
   final Value<String> unidadMedida;
   final Value<String> precio;
@@ -3404,6 +3649,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.deletedAt = const Value.absent(),
     this.companyId = const Value.absent(),
     this.codigo = const Value.absent(),
+    this.codigoSunat = const Value.absent(),
     this.descripcion = const Value.absent(),
     this.unidadMedida = const Value.absent(),
     this.precio = const Value.absent(),
@@ -3423,6 +3669,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.deletedAt = const Value.absent(),
     required String companyId,
     this.codigo = const Value.absent(),
+    this.codigoSunat = const Value.absent(),
     required String descripcion,
     this.unidadMedida = const Value.absent(),
     required String precio,
@@ -3444,6 +3691,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<DateTime>? deletedAt,
     Expression<String>? companyId,
     Expression<String>? codigo,
+    Expression<String>? codigoSunat,
     Expression<String>? descripcion,
     Expression<String>? unidadMedida,
     Expression<String>? precio,
@@ -3463,6 +3711,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (companyId != null) 'company_id': companyId,
       if (codigo != null) 'codigo': codigo,
+      if (codigoSunat != null) 'codigo_sunat': codigoSunat,
       if (descripcion != null) 'descripcion': descripcion,
       if (unidadMedida != null) 'unidad_medida': unidadMedida,
       if (precio != null) 'precio': precio,
@@ -3484,6 +3733,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<DateTime?>? deletedAt,
     Value<String>? companyId,
     Value<String?>? codigo,
+    Value<String?>? codigoSunat,
     Value<String>? descripcion,
     Value<String>? unidadMedida,
     Value<String>? precio,
@@ -3503,6 +3753,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       deletedAt: deletedAt ?? this.deletedAt,
       companyId: companyId ?? this.companyId,
       codigo: codigo ?? this.codigo,
+      codigoSunat: codigoSunat ?? this.codigoSunat,
       descripcion: descripcion ?? this.descripcion,
       unidadMedida: unidadMedida ?? this.unidadMedida,
       precio: precio ?? this.precio,
@@ -3537,6 +3788,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     }
     if (codigo.present) {
       map['codigo'] = Variable<String>(codigo.value);
+    }
+    if (codigoSunat.present) {
+      map['codigo_sunat'] = Variable<String>(codigoSunat.value);
     }
     if (descripcion.present) {
       map['descripcion'] = Variable<String>(descripcion.value);
@@ -3583,6 +3837,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('deletedAt: $deletedAt, ')
           ..write('companyId: $companyId, ')
           ..write('codigo: $codigo, ')
+          ..write('codigoSunat: $codigoSunat, ')
           ..write('descripcion: $descripcion, ')
           ..write('unidadMedida: $unidadMedida, ')
           ..write('precio: $precio, ')
@@ -7650,6 +7905,10 @@ typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   required String numeroDocumentoIdentidad,
   required String nombre,
   Value<String?> direccion,
+  Value<String?> distrito,
+  Value<String?> provincia,
+  Value<String?> departamento,
+  Value<String?> ubigeo,
   Value<String?> email,
   Value<String?> telefono,
   Value<int> rowid,
@@ -7664,6 +7923,10 @@ typedef $$CustomersTableUpdateCompanionBuilder = CustomersCompanion Function({
   Value<String> numeroDocumentoIdentidad,
   Value<String> nombre,
   Value<String?> direccion,
+  Value<String?> distrito,
+  Value<String?> provincia,
+  Value<String?> departamento,
+  Value<String?> ubigeo,
   Value<String?> email,
   Value<String?> telefono,
   Value<int> rowid,
@@ -7737,6 +8000,26 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<String> get direccion => $composableBuilder(
     column: $table.direccion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get distrito => $composableBuilder(
+    column: $table.distrito,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provincia => $composableBuilder(
+    column: $table.provincia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get departamento => $composableBuilder(
+    column: $table.departamento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ubigeo => $composableBuilder(
+    column: $table.ubigeo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7823,6 +8106,26 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get distrito => $composableBuilder(
+    column: $table.distrito,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provincia => $composableBuilder(
+    column: $table.provincia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get departamento => $composableBuilder(
+    column: $table.departamento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ubigeo => $composableBuilder(
+    column: $table.ubigeo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get email => $composableBuilder(
     column: $table.email,
     builder: (column) => ColumnOrderings(column),
@@ -7894,6 +8197,20 @@ class $$CustomersTableAnnotationComposer
   GeneratedColumn<String> get direccion =>
       $composableBuilder(column: $table.direccion, builder: (column) => column);
 
+  GeneratedColumn<String> get distrito =>
+      $composableBuilder(column: $table.distrito, builder: (column) => column);
+
+  GeneratedColumn<String> get provincia =>
+      $composableBuilder(column: $table.provincia, builder: (column) => column);
+
+  GeneratedColumn<String> get departamento => $composableBuilder(
+    column: $table.departamento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ubigeo =>
+      $composableBuilder(column: $table.ubigeo, builder: (column) => column);
+
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
 
@@ -7961,6 +8278,10 @@ class $$CustomersTableTableManager
                 Value<String> numeroDocumentoIdentidad = const Value.absent(),
                 Value<String> nombre = const Value.absent(),
                 Value<String?> direccion = const Value.absent(),
+                Value<String?> distrito = const Value.absent(),
+                Value<String?> provincia = const Value.absent(),
+                Value<String?> departamento = const Value.absent(),
+                Value<String?> ubigeo = const Value.absent(),
                 Value<String?> email = const Value.absent(),
                 Value<String?> telefono = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7974,6 +8295,10 @@ class $$CustomersTableTableManager
                 numeroDocumentoIdentidad: numeroDocumentoIdentidad,
                 nombre: nombre,
                 direccion: direccion,
+                distrito: distrito,
+                provincia: provincia,
+                departamento: departamento,
+                ubigeo: ubigeo,
                 email: email,
                 telefono: telefono,
                 rowid: rowid,
@@ -7989,6 +8314,10 @@ class $$CustomersTableTableManager
                 required String numeroDocumentoIdentidad,
                 required String nombre,
                 Value<String?> direccion = const Value.absent(),
+                Value<String?> distrito = const Value.absent(),
+                Value<String?> provincia = const Value.absent(),
+                Value<String?> departamento = const Value.absent(),
+                Value<String?> ubigeo = const Value.absent(),
                 Value<String?> email = const Value.absent(),
                 Value<String?> telefono = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8002,6 +8331,10 @@ class $$CustomersTableTableManager
                 numeroDocumentoIdentidad: numeroDocumentoIdentidad,
                 nombre: nombre,
                 direccion: direccion,
+                distrito: distrito,
+                provincia: provincia,
+                departamento: departamento,
+                ubigeo: ubigeo,
                 email: email,
                 telefono: telefono,
                 rowid: rowid,
@@ -8078,6 +8411,7 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<DateTime?> deletedAt,
   required String companyId,
   Value<String?> codigo,
+  Value<String?> codigoSunat,
   required String descripcion,
   Value<String> unidadMedida,
   required String precio,
@@ -8097,6 +8431,7 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<DateTime?> deletedAt,
   Value<String> companyId,
   Value<String?> codigo,
+  Value<String?> codigoSunat,
   Value<String> descripcion,
   Value<String> unidadMedida,
   Value<String> precio,
@@ -8163,6 +8498,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get codigo => $composableBuilder(
     column: $table.codigo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get codigoSunat => $composableBuilder(
+    column: $table.codigoSunat,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8274,6 +8614,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get codigoSunat => $composableBuilder(
+    column: $table.codigoSunat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get descripcion => $composableBuilder(
     column: $table.descripcion,
     builder: (column) => ColumnOrderings(column),
@@ -8372,6 +8717,11 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get codigo =>
       $composableBuilder(column: $table.codigo, builder: (column) => column);
 
+  GeneratedColumn<String> get codigoSunat => $composableBuilder(
+    column: $table.codigoSunat,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get descripcion => $composableBuilder(
     column: $table.descripcion,
     builder: (column) => column,
@@ -8468,6 +8818,7 @@ class $$ProductsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> companyId = const Value.absent(),
                 Value<String?> codigo = const Value.absent(),
+                Value<String?> codigoSunat = const Value.absent(),
                 Value<String> descripcion = const Value.absent(),
                 Value<String> unidadMedida = const Value.absent(),
                 Value<String> precio = const Value.absent(),
@@ -8486,6 +8837,7 @@ class $$ProductsTableTableManager
                 deletedAt: deletedAt,
                 companyId: companyId,
                 codigo: codigo,
+                codigoSunat: codigoSunat,
                 descripcion: descripcion,
                 unidadMedida: unidadMedida,
                 precio: precio,
@@ -8506,6 +8858,7 @@ class $$ProductsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 required String companyId,
                 Value<String?> codigo = const Value.absent(),
+                Value<String?> codigoSunat = const Value.absent(),
                 required String descripcion,
                 Value<String> unidadMedida = const Value.absent(),
                 required String precio,
@@ -8524,6 +8877,7 @@ class $$ProductsTableTableManager
                 deletedAt: deletedAt,
                 companyId: companyId,
                 codigo: codigo,
+                codigoSunat: codigoSunat,
                 descripcion: descripcion,
                 unidadMedida: unidadMedida,
                 precio: precio,

@@ -561,6 +561,46 @@
             "dsl_features": []
           },
           {
+            "name": "distrito",
+            "getter_name": "distrito",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "provincia",
+            "getter_name": "provincia",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "departamento",
+            "getter_name": "departamento",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "ubigeo",
+            "getter_name": "ubigeo",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
             "name": "email",
             "getter_name": "email",
             "moor_type": "string",
@@ -668,6 +708,16 @@
           {
             "name": "codigo",
             "getter_name": "codigo",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "codigo_sunat",
+            "getter_name": "codigoSunat",
             "moor_type": "string",
             "nullable": true,
             "customConstraints": null,
@@ -1427,7 +1477,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"customers\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"tipo_documento_identidad\" TEXT NOT NULL, \"numero_documento_identidad\" TEXT NOT NULL, \"nombre\" TEXT NOT NULL, \"direccion\" TEXT NULL, \"email\" TEXT NULL, \"telefono\" TEXT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"customers\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"tipo_documento_identidad\" TEXT NOT NULL, \"numero_documento_identidad\" TEXT NOT NULL, \"nombre\" TEXT NOT NULL, \"direccion\" TEXT NULL, \"distrito\" TEXT NULL, \"provincia\" TEXT NULL, \"departamento\" TEXT NULL, \"ubigeo\" TEXT NULL, \"email\" TEXT NULL, \"telefono\" TEXT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },
@@ -1436,7 +1486,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"products\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"codigo\" TEXT NULL, \"descripcion\" TEXT NOT NULL, \"unidad_medida\" TEXT NOT NULL DEFAULT 'NIU', \"precio\" TEXT NOT NULL, \"precio_incluye_igv\" INTEGER NOT NULL DEFAULT 1 CHECK (\"precio_incluye_igv\" IN (0, 1)), \"igv_tipo\" TEXT NULL, \"isc_tipo\" TEXT NULL, \"isc_tasa\" TEXT NULL, \"es_bolsa\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_bolsa\" IN (0, 1)), \"detraccion_codigo\" TEXT NULL, \"favorito\" INTEGER NOT NULL DEFAULT 0 CHECK (\"favorito\" IN (0, 1)), PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"products\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"codigo\" TEXT NULL, \"codigo_sunat\" TEXT NULL, \"descripcion\" TEXT NOT NULL, \"unidad_medida\" TEXT NOT NULL DEFAULT 'NIU', \"precio\" TEXT NOT NULL, \"precio_incluye_igv\" INTEGER NOT NULL DEFAULT 1 CHECK (\"precio_incluye_igv\" IN (0, 1)), \"igv_tipo\" TEXT NULL, \"isc_tipo\" TEXT NULL, \"isc_tasa\" TEXT NULL, \"es_bolsa\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_bolsa\" IN (0, 1)), \"detraccion_codigo\" TEXT NULL, \"favorito\" INTEGER NOT NULL DEFAULT 0 CHECK (\"favorito\" IN (0, 1)), PRIMARY KEY (\"id\"));"
         }
       ]
     },

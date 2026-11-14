@@ -26,24 +26,40 @@ Company _company(LookupProvider provider, [String? url]) => Company(
 void main() {
   late http.Request request;
 
-  CustomerLookup lookupAnswering(int status, Object body) => CustomerLookup(
+  CustomerLookup answering(int status, Object body) => CustomerLookup(
     MockClient((r) async {
       request = r;
-      return http.Response.bytes(utf8.encode(jsonEncode(body)), status);
+      final text = body is String ? body : jsonEncode(body);
+      return http.Response.bytes(utf8.encode(text), status);
     }),
   );
 
-  test('Decolecta: RUC', () async {
-    final lookup = lookupAnswering(200, {
-      'razon_social': 'REXTIE S.A.C.',
-      'direccion': 'AV. CANAVAL Y MOREYRA 380',
-    });
+  Future<LookupResult?> lookUp(
+    CustomerLookup lookup, {
+    LookupProvider provider = LookupProvider.decolecta,
+    String tipo = '6',
+    String numero = '20601030013',
+    String? token,
+    String? url,
+  }) => lookup.lookup(
+    company: _company(provider, url),
+    secrets: CompanySecrets({CompanySecret.lookupToken: ?token}),
+    tipoDocumentoIdentidad: tipo,
+    numero: numero,
+  );
 
-    final result = await lookup.lookup(
-      company: _company(LookupProvider.commercial),
-      secrets: const CompanySecrets({CompanySecret.lookupToken: 't0k'}),
-      tipoDocumentoIdentidad: '6',
-      numero: '20601030013',
+  test('Decolecta RUC: name and address parts, "-" dropped', () async {
+    final result = await lookUp(
+      answering(200, {
+        'razon_social': 'REXTIE S.A.C.',
+        'direccion': 'AV. CANAVAL Y MOREYRA 380',
+        'distrito': 'SAN ISIDRO',
+        'provincia': 'LIMA',
+        'departamento': 'LIMA',
+        'ubigeo': '150131',
+        'interior': '-',
+      }),
+      token: 't0k',
     );
 
     expect(
@@ -52,72 +68,75 @@ void main() {
     );
     expect(request.headers['Authorization'], 'Bearer t0k');
     expect(result?.nombre, 'REXTIE S.A.C.');
-    expect(result?.direccion, 'AV. CANAVAL Y MOREYRA 380');
+    expect(result?.distrito, 'SAN ISIDRO');
+    expect(result?.ubigeo, '150131');
   });
 
-  test('Decolecta: DNI, and unknown numbers', () async {
-    var lookup = lookupAnswering(200, {'full_name': 'DELGADO HUAMANI ROXANA'});
-    final result = await lookup.lookup(
-      company: _company(LookupProvider.commercial),
-      secrets: const CompanySecrets({}),
-      tipoDocumentoIdentidad: '1',
+  test('Decolecta DNI', () async {
+    final result = await lookUp(
+      answering(200, {'full_name': 'DELGADO HUAMANI ROXANA'}),
+      tipo: '1',
       numero: '46027897',
     );
     expect(request.url.path, '/v1/reniec/dni');
     expect(result?.nombre, 'DELGADO HUAMANI ROXANA');
-
-    lookup = lookupAnswering(422, {'message': 'ruc no valido'});
-    expect(
-      await lookup.lookup(
-        company: _company(LookupProvider.commercial),
-        secrets: const CompanySecrets({}),
-        tipoDocumentoIdentidad: '6',
-        numero: '20601030010',
-      ),
-      isNull,
-    );
   });
 
-  test('searchpe: basic authentication and its split address', () async {
-    final lookup = lookupAnswering(200, {
-      'nombre': 'EMPRESA S.A.C.',
-      'tipoVia': 'AV.',
-      'nombreVia': 'LARCO',
-      'numero': '123',
-      'interior': '-',
-    });
+  test('unknown numbers and answers without a name are not found', () async {
+    expect(await lookUp(answering(422, {'message': 'ruc no valido'})), isNull);
+    expect(await lookUp(answering(404, {})), isNull);
+    expect(await lookUp(answering(200, {'razon_social': '-'})), isNull);
+  });
 
-    final result = await lookup.lookup(
-      company: _company(
-        LookupProvider.searchpe,
-        'https://searchpe.example.com/',
-      ),
-      secrets: const CompanySecrets({CompanySecret.lookupToken: 'user:pass'}),
-      tipoDocumentoIdentidad: '6',
-      numero: '20123456789',
+  test('errors say whether to fix the token or wait', () async {
+    Matcher kind(LookupErrorKind kind) =>
+        throwsA(isA<LookupError>().having((e) => e.kind, 'kind', kind));
+
+    expect(lookUp(answering(401, {})), kind(LookupErrorKind.authentication));
+    expect(lookUp(answering(429, {})), kind(LookupErrorKind.quota));
+    expect(
+      lookUp(answering(400, {'error': 'Invalid request'})),
+      kind(LookupErrorKind.other),
+    );
+    expect(lookUp(answering(200, '[1, 2]')), kind(LookupErrorKind.other));
+    expect(lookUp(answering(200, 'not json')), kind(LookupErrorKind.other));
+  });
+
+  test('searchpe: basic authentication and the padrón address', () async {
+    final result = await lookUp(
+      answering(200, {
+        'nombre': 'EMPRESA S.A.C.',
+        'tipoVia': 'AV.',
+        'nombreVia': 'LARCO',
+        'numero': '123',
+        'departamento': '401',
+        'interior': '-',
+        'tipoZona': 'URB.',
+        'codigoZona': 'SAN ANTONIO',
+        'ubigeo': '150122',
+      }),
+      provider: LookupProvider.searchpe,
+      url: 'https://searchpe.example.com',
+      token: 'user:pass',
     );
 
     expect(
       request.url.toString(),
-      'https://searchpe.example.com/api/contribuyentes/20123456789',
+      'https://searchpe.example.com/api/contribuyentes/20601030013',
     );
     expect(
       request.headers['Authorization'],
       'Basic ${base64Encode(utf8.encode('user:pass'))}',
     );
-    expect(result?.direccion, 'AV. LARCO 123');
+    expect(result?.nombre, 'EMPRESA S.A.C.');
+    expect(result?.direccion, 'AV. LARCO NRO. 123 DPTO. 401 URB. SAN ANTONIO');
+    expect(result?.ubigeo, '150122');
   });
 
-  test('other HTTP errors are reported', () {
-    final lookup = lookupAnswering(401, {});
+  test('no service, no lookup', () async {
     expect(
-      lookup.lookup(
-        company: _company(LookupProvider.commercial),
-        secrets: const CompanySecrets({}),
-        tipoDocumentoIdentidad: '6',
-        numero: '20601030013',
-      ),
-      throwsA(isA<http.ClientException>()),
+      await lookUp(answering(200, {}), provider: LookupProvider.none),
+      isNull,
     );
   });
 }

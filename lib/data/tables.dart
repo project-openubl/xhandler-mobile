@@ -73,7 +73,7 @@ class Companies extends Table with SyncColumns {
   TextColumn get lookupUrl => text().nullable()();
 }
 
-enum LookupProvider { none, commercial, searchpe }
+enum LookupProvider { none, decolecta, searchpe }
 
 /// Document numbering: each series gives `serie-number` to one document type.
 /// Series are never deleted, so their numbers are never reused; they are
@@ -112,7 +112,13 @@ class Customers extends Table with SyncColumns {
   TextColumn get tipoDocumentoIdentidad => text()();
   TextColumn get numeroDocumentoIdentidad => text()();
   TextColumn get nombre => text()();
+
+  // Address, as SUNAT's padrón and the lookup services give it
   TextColumn get direccion => text().nullable()();
+  TextColumn get distrito => text().nullable()();
+  TextColumn get provincia => text().nullable()();
+  TextColumn get departamento => text().nullable()();
+  TextColumn get ubigeo => text().nullable()();
   TextColumn get email => text().nullable()();
 
   /// With country code, e.g. "+51987654321"
@@ -122,6 +128,9 @@ class Customers extends Table with SyncColumns {
 class Products extends Table with SyncColumns {
   TextColumn get companyId => text().references(Companies, #id)();
   TextColumn get codigo => text().nullable()();
+
+  /// SUNAT product code (UNSPSC)
+  TextColumn get codigoSunat => text().nullable()();
   TextColumn get descripcion => text()();
 
   /// Catalog 3, e.g. "NIU" unit, "ZZ" service
@@ -135,7 +144,7 @@ class Products extends Table with SyncColumns {
   /// Catalog 7; null = the company's default
   TextColumn get igvTipo => text().nullable()();
 
-  /// Catalog 8 and its rate
+  /// Catalog 8 and its rate, as a percentage (e.g. "17")
   TextColumn get iscTipo => text().nullable()();
   TextColumn get iscTasa => text().nullable()();
 

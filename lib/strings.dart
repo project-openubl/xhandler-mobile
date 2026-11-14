@@ -131,8 +131,13 @@ abstract final class Strings {
   static const telefonoHelp = 'Con código de país, ej. +51987654321';
   static const lookup = 'Consultar';
   static const lookupNotFound = 'No se encontró el número';
-  static const lookupFailed =
-      'No se pudo consultar; revisa la conexión y el token';
+  static const lookupFailed = 'No se pudo consultar; revisa la conexión';
+  static const lookupAuthentication =
+      'El servicio de consulta rechazó el token o la contraseña';
+  static const lookupQuota = 'Se agotaron las consultas de tu plan';
+  static String invalidNumeroDocumento(int length) =>
+      'Hasta $length letras o números';
+  static const invalidEmail = 'Correo no válido';
   static const customerExists = 'Ya existe un cliente con este documento';
   static const deleteCustomerConfirm = '¿Eliminar este cliente?';
 
@@ -144,24 +149,31 @@ abstract final class Strings {
   static const codigo = 'Código';
   static const unidadMedida = 'Unidad de medida';
   static const precio = 'Precio';
-  static const invalidPrecio = 'Un número, ej. 12.50';
+  static const invalidPrecio = 'Un monto mayor que 0, ej. 12.50';
   static const precioIncluyeIgv = 'El precio incluye IGV';
   static const igvTipo = 'Afectación del IGV';
   static const esBolsa = 'Bolsa de plástico (paga ICBPER)';
   static const favorito = 'Favorito (venta rápida)';
   static const moreOptions = 'Más opciones';
   static const iscTipo = 'Tipo de ISC';
-  static const iscTasa = 'Tasa o monto de ISC';
+  static const iscTasa = 'Tasa de ISC (%)';
+  static const invalidIscTasa = 'Un porcentaje mayor que 0, ej. 17';
+  static const igvTipoDefault = 'El de la empresa';
+  static const codigoSunat = 'Código SUNAT del producto';
+  static const invalidDetraccionCodigo = 'El código tiene 3 dígitos';
   static const detraccionCodigo = 'Código de detracción';
   static const deleteProductConfirm = '¿Eliminar este producto?';
 
   // Lookup settings
   static const lookupSettings = 'Consulta RUC/DNI';
   static const lookupNone = 'Sin consulta (ingreso manual)';
-  static const lookupCommercial = 'Decolecta';
-  static const lookupCommercialHelp =
+  static const lookupDecolecta = 'Decolecta';
+  static const lookupDecolectaHelp =
       'Servicio con plan gratuito: regístrate en decolecta.com y copia tu token.';
   static const lookupSearchpe = 'searchpe (servidor propio)';
+  static const lookupSearchpeHelp =
+      'Usa el padrón de SUNAT: encuentra RUC, y DNI solo de personas con RUC.';
+  static const invalidUrl = 'URL no válida (https://...)';
   static const lookupToken = 'Token';
   static const lookupUrl = 'URL de searchpe';
   static const lookupUser = 'Usuario de searchpe';
