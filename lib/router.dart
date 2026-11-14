@@ -1,5 +1,9 @@
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
+import 'data/database.dart';
+
+import 'features/company/active_company_page.dart';
 import 'features/company/certificate_page.dart';
 import 'features/company/company_form_page.dart';
 import 'features/company/company_settings_page.dart';
@@ -11,39 +15,35 @@ import 'features/series/series_page.dart';
 /// Routes of the app. Pages under `/company` work on the active company.
 abstract final class Routes {
   static const home = '/';
-  static const newCompany = '/company/new';
+  static const newCompany = '/new-company';
   static const companySettings = '/company';
   static const editCompany = '/company/edit';
   static const certificate = '/company/certificate';
   static const credentials = '/company/credentials';
-  static const series = '/series';
-  static const diagnostics = '/diagnostics';
+  static const series = '/company/series';
+  static const diagnostics = '/company/diagnostics';
 }
 
-final router = GoRouter(
+GoRoute _companyRoute(String path, Widget Function(Company) page) => GoRoute(
+  path: path,
+  builder: (_, _) => ActiveCompanyPage(builder: page),
+);
+
+GoRouter buildRouter() => GoRouter(
   routes: [
     GoRoute(path: Routes.home, builder: (_, _) => const HomePage()),
     GoRoute(
       path: Routes.newCompany,
       builder: (_, _) => const CompanyFormPage(),
     ),
-    GoRoute(
-      path: Routes.companySettings,
-      builder: (_, _) => const CompanySettingsPage(),
+    _companyRoute(Routes.companySettings, CompanySettingsPage.new),
+    _companyRoute(
+      Routes.editCompany,
+      (company) => CompanyFormPage(company: company),
     ),
-    GoRoute(
-      path: Routes.editCompany,
-      builder: (_, _) => const CompanyFormPage(editActive: true),
-    ),
-    GoRoute(
-      path: Routes.certificate,
-      builder: (_, _) => const CertificatePage(),
-    ),
-    GoRoute(
-      path: Routes.credentials,
-      builder: (_, _) => const CredentialsPage(),
-    ),
-    GoRoute(path: Routes.series, builder: (_, _) => const SeriesPage()),
+    _companyRoute(Routes.certificate, CertificatePage.new),
+    _companyRoute(Routes.credentials, CredentialsPage.new),
+    _companyRoute(Routes.series, SeriesPage.new),
     GoRoute(
       path: Routes.diagnostics,
       builder: (_, _) => const SunatBetaCheckPage(),

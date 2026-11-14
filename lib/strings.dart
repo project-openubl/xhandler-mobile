@@ -6,6 +6,11 @@ abstract final class Strings {
   static const cancel = 'Cancelar';
   static const delete = 'Eliminar';
   static const required = 'Obligatorio';
+  static const show = 'Mostrar';
+  static const hide = 'Ocultar';
+  static const saved = 'Guardado';
+  static const retry = 'Reintentar';
+  static const unexpectedError = 'Ocurrió un error inesperado';
 
   // Home
   static const welcomeTitle = 'Bienvenido';
@@ -20,9 +25,12 @@ abstract final class Strings {
   static const databaseErrorTitle = 'No se puede abrir la base de datos';
   static const databaseErrorText =
       'La clave que protege los datos de este dispositivo ya no está '
-      'disponible. Puedes empezar de nuevo (se borran los datos de este '
-      'dispositivo) o restaurar una copia de seguridad.';
+      'disponible, por lo que no se pueden leer.';
   static const startOver = 'Empezar de nuevo';
+  static const startOverConfirm =
+      'Se borrarán todos los datos de este dispositivo: empresas, '
+      'comprobantes y configuración.';
+  static const startupErrorTitle = 'No se pudo iniciar la aplicación';
 
   // Company
   static const companySettings = 'Empresa';
@@ -31,6 +39,9 @@ abstract final class Strings {
   static const ruc = 'RUC';
   static const invalidRuc = 'RUC no válido';
   static const companyExists = 'Ya existe una empresa con este RUC';
+  static const companyCreated =
+      'Empresa creada. Revisa su certificado, credenciales y series.';
+  static const invalidCodigoLocal = 'El código tiene 4 dígitos';
   static const razonSocial = 'Razón social';
   static const nombreComercial = 'Nombre comercial';
   static const domicilioFiscal = 'Domicilio fiscal';
@@ -47,16 +58,26 @@ abstract final class Strings {
   static const email = 'Correo electrónico';
   static const testModeSwitch = 'Modo prueba';
   static const testModeHelp =
-      'Envía a SUNAT beta. Desactívalo para emitir comprobantes reales.';
+      'Los comprobantes son de prueba y no tienen validez tributaria.';
+  static const productionConfirm =
+      'Desde ahora los comprobantes serán reales y tendrán validez ante '
+      'SUNAT.';
+  static const productionAccept = 'Emitir comprobantes reales';
+  static const productionMissing =
+      'Para emitir comprobantes reales registra primero el certificado '
+      'digital y las credenciales SOL.';
   static const deleteCompany = 'Eliminar empresa';
   static const deleteCompanyConfirm =
-      'Se ocultará la empresa y se borrarán su certificado y credenciales de '
-      'este dispositivo.';
+      'La empresa dejará de mostrarse y se borrarán su certificado y '
+      'credenciales de este dispositivo.';
 
   // Certificate
   static const certificate = 'Certificado digital';
   static const certificateMissing = 'Sin certificado';
-  static const certificateSelect = 'Seleccionar archivo .pfx';
+  static const certificateSelect = 'Seleccionar archivo (.pfx o .p12)';
+  static const certificateUnreadable =
+      'El certificado guardado no se puede abrir; vuelve a importarlo.';
+  static const certificateNotYetValid = 'El certificado aún no es válido';
   static const certificatePassword = 'Contraseña del certificado';
   static const certificateWrongPassword = 'Contraseña incorrecta';
   static const certificateInvalid =
@@ -92,8 +113,10 @@ abstract final class Strings {
       '4 letras o números, empezando con ${letters.split('').join(' o ')}';
   static const nextNumber = 'Siguiente número';
   static String nextNumberOf(int number) => 'Siguiente número: $number';
-  static const invalidNextNumber = 'Un número mayor que 0';
+  static const invalidNextNumber = 'Un número del 1 al 99999999';
   static const setDefault = 'Usar por defecto';
+  static const isDefault = 'Serie por defecto';
+  static const serieExists = 'Esta serie ya existe';
 
   // Diagnostics
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
@@ -43,6 +44,23 @@ void main() {
       throwsA(isA<Exception>().having((e) => '$e', 'message', contains('26'))),
     );
     await wrongKey.close();
+  });
+
+  test('checkKeyOpens tells a wrong key apart', () async {
+    checkKeyOpens(file, 'ab12'); // no file yet
+    await writeSecret('ab12');
+
+    checkKeyOpens(file, 'ab12');
+    expect(
+      () => checkKeyOpens(file, 'cd34'),
+      throwsA(
+        isA<SqliteException>().having(
+          (e) => e.extendedResultCode,
+          'code',
+          sqliteNotADatabase,
+        ),
+      ),
+    );
   });
 
   test('VACUUM INTO keeps the snapshot encrypted with the same key', () async {

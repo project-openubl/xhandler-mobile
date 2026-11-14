@@ -33,6 +33,21 @@ class SeriesRepository {
     return query.watch();
   }
 
+  Future<bool> exists(
+    String companyId,
+    String tipoComprobante,
+    String serie,
+  ) async {
+    final query = _db.select(_db.series)
+      ..where(
+        (s) =>
+            s.companyId.equals(companyId) &
+            s.tipoComprobante.equals(tipoComprobante) &
+            s.serie.equals(serie),
+      );
+    return await query.getSingleOrNull() != null;
+  }
+
   Future<void> create(SeriesCompanion serie) =>
       _db.into(_db.series).insert(serie);
 
@@ -63,4 +78,9 @@ class SeriesRepository {
 
 final seriesRepositoryProvider = Provider(
   (ref) => SeriesRepository(ref.watch(databaseProvider)),
+);
+
+final seriesProvider = StreamProvider.autoDispose.family<List<Serie>, String>(
+  (ref, companyId) =>
+      ref.watch(seriesRepositoryProvider).watchByCompany(companyId),
 );

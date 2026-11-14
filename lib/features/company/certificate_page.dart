@@ -14,10 +14,12 @@ import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import 'company_repository.dart';
 
-/// Imports the company's certificate (.pfx): checks its password, shows who
-/// it belongs to and until when it is valid, and keeps it in secure storage
+/// Imports the company's certificate (.pfx): checks its password and
+/// validity, shows who it belongs to, and keeps it in secure storage
 class CertificatePage extends ConsumerStatefulWidget {
-  const CertificatePage({super.key});
+  const CertificatePage(this.company, {super.key});
+
+  final Company company;
 
   @override
   ConsumerState<CertificatePage> createState() => _CertificatePageState();
@@ -25,8 +27,11 @@ class CertificatePage extends ConsumerStatefulWidget {
 
 class _CertificatePageState extends ConsumerState<CertificatePage> {
   final _password = TextEditingController();
-  late final Company _company = ref.read(activeCompanyProvider).value!;
-  CertificateInfo? _info;
+
+  /// The saved certificate: `null` while loading or when there is none
+  CertificateInfo? _saved;
+  bool _loading = true;
+  bool _savedUnreadable = false;
   Uint8List? _selected;
   String? _selectedName;
   String? _error;
@@ -34,7 +39,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
   @override
   void initState() {
     super.initState();
-    _showSaved();
+    _loadSaved();
   }
 
   @override
@@ -43,26 +48,36 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
     super.dispose();
   }
 
-  Future<void> _showSaved() async {
-    final secrets = await ref
-        .read(companyRepositoryProvider)
-        .readSecrets(_company.id);
+  Future<void> _loadSaved() async {
+    final repository = ref.read(companyRepositoryProvider);
+    final secrets = await repository.readSecrets(widget.company.id);
     final certificate = secrets.certificate;
-    if (certificate == null) return;
-    final info = await inspectCertificate(
-      certificate: certificate,
-      password: secrets.certificatePassword ?? '',
-    );
-    if (mounted) setState(() => _info = info);
+    CertificateInfo? saved;
+    var unreadable = false;
+    if (certificate != null) {
+      try {
+        saved = await inspectCertificate(
+          certificate: certificate,
+          password: secrets.certificatePassword ?? '',
+        );
+      } on BridgeError {
+        unreadable = true;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _saved = saved;
+      _savedUnreadable = unreadable;
+      _loading = false;
+    });
   }
 
   Future<void> _select() async {
-    final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['pfx', 'p12'],
-    );
+    // Any type: certificates shared by chat or e-mail often lose theirs
+    final files = await FilePicker.pickFiles();
     if (files.isEmpty) return;
     final bytes = await files.first.readAsBytes();
+    if (!mounted) return;
     setState(() {
       _selected = bytes;
       _selectedName = files.first.name;
@@ -71,15 +86,17 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
   }
 
   Future<void> _save() async {
-    final certificate = _selected;
-    if (certificate == null) return;
+    final certificate = _selected!;
+    final password = _password.text;
+    final repository = ref.read(companyRepositoryProvider);
     final CertificateInfo info;
     try {
       info = await inspectCertificate(
         certificate: certificate,
-        password: _password.text,
+        password: password,
       );
     } on BridgeError catch (error) {
+      if (!mounted) return;
       setState(() {
         _error = error.kind == BridgeErrorKind.wrongPassword
             ? Strings.certificateWrongPassword
@@ -87,15 +104,35 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
       });
       return;
     }
-    if (info.ruc != _company.ruc && !await _confirmOtherRuc(info.ruc)) return;
+    final now = DateTime.now();
+    final invalid = info.validUntil.isBefore(now)
+        ? Strings.certificateExpired
+        : info.validFrom.isAfter(now)
+        ? Strings.certificateNotYetValid
+        : null;
+    if (invalid != null) {
+      if (mounted) setState(() => _error = invalid);
+      return;
+    }
+    if (!mounted) return;
+    if (info.ruc != widget.company.ruc &&
+        !await confirm(
+          context,
+          message: Strings.certificateOtherRuc(info.ruc),
+          accept: Strings.save,
+        )) {
+      return;
+    }
 
-    await ref.read(companyRepositoryProvider).writeSecrets(_company.id, {
+    await repository.writeSecrets(widget.company.id, {
       CompanySecret.certificate: base64Encode(certificate),
-      CompanySecret.certificatePassword: _password.text,
+      CompanySecret.certificatePassword: password,
     });
     if (!mounted) return;
+    showMessage(context, Strings.saved);
     setState(() {
-      _info = info;
+      _saved = info;
+      _savedUnreadable = false;
       _selected = null;
       _selectedName = null;
       _error = null;
@@ -103,41 +140,31 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
     });
   }
 
-  Future<bool> _confirmOtherRuc(String? ruc) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        content: Text(Strings.certificateOtherRuc(ruc)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(Strings.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(Strings.save),
-          ),
-        ],
-      ),
-    );
-    return confirmed ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final info = _info;
+    final saved = _saved;
+    final testMode = widget.company.sunatEnvironment == SunatEnvironment.beta;
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.certificate)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (info == null)
-            const ListTile(title: Text(Strings.certificateMissing))
+          if (_loading)
+            const LinearProgressIndicator()
+          else if (saved != null)
+            _CertificateSummary(saved)
           else
-            _CertificateSummary(info),
-          if (info == null &&
-              _company.sunatEnvironment == SunatEnvironment.beta)
-            const Text(Strings.certificateTestModeHelp),
+            ListTile(
+              leading: const Icon(Icons.gpp_maybe),
+              title: Text(
+                _savedUnreadable
+                    ? Strings.certificateUnreadable
+                    : Strings.certificateMissing,
+              ),
+              subtitle: testMode
+                  ? const Text(Strings.certificateTestModeHelp)
+                  : null,
+            ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: _select,
@@ -152,12 +179,14 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
               obscureText: true,
             ),
             if (_error != null)
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _save, child: const Text(Strings.save)),
+            SaveButton(onPressed: _save, filled: true),
           ],
         ],
       ),
@@ -172,20 +201,27 @@ class _CertificateSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
     final validUntil = info.validUntil.toLocal();
-    final daysLeft = validUntil.difference(DateTime.now()).inDays;
-    final warning = daysLeft < 0
+    final warning = validUntil.isBefore(now)
         ? Strings.certificateExpired
-        : daysLeft < 30
+        : validUntil.isBefore(now.add(const Duration(days: 30)))
         ? Strings.certificateExpiresSoon
         : null;
     final date = MaterialLocalizations.of(context).formatMediumDate(validUntil);
+    // e.g. "CN=EMPRESA S.A.C.,O=..." → "EMPRESA S.A.C."
+    final holder =
+        RegExp(r'CN=([^,]+)').firstMatch(info.subject)?.group(1) ??
+        info.subject;
     return ListTile(
-      leading: const Icon(Icons.verified_user),
-      title: Text(info.ruc ?? info.subject),
+      leading: Icon(
+        warning == null ? Icons.verified_user : Icons.warning,
+        color: warning == null ? null : Theme.of(context).colorScheme.error,
+      ),
+      title: Text(holder),
       subtitle: Text(
         [
-          info.subject,
+          if (info.ruc != null) '${Strings.ruc} ${info.ruc}',
           Strings.certificateValidUntil(date),
           ?warning,
         ].join('\n'),

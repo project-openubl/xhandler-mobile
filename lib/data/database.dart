@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 import '../src/rust/api/sunat.dart';
 import 'tables.dart';
@@ -57,6 +58,23 @@ QueryExecutor openEncryptedDatabase(File file, String key) {
       ..execute("PRAGMA key = '$key'")
       ..execute('PRAGMA foreign_keys = ON'),
   );
+}
+
+/// SQLITE_NOTADB, the error of a key that doesn't decrypt the file
+const sqliteNotADatabase = 26;
+
+/// Throws a [SqliteException] with [sqliteNotADatabase] if [key] doesn't
+/// open [file]. Runs synchronously, before Drift opens the database.
+void checkKeyOpens(File file, String key) {
+  if (!file.existsSync()) return;
+  final database = sqlite3.open(file.path);
+  try {
+    database
+      ..execute("PRAGMA key = '$key'")
+      ..select('SELECT count(*) FROM sqlite_master');
+  } finally {
+    database.close();
+  }
 }
 
 /// `column LIKE '%text%'`, with `%` and `_` in [text] taken literally

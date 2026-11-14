@@ -17,7 +17,9 @@ class HomePage extends ConsumerWidget {
     return switch (ref.watch(activeCompanyProvider)) {
       AsyncData(value: final company?) => _CompanyHome(company),
       AsyncData() => const _WelcomePage(),
-      AsyncError(:final error) => Scaffold(body: Center(child: Text('$error'))),
+      AsyncError() => const Scaffold(
+        body: Center(child: Text(Strings.unexpectedError)),
+      ),
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };
   }
@@ -110,9 +112,10 @@ class _CompanyDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final companies = ref.watch(companiesProvider).value ?? const [];
+    final router = GoRouter.of(context);
     void open(String route) {
-      Navigator.of(context).pop();
-      context.push(route);
+      Scaffold.of(context).closeDrawer();
+      router.push(route);
     }
 
     return NavigationDrawer(
@@ -125,7 +128,7 @@ class _CompanyDrawer extends ConsumerWidget {
             selected: company.id == activeId,
             onTap: () {
               ref.read(companyRepositoryProvider).setActive(company.id);
-              Navigator.of(context).pop();
+              Scaffold.of(context).closeDrawer();
             },
           ),
         ListTile(
@@ -143,11 +146,6 @@ class _CompanyDrawer extends ConsumerWidget {
           leading: const Icon(Icons.settings),
           title: const Text(Strings.companySettings),
           onTap: () => open(Routes.companySettings),
-        ),
-        ListTile(
-          leading: const Icon(Icons.health_and_safety),
-          title: const Text(Strings.sunatBetaCheckTitle),
-          onTap: () => open(Routes.diagnostics),
         ),
       ],
     );

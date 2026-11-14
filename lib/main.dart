@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 
 import 'app.dart';
 import 'data/database.dart';
@@ -10,6 +11,7 @@ import 'data/providers.dart';
 import 'data/secure_store.dart';
 import 'src/rust/frb_generated.dart';
 import 'strings.dart';
+import 'widgets/form_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,66 +22,102 @@ Future<void> main() async {
 Future<void> _start() async {
   final directory = await getApplicationSupportDirectory();
   final file = File('${directory.path}/xhandler.db');
-  void showDatabaseError() => runApp(
-    _DatabaseErrorApp(
-      onStartOver: () async {
-        await file.delete();
-        await _start();
-      },
-    ),
-  );
-
-  final String key;
   try {
-    key = await SecureStore().databaseKey(databaseExists: file.existsSync());
-  } on DatabaseKeyLostError {
-    return showDatabaseError();
+    final key = await SecureStore().databaseKey(
+      databaseExists: file.existsSync(),
+    );
+    checkKeyOpens(file, key);
+    runApp(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(
+            AppDatabase(openEncryptedDatabase(file, key)),
+          ),
+        ],
+        child: const App(),
+      ),
+    );
+  } on Object catch (error) {
+    final keyLost =
+        error is DatabaseKeyLostError ||
+        (error is SqliteException &&
+            error.extendedResultCode == sqliteNotADatabase);
+    runApp(
+      _StartupErrorApp(
+        keyLost: keyLost,
+        onRetry: _start,
+        onStartOver: () async {
+          for (final suffix in ['', '-wal', '-shm', '-journal']) {
+            final path = File('${file.path}$suffix');
+            if (path.existsSync()) await path.delete();
+          }
+          await _start();
+        },
+      ),
+    );
   }
-  final database = AppDatabase(openEncryptedDatabase(file, key));
-  try {
-    // Fails if the key doesn't open the file
-    await database.customSelect('SELECT count(*) FROM sqlite_master').get();
-  } on Exception {
-    await database.close();
-    return showDatabaseError();
-  }
-  runApp(
-    ProviderScope(
-      overrides: [databaseProvider.overrideWithValue(database)],
-      child: const App(),
-    ),
-  );
 }
 
-/// Shown when the database can't be opened, e.g. its key was lost
-class _DatabaseErrorApp extends StatelessWidget {
-  const _DatabaseErrorApp({required this.onStartOver});
+/// Shown when the app can't start. Only a lost key offers to start over
+/// (deleting the data); any other problem can just be retried.
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp({
+    required this.keyLost,
+    required this.onRetry,
+    required this.onStartOver,
+  });
 
-  final VoidCallback onStartOver;
+  final bool keyLost;
+  final Future<void> Function() onRetry;
+  final Future<void> Function() onStartOver;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  Strings.databaseErrorTitle,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 16),
-                const Text(Strings.databaseErrorText),
-                const SizedBox(height: 32),
-                FilledButton(
-                  onPressed: onStartOver,
-                  child: const Text(Strings.startOver),
-                ),
-              ],
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    keyLost
+                        ? Strings.databaseErrorTitle
+                        : Strings.startupErrorTitle,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    keyLost
+                        ? Strings.databaseErrorText
+                        : Strings.unexpectedError,
+                  ),
+                  const SizedBox(height: 32),
+                  if (keyLost)
+                    SaveButton(
+                      label: Strings.startOver,
+                      filled: true,
+                      onPressed: () async {
+                        if (await confirm(
+                          context,
+                          message: Strings.startOverConfirm,
+                          accept: Strings.startOver,
+                        )) {
+                          await onStartOver();
+                        }
+                      },
+                    )
+                  else
+                    SaveButton(
+                      label: Strings.retry,
+                      filled: true,
+                      onPressed: onRetry,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

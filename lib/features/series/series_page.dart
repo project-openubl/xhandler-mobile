@@ -6,34 +6,28 @@ import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
-import '../company/company_repository.dart';
 import 'series_repository.dart';
 
-final _seriesProvider = StreamProvider.family<List<Serie>, String>(
-  (ref, companyId) =>
-      ref.watch(seriesRepositoryProvider).watchByCompany(companyId),
-);
-
-/// Series of the active company: which one is suggested for each document
-/// type and the number its next document takes
+/// Series of the company: which one is suggested for each document type and
+/// the number its next document takes
 class SeriesPage extends ConsumerWidget {
-  const SeriesPage({super.key});
+  const SeriesPage(this.company, {super.key});
+
+  final Company company;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final company = ref.watch(activeCompanyProvider).value;
-    if (company == null) return const Scaffold();
-    final series = ref.watch(_seriesProvider(company.id)).value ?? const [];
-    final repository = ref.read(seriesRepositoryProvider);
+    final series = ref.watch(seriesProvider(company.id)).value ?? const [];
+    void openDialog([Serie? serie]) => showDialog<void>(
+      context: context,
+      builder: (_) => _SerieDialog(companyId: company.id, serie: serie),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.series)),
       floatingActionButton: FloatingActionButton(
         tooltip: Strings.addSerie,
-        onPressed: () => showDialog<void>(
-          context: context,
-          builder: (_) => _SerieDialog(companyId: company.id),
-        ),
+        onPressed: openDialog,
         child: const Icon(Icons.add),
       ),
       body: ListView(
@@ -42,21 +36,20 @@ class SeriesPage extends ConsumerWidget {
             ListTile(
               title: Text(serie.serie),
               subtitle: Text(
-                '${Catalogs.tiposComprobante[serie.tipoComprobante]} · '
-                '${Strings.nextNumberOf(serie.nextNumber)}',
+                '${Catalogs.tiposComprobante[serie.tipoComprobante] ?? serie.tipoComprobante}'
+                ' · ${Strings.nextNumberOf(serie.nextNumber)}',
               ),
               trailing: IconButton(
-                tooltip: Strings.setDefault,
+                tooltip: serie.isDefault
+                    ? Strings.isDefault
+                    : Strings.setDefault,
                 icon: Icon(serie.isDefault ? Icons.star : Icons.star_border),
                 onPressed: serie.isDefault
                     ? null
-                    : () => repository.setDefault(serie),
+                    : () =>
+                          ref.read(seriesRepositoryProvider).setDefault(serie),
               ),
-              onTap: () => showDialog<void>(
-                context: context,
-                builder: (_) =>
-                    _SerieDialog(companyId: company.id, serie: serie),
-              ),
+              onTap: () => openDialog(serie),
             ),
         ],
       ),
@@ -82,6 +75,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
   late final _nextNumber = TextEditingController(
     text: '${widget.serie?.nextNumber ?? 1}',
   );
+  String? _serieError;
 
   @override
   void dispose() {
@@ -91,6 +85,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
   }
 
   String? _validateSerie(String serie) {
+    if (_serieError != null) return _serieError;
     final letters = Catalogs.serieLetters[_tipoComprobante]!;
     final valid = RegExp('^[$letters][A-Z0-9]{3}\$')
         .hasMatch(serie.toUpperCase());
@@ -98,21 +93,29 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
   }
 
   Future<void> _save() async {
+    setState(() => _serieError = null);
     if (!_form.currentState!.validate()) return;
     final repository = ref.read(seriesRepositoryProvider);
     final nextNumber = Value(int.parse(_nextNumber.text.trim()));
     final existing = widget.serie;
     if (existing != null) {
+      // TODO(phase 3): don't go below the last issued number + 1
       await repository.update(
         existing.id,
         SeriesCompanion(nextNumber: nextNumber),
       );
     } else {
+      final serie = _serie.text.trim().toUpperCase();
+      if (await repository.exists(widget.companyId, _tipoComprobante, serie)) {
+        _serieError = Strings.serieExists;
+        _form.currentState!.validate();
+        return;
+      }
       await repository.create(
         SeriesCompanion.insert(
           companyId: widget.companyId,
           tipoComprobante: _tipoComprobante,
-          serie: _serie.text.trim().toUpperCase(),
+          serie: serie,
           nextNumber: nextNumber,
         ),
       );
@@ -141,14 +144,23 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
                       in Catalogs.tiposComprobante.entries)
                     DropdownMenuItem(value: key, child: Text(value)),
                 ],
-                onChanged: (tipo) => setState(() => _tipoComprobante = tipo!),
+                onChanged: (tipo) {
+                  setState(() => _tipoComprobante = tipo!);
+                  if (_serie.text.isNotEmpty) _form.currentState!.validate();
+                },
               ),
-              FormTextField(_serie, Strings.serie, validator: _validateSerie),
+              FormTextField(
+                _serie,
+                Strings.serie,
+                maxLength: 4,
+                validator: _validateSerie,
+              ),
             ],
             FormTextField(
               _nextNumber,
               Strings.nextNumber,
-              keyboardType: TextInputType.number,
+              digitsOnly: true,
+              maxLength: 8,
               validator: (text) => (int.tryParse(text) ?? 0) > 0
                   ? null
                   : Strings.invalidNextNumber,
@@ -161,7 +173,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text(Strings.cancel),
         ),
-        TextButton(onPressed: _save, child: const Text(Strings.save)),
+        SaveButton(onPressed: _save),
       ],
     );
   }
