@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../data/database.dart';
+import '../../data/providers.dart';
+import '../../notifications.dart';
 import '../../src/rust/api/error.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
@@ -39,6 +43,14 @@ Future<({String id, DocumentStatus status})?> issueDocument(
         const Duration(seconds: 30),
         onTimeout: () => DocumentStatus.pendingSend,
       );
+  if (status == DocumentStatus.pendingSend ||
+      status == DocumentStatus.inProgress) {
+    // SUNAT's answer may come in the background: ask to notify it
+    unawaited(
+      Notifications.requestPermissionOnce(ref.read(databaseProvider))
+          .catchError((Object error) => debugPrint('Notifications: $error')),
+    );
+  }
   return (id: id, status: status);
 }
 

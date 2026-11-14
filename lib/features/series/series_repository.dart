@@ -19,6 +19,15 @@ const defaultSeries = [
   ('40', 'P001'), // percepción
 ];
 
+/// The active serie to suggest for [tipoComprobante]: the default one, or
+/// any active one
+Serie? defaultSerie(Iterable<Serie> series, String tipoComprobante) {
+  final active = series.where(
+    (s) => s.tipoComprobante == tipoComprobante && s.active,
+  );
+  return active.where((s) => s.isDefault).followedBy(active).firstOrNull;
+}
+
 class SeriesRepository {
   SeriesRepository(this._db);
 

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -19,7 +17,7 @@ import 'invoice_draft.dart';
 import 'invoice_form_parts.dart';
 
 /// Counter sales: boletas to "Clientes varios" in a few taps
-/// (docs/DESIGN.md §6.1)
+/// (docs/DESIGN.md §6.1). Quantities are whole units.
 class QuickSalePage extends ConsumerStatefulWidget {
   const QuickSalePage(this.company, {super.key});
 
@@ -30,27 +28,35 @@ class QuickSalePage extends ConsumerStatefulWidget {
 }
 
 class _QuickSalePageState extends ConsumerState<QuickSalePage> {
-  /// Product id → quantity, in the order they were added
+  /// Product id → the product as first added and its quantity
   final _cart = <String, ({Product product, int cantidad})>{};
   DraftCustomer _customer = anonymousCustomer;
   final _received = TextEditingController();
-  String? _total;
-  Timer? _previewTimer;
-  int _previewRun = 0;
+  DocumentTotals? _totals;
+  late final _preview = TotalsPreview((totals, _) {
+    if (mounted) setState(() => _totals = totals);
+  });
 
   @override
   void dispose() {
-    _previewTimer?.cancel();
+    _preview.dispose();
     _received.dispose();
     super.dispose();
   }
+
+  String get _moneda => widget.company.moneda;
+
+  Serie? get _serie => defaultSerie(
+    ref.read(seriesProvider(widget.company.id)).value ?? const [],
+    '03',
+  );
 
   InvoiceDraft? get _draft => _cart.isEmpty
       ? null
       : InvoiceDraft(
           tipoComprobante: '03',
           customer: _customer,
-          moneda: widget.company.moneda,
+          moneda: _moneda,
           lines: [
             for (final (:product, :cantidad) in _cart.values)
               DraftLine.fromProduct(
@@ -61,56 +67,33 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
         );
 
   void _add(Product product, int delta) {
-    final cantidad = (_cart[product.id]?.cantidad ?? 0) + delta;
+    final current = _cart[product.id];
+    final cantidad = (current?.cantidad ?? 0) + delta;
     if (cantidad <= 0) {
       _cart.remove(product.id);
     } else {
-      _cart[product.id] = (product: product, cantidad: cantidad);
+      _cart[product.id] = (
+        product: current?.product ?? product,
+        cantidad: cantidad,
+      );
     }
     _changed();
   }
 
-  /// Recomputes the total with xbuilder, shortly after the last change
+  /// The total is cleared at once, so an old one is never charged, and
+  /// recomputed by xbuilder shortly after
   void _changed() {
-    setState(() {});
-    _previewTimer?.cancel();
-    _previewTimer = Timer(const Duration(milliseconds: 300), () async {
-      final run = ++_previewRun;
-      final draft = _draft;
-      final serie = _serie;
-      String? total;
-      if (draft != null && serie != null) {
-        try {
-          total =
-              (await ref
-                      .read(documentServiceProvider)
-                      .preview(
-                        company: widget.company,
-                        serie: serie,
-                        draft: draft,
-                      ))
-                  .total;
-        } on Object {
-          total = null;
-        }
-      }
-      if (mounted && run == _previewRun) setState(() => _total = total);
-    });
+    setState(() => _totals = null);
+    final draft = _draft;
+    final serie = _serie;
+    _preview.request(
+      draft == null || serie == null
+          ? null
+          : () => ref
+                .read(documentServiceProvider)
+                .preview(company: widget.company, serie: serie, draft: draft),
+    );
   }
-
-  Serie? get _serie {
-    final series =
-        ref.read(seriesProvider(widget.company.id)).value ?? const [];
-    return series
-        .where((s) => s.tipoComprobante == '03' && s.active)
-        .sortedByDefault
-        .firstOrNull;
-  }
-
-  bool get _needsCustomer =>
-      _customer == anonymousCustomer &&
-      _total != null &&
-      toCents(_total!) > toCents('700');
 
   Future<void> _charge() async {
     final draft = _draft;
@@ -130,12 +113,10 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
           EmitResultSheet(status: issued.status, doneLabel: Strings.newSale),
     );
     if (!mounted) return;
-    setState(() {
-      _cart.clear();
-      _customer = anonymousCustomer;
-      _received.clear();
-      _total = null;
-    });
+    _cart.clear();
+    _customer = anonymousCustomer;
+    _received.clear();
+    _changed();
     if (view ?? false) {
       Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -159,26 +140,19 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Keeps the series loaded for [_serie]
-    ref.watch(seriesProvider(widget.company.id));
+    final series = ref.watch(seriesProvider(widget.company.id)).value;
+    final noSerie = series != null && defaultSerie(series, '03') == null;
     final favorites =
-        (ref
-                    .watch(
-                      productsProvider((
-                        companyId: widget.company.id,
-                        search: '',
-                      )),
-                    )
-                    .value ??
-                const <Product>[])
-            .where((p) => p.favorito)
-            .toList();
-    final moneda = widget.company.moneda;
-    final total = _total;
+        ref.watch(favoriteProductsProvider(widget.company.id)).value ??
+        const <Product>[];
+    final total = _totals?.total;
+    final needsCustomer =
+        total != null && exceedsAnonymousLimit(_customer, _moneda, total);
     final received = parseAmount(_received.text);
     final change = total == null || received == null
         ? null
         : toCents(received) - toCents(total);
+    final errorColor = Theme.of(context).colorScheme.error;
 
     return Scaffold(
       appBar: AppBar(
@@ -194,152 +168,156 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      body: CustomScrollView(
+        slivers: [
           if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-            const TestModeBanner(),
-          Expanded(
-            flex: 3,
-            child: favorites.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        Strings.noFavorites,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : GridView.extent(
-                    maxCrossAxisExtent: 160,
-                    padding: const EdgeInsets.all(8),
-                    childAspectRatio: 1.4,
-                    children: [
-                      for (final product in favorites)
-                        Card(
-                          child: InkWell(
-                            onTap: () => _add(product, 1),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    product.descripcion,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  Text(formatMoney(moneda, product.precio)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            flex: 4,
-            child: _cart.isEmpty
-                ? const Center(child: Text(Strings.cartEmpty))
-                : ListView(
-                    children: [
-                      for (final (:product, :cantidad) in _cart.values)
-                        ListTile(
-                          title: Text(product.descripcion),
-                          subtitle: Text(formatMoney(moneda, product.precio)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
+            const SliverToBoxAdapter(child: TestModeBanner()),
+          if (noSerie)
+            SliverToBoxAdapter(
+              child: ListTile(
+                leading: Icon(Icons.warning, color: errorColor),
+                title: Text(Strings.noSerie(Strings.boleta.toLowerCase())),
+              ),
+            ),
+          if (favorites.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(Strings.noFavorites, textAlign: TextAlign.center),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(8),
+              sliver: SliverGrid.extent(
+                maxCrossAxisExtent: 160,
+                childAspectRatio: 1.4,
+                children: [
+                  for (final product in favorites)
+                    Card(
+                      child: InkWell(
+                        onTap: () => _add(product, 1),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              IconButton(
-                                tooltip: Strings.delete,
-                                icon: const Icon(Icons.remove),
-                                onPressed: () => _add(product, -1),
+                              Text(
+                                product.descripcion,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
                               ),
-                              Text('$cantidad'),
-                              IconButton(
-                                tooltip: Strings.add,
-                                icon: const Icon(Icons.add),
-                                onPressed: () => _add(product, 1),
-                              ),
+                              Text(formatMoney(_moneda, product.precio)),
                             ],
                           ),
                         ),
-                    ],
-                  ),
-          ),
-          Material(
-            elevation: 8,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.person),
-                    title: Text(_customer.nombre),
-                    subtitle: _needsCustomer
-                        ? Text(
-                            draftProblemMessage(DraftProblem.anonymousOver700),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          )
-                        : null,
-                    trailing: TextButton(
-                      onPressed: _identifyCustomer,
-                      child: const Text(Strings.identifyCustomer),
+                      ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _received,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(
-                            labelText: Strings.received,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        change == null || change.isNegative
-                            ? ''
-                            : '${Strings.change}: '
-                                  '${formatMoney(moneda, fromCents(change))}',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SaveButton(
-                    label: total == null
-                        ? Strings.charge
-                        : '${Strings.charge} ${formatMoney(moneda, total)}',
-                    filled: true,
-                    onPressed: _cart.isEmpty || _needsCustomer ? null : _charge,
-                  ),
                 ],
               ),
+            ),
+          const SliverToBoxAdapter(child: Divider(height: 1)),
+          if (_cart.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(Strings.cartEmpty, textAlign: TextAlign.center),
+              ),
+            )
+          else
+            SliverList.list(
+              children: [
+                for (final (:product, :cantidad) in _cart.values)
+                  ListTile(
+                    title: Text(product.descripcion),
+                    subtitle: Text(formatMoney(_moneda, product.precio)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: Strings.removeOne,
+                          icon: const Icon(Icons.remove),
+                          onPressed: () => _add(product, -1),
+                        ),
+                        Text('$cantidad'),
+                        IconButton(
+                          tooltip: Strings.add,
+                          icon: const Icon(Icons.add),
+                          onPressed: () => _add(product, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList.list(
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person),
+                  title: Text(_customer.nombre),
+                  subtitle: needsCustomer
+                      ? Text(
+                          draftProblemMessage(DraftProblem.anonymousOver700),
+                          style: TextStyle(color: errorColor),
+                        )
+                      : null,
+                  trailing: TextButton(
+                    onPressed: _identifyCustomer,
+                    child: const Text(Strings.identifyCustomer),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _received,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: Strings.received,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    if (change != null)
+                      Text(
+                        change.isNegative
+                            ? '${Strings.missing}: '
+                                  '${formatMoney(_moneda, fromCents(-change))}'
+                            : '${Strings.change}: '
+                                  '${formatMoney(_moneda, fromCents(change))}',
+                        style: change.isNegative
+                            ? TextStyle(color: errorColor)
+                            : null,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SaveButton(
+            label: total == null
+                ? Strings.charge
+                : '${Strings.charge} ${formatMoney(_moneda, total)}',
+            filled: true,
+            onPressed: total == null || needsCustomer || noSerie
+                ? null
+                : _charge,
+          ),
+        ),
+      ),
     );
   }
-}
-
-extension on Iterable<Serie> {
-  /// The default serie first
-  List<Serie> get sortedByDefault => [
-    ...where((s) => s.isDefault),
-    ...where((s) => !s.isDefault),
-  ];
 }

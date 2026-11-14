@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../../amount_text.dart';
@@ -8,8 +10,48 @@ import '../../widgets/form_widgets.dart';
 import '../customer/customer_form_page.dart';
 import '../customer/customers_page.dart';
 import '../product/products_page.dart';
+import '../../src/rust/api/error.dart';
+import 'document_status.dart';
 import 'document_service.dart';
 import 'invoice_draft.dart';
+
+/// Totals of a draft computed by xbuilder shortly after the last change.
+/// Only the latest request counts, even if an older one ends later.
+class TotalsPreview {
+  TotalsPreview(this._onResult);
+
+  /// Totals, or a Spanish error message; both `null` when cleared
+  final void Function(DocumentTotals? totals, String? error) _onResult;
+  Timer? _timer;
+  int _run = 0;
+
+  /// Recomputes with [compute] after a short pause; `null` clears
+  void request(Future<DocumentTotals> Function()? compute) {
+    _timer?.cancel();
+    final run = ++_run;
+    if (compute == null) {
+      _onResult(null, null);
+      return;
+    }
+    _timer = Timer(const Duration(milliseconds: 300), () async {
+      DocumentTotals? totals;
+      String? error;
+      try {
+        totals = await compute();
+      } on BridgeError catch (bridgeError) {
+        error = documentErrorMessage(bridgeError.message);
+      } on Object {
+        error = Strings.unexpectedError;
+      }
+      if (run == _run) _onResult(totals, error);
+    });
+  }
+
+  void dispose() {
+    _timer?.cancel();
+    _run++;
+  }
+}
 
 /// Bottom sheet with a search box over a list built for the search text
 class _PickerSheet extends StatefulWidget {

@@ -85,7 +85,11 @@ QueryExecutor openEncryptedDatabase(File file, String key) {
     file,
     setup: (database) => database
       ..execute("PRAGMA key = '$key'")
-      ..execute('PRAGMA foreign_keys = ON'),
+      ..execute('PRAGMA foreign_keys = ON')
+      // The background outbox opens a second connection: wait for each
+      // other instead of failing with "database is locked"
+      ..execute('PRAGMA busy_timeout = 5000')
+      ..execute('PRAGMA journal_mode = WAL'),
   );
 }
 

@@ -27,6 +27,19 @@ class ProductRepository {
     return query.watch();
   }
 
+  /// Favorites of the company, for quick sale
+  Stream<List<Product>> watchFavorites(String companyId) {
+    final query = _db.select(_db.products)
+      ..where(
+        (p) =>
+            p.companyId.equals(companyId) &
+            p.deletedAt.isNull() &
+            p.favorito.equals(true),
+      )
+      ..orderBy([(p) => OrderingTerm(expression: p.descripcion)]);
+    return query.watch();
+  }
+
   Future<void> create(ProductsCompanion product) =>
       _db.into(_db.products).insert(product);
 
@@ -45,4 +58,10 @@ final productsProvider = StreamProvider.autoDispose
       (ref, query) => ref
           .watch(productRepositoryProvider)
           .watch(query.companyId, search: query.search),
+    );
+
+final favoriteProductsProvider = StreamProvider.autoDispose
+    .family<List<Product>, String>(
+      (ref, companyId) =>
+          ref.watch(productRepositoryProvider).watchFavorites(companyId),
     );

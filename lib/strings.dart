@@ -230,8 +230,10 @@ abstract final class Strings {
   static const charge = 'Cobrar';
   static const received = 'Recibido';
   static const change = 'Vuelto';
+  static const missing = 'Falta';
+  static const removeOne = 'Quitar uno';
   static const newSale = 'Nueva venta';
-  static const identifyCustomer = 'Identificar cliente (DNI)';
+  static const identifyCustomer = 'Identificar cliente';
   static const noFavorites =
       'Marca productos como favoritos para verlos aquí, o búscalos.';
 

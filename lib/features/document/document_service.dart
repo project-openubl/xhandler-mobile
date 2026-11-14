@@ -80,6 +80,14 @@ class DocumentTotals {
   String get total => _amount('total_importe', 'importe');
 }
 
+/// Boletas over S/ 700 need an identified customer. Only soles are checked:
+/// other currencies need an exchange rate, not supported yet.
+bool exceedsAnonymousLimit(
+  DraftCustomer customer,
+  String moneda,
+  String total,
+) => customer.isAnonymous && moneda == 'PEN' && toCents(total) > toCents('700');
+
 /// SUNAT's public demo certificate, used in test mode without a certificate
 Future<Uint8List> loadDemoCertificate() async =>
     (await rootBundle.load('assets/demo/certificado_demo.pfx')).buffer
@@ -257,12 +265,7 @@ class DocumentService {
   }
 
   void _checkTotals(InvoiceDraft draft, String total, String fechaEmision) {
-    final anonymous =
-        draft.customer.tipoDocumentoIdentidad ==
-            anonymousCustomer.tipoDocumentoIdentidad &&
-        draft.customer.numeroDocumentoIdentidad ==
-            anonymousCustomer.numeroDocumentoIdentidad;
-    if (anonymous && toCents(total) > toCents('700')) {
+    if (exceedsAnonymousLimit(draft.customer, draft.moneda, total)) {
       throw const InvalidDraftError(DraftProblem.anonymousOver700);
     }
     final cuotas = draft.cuotas;
@@ -286,10 +289,14 @@ class DocumentService {
   }
 
   /// Sends every document whose next attempt is due (the outbox). Calls
-  /// while a round is running join it.
-  Future<void> sendDue() => _outbox ??= () async {
+  /// while a round is running join it. With a [budget] (iOS gives
+  /// background tasks about 30 s), no new send starts once it's spent; the
+  /// rest wait for the next round.
+  Future<void> sendDue({Duration? budget}) => _outbox ??= () async {
+    final clock = Stopwatch()..start();
     try {
       for (final document in await _documents.due(nowUtc())) {
+        if (budget != null && clock.elapsed > budget) break;
         await send(document.id);
       }
     } finally {
@@ -297,14 +304,33 @@ class DocumentService {
     }
   }();
 
+  /// How long a claimed document waits before another connection may try
+  static const claimTime = Duration(minutes: 2);
+
   Future<DocumentStatus> _send(String documentId, bool manual) async {
-    final document = await _documents.find(documentId);
-    if (!sendable.contains(document.status)) return document.status;
+    final found = await _documents.find(documentId);
+    if (!sendable.contains(found.status)) return found.status;
     // Automatic sends respect the retry back-off
-    final nextAttemptAt = document.nextAttemptAt;
-    if (!manual && nextAttemptAt != null && nextAttemptAt.isAfter(nowUtc())) {
-      return document.status;
+    final nextAttemptAt = found.nextAttemptAt;
+    final now = nowUtc();
+    if (!manual && nextAttemptAt != null && nextAttemptAt.isAfter(now)) {
+      return found.status;
     }
+    // Claims it: the app and the background outbox use separate database
+    // connections, and only one of them must send it
+    final claimed =
+        await (_db.update(_db.documents)..where(
+              (d) =>
+                  d.id.equals(documentId) & d.updatedAt.equals(found.updatedAt),
+            ))
+            .write(
+              DocumentsCompanion(
+                nextAttemptAt: Value(now.add(claimTime)),
+                updatedAt: Value(now),
+              ),
+            );
+    if (claimed == 0) return (await _documents.find(documentId)).status;
+    final document = await _documents.find(documentId);
 
     SunatResponse response;
     try {

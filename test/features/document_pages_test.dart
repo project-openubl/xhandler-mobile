@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/providers.dart';
+import 'package:xhandler_mobile/features/document/background_outbox.dart';
 import 'package:xhandler_mobile/features/document/document_detail_page.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
@@ -268,6 +269,39 @@ void main() {
       await data.unmount(tester);
     });
 
+    testWidgets('− removes products; no boleta serie, no charge', (
+      tester,
+    ) async {
+      final data = TestData();
+      final company = await withCoffee(tester, data);
+      await tester.runAsync(
+        () => data.database
+            .update(data.database.series)
+            .write(const SeriesCompanion(active: Value(false))),
+      );
+      final bridge = FakeBridge();
+      await pumpPage(
+        tester,
+        data,
+        serviceFor(data, bridge),
+        bridge,
+        QuickSalePage(company),
+      );
+      await pumpUntil(tester, () => shows('Café'));
+      expect(find.textContaining('No tienes una serie activa'), findsOneWidget);
+
+      await tester.tap(find.text('Café'));
+      await pumpUntil(tester, () => shows('1'));
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.byTooltip(Strings.removeOne));
+      await pumpUntil(tester, () => shows(Strings.cartEmpty));
+      await data.unmount(tester);
+    });
+
     testWidgets('over S/ 700 the customer must be identified', (tester) async {
       final data = TestData();
       final company = await withCoffee(tester, data);
@@ -369,6 +403,52 @@ void main() {
           find.textContaining('B001-00000002').evaluate().isNotEmpty,
     );
     await data.unmount(tester);
+  });
+
+  test('two connections sending the same document send it once', () async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final app = serviceFor(data, bridge);
+    final background = serviceFor(data, bridge);
+    final company = await data.createCompany();
+    final b001 = await (data.database.select(
+      data.database.series,
+    )..where((s) => s.serie.equals('B001'))).getSingle();
+    final id = await app.emit(company: company, serie: b001, draft: _boleta);
+    bridge.responses.add(_accepted);
+
+    await Future.wait([app.send(id), background.send(id)]);
+
+    expect(bridge.calls, hasLength(1));
+  });
+
+  test('the background round notifies only SUNAT final answers', () async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final company = await data.createCompany();
+    final b001 = await (data.database.select(
+      data.database.series,
+    )..where((s) => s.serie.equals('B001'))).getSingle();
+    final accepted = await service.emit(
+      company: company,
+      serie: b001,
+      draft: _boleta,
+    );
+    await service.emit(company: company, serie: b001, draft: _boleta);
+    bridge.responses.addAll([
+      _accepted,
+      const SunatResponse(status: SunatStatus.notDelivered, notes: []),
+    ]);
+    final notified = <String>[];
+
+    await runBackgroundOutbox(
+      DocumentRepository(data.database),
+      service,
+      (document) async => notified.add(document.id),
+    );
+
+    expect(notified, [accepted]);
   });
 
   test('overlapping outbox rounds send once', () async {

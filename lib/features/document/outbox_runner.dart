@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../notifications.dart';
+import '../../data/providers.dart';
 import 'background_outbox.dart';
 import 'document_service.dart';
 
@@ -28,11 +28,11 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     super.initState();
     _run();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) => _run());
-    _lifecycle = AppLifecycleListener(onResume: _run);
+    _lifecycle = AppLifecycleListener(onResume: _resumed);
     // While closed, the work goes on in the background
-    scheduleBackgroundOutbox()
-        .then((_) => Notifications.requestPermission())
-        .catchError((Object error) => debugPrint('Background outbox: $error'));
+    scheduleBackgroundOutbox().catchError(
+      (Object error) => debugPrint('Background outbox: $error'),
+    );
   }
 
   @override
@@ -40,6 +40,18 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     _timer.cancel();
     _lifecycle.dispose();
     super.dispose();
+  }
+
+  /// The background outbox writes through its own connection: tell this
+  /// one's streams the documents may have changed
+  void _resumed() {
+    final database = ref.read(databaseProvider);
+    database.markTablesUpdated([
+      database.documents,
+      database.documentEvents,
+      database.documentFiles,
+    ]);
+    _run();
   }
 
   /// Errors are logged: the next round tries again

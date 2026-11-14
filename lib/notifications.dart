@@ -1,5 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'data/database.dart';
+
 /// Local notifications, e.g. SUNAT answers to documents sent in the
 /// background
 abstract final class Notifications {
@@ -25,8 +27,22 @@ abstract final class Notifications {
     ),
   );
 
-  /// Asks once (Android 13+, iOS); later calls do nothing
-  static Future<void> requestPermission() async {
+  /// Asks for permission the first time it's useful (a document left for
+  /// the background outbox), once per install
+  static Future<void> requestPermissionOnce(AppDatabase database) async {
+    const asked = 'notifications_asked';
+    final row = await (database.select(
+      database.deviceSettings,
+    )..where((s) => s.key.equals(asked))).getSingleOrNull();
+    if (row != null) return;
+    await database
+        .into(database.deviceSettings)
+        .insert(DeviceSettingsCompanion.insert(key: asked, value: 'true'));
+    await initialize();
+    await _requestPermission();
+  }
+
+  static Future<void> _requestPermission() async {
     await _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin

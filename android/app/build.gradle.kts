@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "io.github.projectopenubl.xhandler"
     // flutter_local_notifications and androidx.core need API 37 to compile
-    compileSdk = 37
+    compileSdk = maxOf(37, flutter.compileSdkVersion)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

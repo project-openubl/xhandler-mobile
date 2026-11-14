@@ -123,6 +123,10 @@ class DraftCustomer {
   final String? ubigeo;
   final String? email;
 
+  /// "Clientes varios": customer type "0" with number "-"
+  bool get isAnonymous =>
+      tipoDocumentoIdentidad == '0' && numeroDocumentoIdentidad == '-';
+
   Map<String, Object?> toJson() {
     final address = {
       'direccion': ?direccion,

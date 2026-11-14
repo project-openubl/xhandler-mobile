@@ -7,7 +7,6 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../peru_date.dart';
-import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
@@ -46,16 +45,20 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   final _cuotas = <DraftCuota>[];
   DocumentTotals? _totals;
   String? _previewError;
-  Timer? _previewTimer;
-
-  /// Only the latest preview is shown, even if an older one ends later
-  int _previewRun = 0;
+  late final _preview = TotalsPreview((totals, error) {
+    if (mounted) {
+      setState(() {
+        _totals = totals;
+        _previewError = error;
+      });
+    }
+  });
 
   bool get _isFactura => widget.tipoComprobante == '01';
 
   @override
   void dispose() {
-    _previewTimer?.cancel();
+    _preview.dispose();
     super.dispose();
   }
 
@@ -77,41 +80,24 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   /// Recomputes the totals with xbuilder, shortly after the last change
   void _changed() {
     setState(() {});
-    _previewTimer?.cancel();
-    _previewTimer = Timer(const Duration(milliseconds: 300), _preview);
-  }
-
-  Future<void> _preview() async {
-    final run = ++_previewRun;
     final customer = _customer;
     final serie = _serie;
-    DocumentTotals? totals;
-    String? error;
-    if (customer != null && serie != null && _lines.isNotEmpty) {
-      try {
-        totals = await ref
-            .read(documentServiceProvider)
-            .preview(
-              company: widget.company,
-              serie: serie,
-              draft: InvoiceDraft(
-                tipoComprobante: widget.tipoComprobante,
-                customer: customer,
-                lines: List.of(_lines),
-                moneda: widget.company.moneda,
-              ),
-            );
-      } on BridgeError catch (bridgeError) {
-        error = documentErrorMessage(bridgeError.message);
-      } on Object {
-        error = Strings.unexpectedError;
-      }
-    }
-    if (!mounted || run != _previewRun) return;
-    setState(() {
-      _totals = totals;
-      _previewError = error;
-    });
+    _preview.request(
+      customer == null || serie == null || _lines.isEmpty
+          ? null
+          : () => ref
+                .read(documentServiceProvider)
+                .preview(
+                  company: widget.company,
+                  serie: serie,
+                  draft: InvoiceDraft(
+                    tipoComprobante: widget.tipoComprobante,
+                    customer: customer,
+                    lines: List.of(_lines),
+                    moneda: widget.company.moneda,
+                  ),
+                ),
+    );
   }
 
   Future<void> _emit() async {
@@ -206,9 +192,10 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   /// What still stops issuing, or would make SUNAT reject it
   String? get _warning {
     final total = _totals?.total;
-    if (_customer == anonymousCustomer &&
+    final customer = _customer;
+    if (customer != null &&
         total != null &&
-        toCents(total) > toCents('700')) {
+        exceedsAnonymousLimit(customer, widget.company.moneda, total)) {
       return draftProblemMessage(DraftProblem.anonymousOver700);
     }
     if (_credito && _cuotas.isEmpty) return Strings.creditoWithoutCuotas;
@@ -221,11 +208,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final series = (seriesValue ?? const <Serie>[])
         .where((s) => s.tipoComprobante == widget.tipoComprobante && s.active)
         .toList();
-    _serieId ??= series
-        .where((s) => s.isDefault)
-        .followedBy(series)
-        .firstOrNull
-        ?.id;
+    _serieId ??= defaultSerie(series, widget.tipoComprobante)?.id;
     _serie = series.where((s) => s.id == _serieId).firstOrNull;
     final customer = _customer;
     final totals = _totals;
@@ -276,7 +259,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.person),
             title: Text(customer?.nombre ?? Strings.selectCustomer),
-            subtitle: customer == null || customer == anonymousCustomer
+            subtitle: customer == null || customer.isAnonymous
                 ? null
                 : Text(
                     '${Catalogs.tiposDocumentoIdentidad[customer.tipoDocumentoIdentidad] ?? ''}'
