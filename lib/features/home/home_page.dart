@@ -243,6 +243,11 @@ class _CompanyDrawer extends ConsumerWidget {
           onTap: () => open(Routes.companySettings),
         ),
         ListTile(
+          leading: const Icon(Icons.bar_chart),
+          title: const Text(Strings.reports),
+          onTap: () => open(Routes.reports),
+        ),
+        ListTile(
           leading: const Icon(Icons.backup),
           title: const Text(Strings.backupTitle),
           onTap: () => open(Routes.backup),

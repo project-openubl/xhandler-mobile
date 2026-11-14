@@ -378,6 +378,19 @@ abstract final class Strings {
   static const backupNeedsUpdate =
       'La copia es de una versión más nueva de XHandler. Actualiza la app.';
 
+  // Reports
+  static const reports = 'Reportes';
+  static const salesRegister = 'Registro de ventas';
+  static const previousMonth = 'Mes anterior';
+  static const nextMonth = 'Mes siguiente';
+  static const noSales = 'No hay ventas aceptadas por SUNAT en este mes.';
+  static String documentsCount(int count, int voided) =>
+      '$count comprobantes${voided == 0 ? '' : ' ($voided anulados)'}';
+  static const export = 'Exportar';
+  static const salesRegisterHelp =
+      'Facturas, boletas y notas aceptadas por SUNAT; las notas de crédito '
+      'restan y las anuladas figuran sin importes.';
+
   // Quick sale
   static const quickSale = 'Venta rápida';
   static const quickSaleHelp = 'Boleta en segundos, para ventas de mostrador';

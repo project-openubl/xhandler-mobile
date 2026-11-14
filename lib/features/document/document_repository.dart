@@ -33,6 +33,36 @@ class DocumentRepository {
   Stream<Document> watchOne(String id) =>
       (_db.select(_db.documents)..where((d) => d.id.equals(id))).watchSingle();
 
+  /// Documents of the company in [environment] with these types and
+  /// statuses, issued from [from] to [to] ("YYYY-MM-DD", both included), in
+  /// issue order
+  Future<List<Document>> issued(
+    String companyId,
+    SunatEnvironment environment, {
+    required String from,
+    required String to,
+    required Set<String> tipos,
+    required Set<DocumentStatus> statuses,
+  }) {
+    final query = _db.select(_db.documents)
+      ..where(
+        (d) =>
+            d.companyId.equals(companyId) &
+            d.environment.equalsValue(environment) &
+            d.deletedAt.isNull() &
+            d.fechaEmision.isBetweenValues(from, to) &
+            d.tipoComprobante.isIn(tipos) &
+            d.status.isInValues(statuses),
+      )
+      ..orderBy([
+        (d) => OrderingTerm(expression: d.fechaEmision),
+        (d) => OrderingTerm(expression: d.tipoComprobante),
+        (d) => OrderingTerm(expression: d.serie),
+        (d) => OrderingTerm(expression: d.numero),
+      ]);
+    return query.get();
+  }
+
   /// Notas, comunicaciones de baja and resúmenes of a document
   Stream<List<Document>> watchRelated(String documentId) =>
       _related(documentId).watch();
