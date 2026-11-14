@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart' show SqliteException;
 
 import 'app.dart';
@@ -21,8 +20,7 @@ Future<void> main() async {
 }
 
 Future<void> _start() async {
-  final directory = await getApplicationSupportDirectory();
-  final file = File('${directory.path}/xhandler.db');
+  final file = await databaseFile();
   try {
     final key = await SecureStore().databaseKey(
       databaseExists: file.existsSync(),

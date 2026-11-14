@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../src/rust/api/sunat.dart';
@@ -70,6 +71,10 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 }
+
+/// The app's database file (it may not exist yet)
+Future<File> databaseFile() async =>
+    File('${(await getApplicationSupportDirectory()).path}/xhandler.db');
 
 /// SQLite3MultipleCiphers database file encrypted with [key] (hex)
 QueryExecutor openEncryptedDatabase(File file, String key) {

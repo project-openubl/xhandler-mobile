@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Sends documents to SUNAT -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Tells when SUNAT answers documents sent in the background -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- No Android backup: the database is useless without its key, which
          stays in this device's Keystore. The app makes its own encrypted
          backups (docs/DESIGN.md §9). -->

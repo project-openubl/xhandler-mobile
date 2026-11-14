@@ -6,10 +6,13 @@ plugins {
 
 android {
     namespace = "io.github.projectopenubl.xhandler"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications and androidx.core need API 37 to compile
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications needs Java 8+ APIs on older Android
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -46,4 +49,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
