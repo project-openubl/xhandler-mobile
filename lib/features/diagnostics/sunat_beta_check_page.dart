@@ -1,12 +1,9 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../src/rust/api/document.dart';
-import '../../src/rust/api/signer.dart';
+import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import 'sample_invoice.dart';
 
 /// Checks the whole chain against SUNAT beta: build, sign and send a sample
 /// invoice with SUNAT's demo certificate.
@@ -26,8 +23,10 @@ class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
       _progress = Strings.sunatBetaCheckBuilding;
       _result = null;
     });
+    String result;
     try {
-      final signed = await buildAndSignSampleInvoice();
+      final signed = await SampleInvoice.buildAndSign();
+      if (!mounted) return;
       setState(() => _progress = Strings.sunatBetaCheckSending);
       final response = await sendDocument(
         xml: signed.xml,
@@ -37,14 +36,18 @@ class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
           password: 'MODDATOS',
         ),
       );
-      _result =
+      result =
           '${response.status.name} ${response.code ?? ''}\n'
           '${response.description ?? ''}\n'
           'Hash: ${signed.digestValue}';
-    } catch (error) {
-      _result = '$error';
+    } on BridgeError catch (error) {
+      result = '${error.kind.name}: ${error.message}';
     }
-    setState(() => _progress = null);
+    if (!mounted) return;
+    setState(() {
+      _progress = null;
+      _result = result;
+    });
   }
 
   @override
@@ -70,46 +73,4 @@ class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
       ),
     );
   }
-}
-
-/// Sample invoice of SUNAT's demo certificate owner
-abstract final class SampleInvoice {
-  static const ruc = '10467793549';
-  static const certificateAsset = 'assets/demo/certificado_demo.pfx';
-  static const certificatePassword = 'password';
-
-  static String json(DateTime now) => jsonEncode({
-    'kind': 'Invoice',
-    'spec': {
-      'serie_numero': 'F001-${now.millisecondsSinceEpoch % 100000000}',
-      'proveedor': {'ruc': ruc, 'razon_social': 'Empresa de prueba'},
-      'cliente': {
-        'nombre': 'Cliente de prueba',
-        'numero_documento_identidad': '20123456789',
-        'tipo_documento_identidad': '6',
-      },
-      'detalles': [
-        {'descripcion': 'Producto de prueba', 'cantidad': 1, 'precio': 100},
-      ],
-    },
-  });
-}
-
-Future<SignedDocument> buildAndSignSampleInvoice() async {
-  final now = DateTime.now();
-  final built = await buildDocument(
-    documentJson: SampleInvoice.json(now),
-    defaults: DocumentDefaults(
-      igvTasa: '0.18',
-      icbTasa: '0.50',
-      ivapTasa: '0.04',
-      fechaEmision: now.toIso8601String().substring(0, 10),
-    ),
-  );
-  final certificate = await rootBundle.load(SampleInvoice.certificateAsset);
-  return signDocument(
-    xml: built.xml,
-    certificate: certificate.buffer.asUint8List(),
-    password: SampleInvoice.certificatePassword,
-  );
 }

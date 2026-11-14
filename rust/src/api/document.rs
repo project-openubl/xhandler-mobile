@@ -1,4 +1,7 @@
+use anyhow::Context;
 use xhandler::prelude::{Defaults, Document, Enrich, Renderer};
+
+use crate::api::error::BridgeError;
 
 /// Values the enrichment uses when the document doesn't set them
 pub struct DocumentDefaults {
@@ -25,13 +28,17 @@ pub struct BuiltDocument {
 pub fn build_document(
     document_json: String,
     defaults: DocumentDefaults,
-) -> anyhow::Result<BuiltDocument> {
-    let mut document: Document = serde_json::from_str(&document_json)?;
+) -> Result<BuiltDocument, BridgeError> {
+    build(&document_json, defaults).map_err(BridgeError::invalid_document)
+}
+
+fn build(document_json: &str, defaults: DocumentDefaults) -> anyhow::Result<BuiltDocument> {
+    let mut document: Document = serde_json::from_str(document_json)?;
     document.enrich(&Defaults {
-        igv_tasa: defaults.igv_tasa.parse()?,
-        icb_tasa: defaults.icb_tasa.parse()?,
-        ivap_tasa: defaults.ivap_tasa.parse()?,
-        fecha_emision: defaults.fecha_emision.parse()?,
+        igv_tasa: defaults.igv_tasa.parse().context("igv_tasa")?,
+        icb_tasa: defaults.icb_tasa.parse().context("icb_tasa")?,
+        ivap_tasa: defaults.ivap_tasa.parse().context("ivap_tasa")?,
+        fecha_emision: defaults.fecha_emision.parse().context("fecha_emision")?,
     })?;
     Ok(BuiltDocument {
         xml: document.render()?,
@@ -42,6 +49,7 @@ pub fn build_document(
 #[cfg(test)]
 pub(crate) mod tests {
     use super::{build_document, BuiltDocument, DocumentDefaults};
+    use crate::api::error::BridgeErrorKind;
 
     pub(crate) fn defaults() -> DocumentDefaults {
         DocumentDefaults {
@@ -86,6 +94,7 @@ pub(crate) mod tests {
     #[test]
     fn build_document_rejects_unknown_kinds() {
         let json = r#"{"kind": "Unknown", "spec": {}}"#;
-        assert!(build_document(json.into(), defaults()).is_err());
+        let error = build_document(json.into(), defaults()).err().unwrap();
+        assert!(matches!(error.kind, BridgeErrorKind::InvalidDocument));
     }
 }

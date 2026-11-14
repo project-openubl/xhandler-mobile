@@ -70,6 +70,7 @@ dependencies = [
  "anyhow",
  "atomic",
  "backtrace",
+ "chrono",
 ]
 
 [[package]]
@@ -760,6 +761,7 @@ dependencies = [
  "build-target",
  "bytemuck",
  "byteorder",
+ "chrono",
  "console_error_panic_hook",
  "dart-sys",
  "delegate-attr",
@@ -3175,7 +3177,7 @@ dependencies = [
 [[package]]
 name = "xbuilder"
 version = "0.1.1"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=8136f67e2d13a9c66c6986e228d6bf1c5c73997f#8136f67e2d13a9c66c6986e228d6bf1c5c73997f"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3191,7 +3193,7 @@ dependencies = [
 [[package]]
 name = "xhandler"
 version = "0.1.0"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=8136f67e2d13a9c66c6986e228d6bf1c5c73997f#8136f67e2d13a9c66c6986e228d6bf1c5c73997f"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
 dependencies = [
  "xbuilder",
  "xsender",
@@ -3206,7 +3208,6 @@ dependencies = [
  "base64",
  "chrono",
  "flutter_rust_bridge",
- "rust_decimal",
  "serde_json",
  "tokio",
  "x509-cert",
@@ -3222,7 +3223,7 @@ checksum = "2f45bb2c13fec6a6cb4c0f76a7e94839e110a14ec803ec2940777a94c347bc52"
 [[package]]
 name = "xsender"
 version = "0.1.1"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=8136f67e2d13a9c66c6986e228d6bf1c5c73997f#8136f67e2d13a9c66c6986e228d6bf1c5c73997f"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
 dependencies = [
  "anyhow",
  "base64",
@@ -3243,7 +3244,7 @@ dependencies = [
 [[package]]
 name = "xsigner"
 version = "0.1.0"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=8136f67e2d13a9c66c6986e228d6bf1c5c73997f#8136f67e2d13a9c66c6986e228d6bf1c5c73997f"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
 dependencies = [
  "base64",
  "p12-keystore",

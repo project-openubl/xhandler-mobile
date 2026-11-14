@@ -1,4 +1,4 @@
-package io.github.projectopenubl.xhandler_mobile
+package io.github.projectopenubl.xhandler
 
 import io.flutter.embedding.android.FlutterActivity
 

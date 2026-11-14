@@ -7,6 +7,7 @@
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/document.dart';
+import 'api/error.dart';
 import 'api/signer.dart';
 import 'api/sunat.dart';
 
@@ -26,7 +27,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
-  AnyhowException dco_decode_AnyhowException(dynamic raw);
+  DateTime dco_decode_Chrono_Utc(dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -36,6 +37,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SunatCredentials dco_decode_box_autoadd_sunat_credentials(dynamic raw);
+
+  @protected
+  BridgeError dco_decode_bridge_error(dynamic raw);
+
+  @protected
+  BridgeErrorKind dco_decode_bridge_error_kind(dynamic raw);
 
   @protected
   BuiltDocument dco_decode_built_document(dynamic raw);
@@ -89,7 +96,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
-  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+  DateTime sse_decode_Chrono_Utc(SseDeserializer deserializer);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
@@ -103,6 +110,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SunatCredentials sse_decode_box_autoadd_sunat_credentials(
     SseDeserializer deserializer,
   );
+
+  @protected
+  BridgeError sse_decode_bridge_error(SseDeserializer deserializer);
+
+  @protected
+  BridgeErrorKind sse_decode_bridge_error_kind(SseDeserializer deserializer);
 
   @protected
   BuiltDocument sse_decode_built_document(SseDeserializer deserializer);
@@ -159,10 +172,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  void sse_encode_AnyhowException(
-    AnyhowException self,
-    SseSerializer serializer,
-  );
+  void sse_encode_Chrono_Utc(DateTime self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -176,6 +186,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_sunat_credentials(
     SunatCredentials self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_bridge_error(BridgeError self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_bridge_error_kind(
+    BridgeErrorKind self,
     SseSerializer serializer,
   );
 

@@ -4,8 +4,11 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'error.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+// These functions are ignored because they are not marked as `pub`: `find_ruc`, `is_ruc`
 
 /// Signs the XML with the certificate of a PKCS#12 keystore (`.pfx`)
 Future<SignedDocument> signDocument({
@@ -33,15 +36,10 @@ class CertificateInfo {
   final String subject;
   final String issuer;
 
-  /// First 11-digit number of the subject, where Peruvian certificates
-  /// carry the RUC
+  /// RUC found in the subject's attributes, if any
   final String? ruc;
-
-  /// Unix time in seconds
-  final PlatformInt64 validFrom;
-
-  /// Unix time in seconds
-  final PlatformInt64 validUntil;
+  final DateTime validFrom;
+  final DateTime validUntil;
 
   const CertificateInfo({
     required this.subject,

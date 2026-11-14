@@ -9,12 +9,11 @@ publish = false
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-flutter_rust_bridge = "=2.13.0"
-xhandler = { git = "https://github.com/project-openubl/xhandler-rust", rev = "8136f67e2d13a9c66c6986e228d6bf1c5c73997f" }
+flutter_rust_bridge = { version = "=2.13.0", features = ["chrono"] }
+xhandler = { git = "https://github.com/project-openubl/xhandler-rust", rev = "ad310c463adea6bb34f162d16ec407e71750a131" }
 anyhow = "1.0"
 base64 = "0.22"
 chrono = "0.4"
-rust_decimal = "1.36"
 serde_json = "1"
 x509-cert = "0.3"
 

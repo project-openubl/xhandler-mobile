@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Sends documents to SUNAT -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="XHandler"
         android:name="${applicationName}"

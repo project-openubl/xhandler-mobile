@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request: {}
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FLUTTER_VERSION: "3.50.0"
   # Debug info makes the Rust libraries of every ABI huge
@@ -21,7 +28,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2.9.3
         with:
           workspaces: rust
-      - run: rustup component add rustfmt clippy
+      # Same toolchain as xhandler-rust, so new lints don't break the build
+      - run: rustup toolchain install 1.100.0 --profile minimal --component rustfmt,clippy && rustup default 1.100.0
       - run: cargo fmt --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
@@ -35,8 +43,14 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: Swatinem/rust-cache@v2.9.3
+        with:
+          workspaces: rust
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+      # The Dart bindings must match rust/src/api
+      - run: cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked
+      - run: flutter_rust_bridge_codegen generate && git diff --exit-code
+      - run: dart format --output=none --set-exit-if-changed $(find lib test integration_test -name '*.dart' -not -path 'lib/src/rust/*' -not -name '*.g.dart')
       - run: flutter analyze
       - run: flutter test
 
@@ -55,9 +69,6 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - uses: Swatinem/rust-cache@v2.9.3
-        with:
-          workspaces: rust
       # The emulator below is x86_64
       - run: flutter build apk --debug --target-platform android-x64
       # Runs the integration tests (Rust bridge included) on an emulator
@@ -82,7 +93,4 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - uses: Swatinem/rust-cache@v2.9.3
-        with:
-          workspaces: rust
       - run: flutter build ios --simulator --debug

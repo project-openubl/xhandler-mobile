@@ -2,6 +2,7 @@
 //! and storage live in the app.
 
 pub mod document;
+pub mod error;
 pub mod signer;
 pub mod sunat;
 

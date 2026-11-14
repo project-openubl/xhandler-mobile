@@ -1,7 +1,9 @@
-use anyhow::anyhow;
+use chrono::{DateTime, Utc};
 use x509_cert::der::Decode;
 use x509_cert::Certificate;
 use xhandler::prelude::{RsaKeyPair, UblFile, XSigner};
+
+use crate::api::error::{BridgeError, BridgeErrorKind};
 
 pub struct SignedDocument {
     pub xml: String,
@@ -13,13 +15,10 @@ pub struct SignedDocument {
 pub struct CertificateInfo {
     pub subject: String,
     pub issuer: String,
-    /// First 11-digit number of the subject, where Peruvian certificates
-    /// carry the RUC
+    /// RUC found in the subject's attributes, if any
     pub ruc: Option<String>,
-    /// Unix time in seconds
-    pub valid_from: i64,
-    /// Unix time in seconds
-    pub valid_until: i64,
+    pub valid_from: DateTime<Utc>,
+    pub valid_until: DateTime<Utc>,
 }
 
 /// Signs the XML with the certificate of a PKCS#12 keystore (`.pfx`)
@@ -27,14 +26,17 @@ pub fn sign_document(
     xml: String,
     certificate: Vec<u8>,
     password: String,
-) -> anyhow::Result<SignedDocument> {
+) -> Result<SignedDocument, BridgeError> {
     let key_pair = RsaKeyPair::from_pkcs12(&certificate, &password)?;
-    let signed = XSigner::from_bytes(xml.into_bytes())?.sign(&key_pair)?;
-    let xml = String::from_utf8(signed)?;
+    let xml = XSigner::from_bytes(xml.into_bytes())
+        .map_err(BridgeError::invalid_document)?
+        .sign(&key_pair)?;
+    let xml = String::from_utf8(xml).map_err(BridgeError::invalid_document)?;
     let digest_value = UblFile::from(xml.as_str())
-        .metadata()?
+        .metadata()
+        .map_err(BridgeError::invalid_document)?
         .digest_value
-        .ok_or_else(|| anyhow!("The signed XML has no DigestValue"))?;
+        .ok_or_else(|| BridgeError::invalid_document(anyhow::anyhow!("No DigestValue")))?;
     Ok(SignedDocument { xml, digest_value })
 }
 
@@ -43,31 +45,74 @@ pub fn sign_document(
 pub fn inspect_certificate(
     certificate: Vec<u8>,
     password: String,
-) -> anyhow::Result<CertificateInfo> {
+) -> Result<CertificateInfo, BridgeError> {
     let key_pair = RsaKeyPair::from_pkcs12(&certificate, &password)?;
-    let certificate = Certificate::from_der(key_pair.certificate_der())?;
+    let certificate = Certificate::from_der(key_pair.certificate_der())
+        .map_err(|error| BridgeError::new(BridgeErrorKind::InvalidCertificate, error))?;
     let tbs = certificate.tbs_certificate();
-    let subject = tbs.subject().to_string();
-    let unix_seconds = |time: x509_cert::time::Time| time.to_unix_duration().as_secs() as i64;
+    let date_time = |time: x509_cert::time::Time| {
+        DateTime::from_timestamp(time.to_unix_duration().as_secs() as i64, 0).unwrap_or_default()
+    };
+    let ruc = tbs.subject().iter().find_map(|attribute| {
+        // e.g. "SERIALNUMBER=RUC:20123456789"; undecodable values are "#<hex>"
+        let text = attribute.to_string();
+        let (_, value) = text.split_once('=')?;
+        if value.starts_with('#') {
+            return None;
+        }
+        find_ruc(value)
+    });
     Ok(CertificateInfo {
-        ruc: subject
-            .split(|character: char| !character.is_ascii_digit())
-            .find(|digits| digits.len() == 11)
-            .map(String::from),
-        subject,
+        ruc,
+        subject: tbs.subject().to_string(),
         issuer: tbs.issuer().to_string(),
-        valid_from: unix_seconds(tbs.validity().not_before),
-        valid_until: unix_seconds(tbs.validity().not_after),
+        valid_from: date_time(tbs.validity().not_before),
+        valid_until: date_time(tbs.validity().not_after),
     })
+}
+
+/// First run of 11 digits in `text` that is a valid RUC: type prefix and
+/// check digit (modulo 11)
+fn find_ruc(text: &str) -> Option<String> {
+    text.split(|character: char| !character.is_ascii_digit())
+        .find(|digits| is_ruc(digits))
+        .map(String::from)
+}
+
+fn is_ruc(digits: &str) -> bool {
+    const WEIGHTS: [u32; 10] = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    let Some(digits) = digits
+        .chars()
+        .map(|character| character.to_digit(10))
+        .collect::<Option<Vec<u32>>>()
+    else {
+        return false;
+    };
+    if digits.len() != 11 || ![10, 15, 16, 17, 20].contains(&(digits[0] * 10 + digits[1])) {
+        return false;
+    }
+    let sum: u32 = digits
+        .iter()
+        .zip(WEIGHTS)
+        .map(|(digit, weight)| digit * weight)
+        .sum();
+    let check = match 11 - sum % 11 {
+        10 => 0,
+        11 => 1,
+        check => check,
+    };
+    digits[10] == check
 }
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use super::{inspect_certificate, sign_document};
+    use super::{find_ruc, inspect_certificate, sign_document};
     use crate::api::document::tests::invoice;
+    use crate::api::error::BridgeErrorKind;
 
+    /// SUNAT's demo certificate, also used by the app in MODO PRUEBA
     pub(crate) fn certificate() -> Vec<u8> {
-        std::fs::read("tests/resources/LLAMA-PE-CERTIFICADO-DEMO-10467793549.pfx").unwrap()
+        include_bytes!("../../../assets/demo/certificado_demo.pfx").to_vec()
     }
 
     #[test]
@@ -87,6 +132,31 @@ pub(crate) mod tests {
 
         assert_eq!(info.ruc.as_deref(), Some("10467793549"));
         assert!(info.valid_from < info.valid_until);
-        assert!(inspect_certificate(certificate(), "wrong".into()).is_err());
+    }
+
+    #[test]
+    fn inspect_certificate_tells_wrong_passwords_and_invalid_files_apart() {
+        let wrong_password = inspect_certificate(certificate(), "wrong".into())
+            .err()
+            .unwrap();
+        assert!(matches!(
+            wrong_password.kind,
+            BridgeErrorKind::WrongPassword
+        ));
+
+        let invalid = inspect_certificate(b"not a pfx".to_vec(), "password".into())
+            .err()
+            .unwrap();
+        assert!(matches!(invalid.kind, BridgeErrorKind::InvalidCertificate));
+    }
+
+    #[test]
+    fn find_ruc_skips_numbers_that_are_not_rucs() {
+        assert_eq!(
+            find_ruc("TEL 51987654321, RUC 20100070970").as_deref(),
+            Some("20100070970")
+        );
+        assert_eq!(find_ruc("20100070971"), None); // wrong check digit
+        assert_eq!(find_ruc("DNI 12345678"), None);
     }
 }

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.projectopenubl.xhandler_mobile"
+    namespace = "io.github.projectopenubl.xhandler"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

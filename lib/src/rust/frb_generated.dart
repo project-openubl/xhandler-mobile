@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/document.dart';
+import 'api/error.dart';
 import 'api/signer.dart';
 import 'api/sunat.dart';
 
@@ -143,7 +144,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_built_document,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: sse_decode_bridge_error,
         ),
         constMeta: kCrateApiDocumentBuildDocumentConstMeta,
         argValues: [documentJson, defaults],
@@ -205,7 +206,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_certificate_info,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: sse_decode_bridge_error,
         ),
         constMeta: kCrateApiSignerInspectCertificateConstMeta,
         argValues: [certificate, password],
@@ -242,7 +243,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_sunat_response,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: sse_decode_bridge_error,
         ),
         constMeta: kCrateApiSunatSendDocumentConstMeta,
         argValues: [xml, environment, credentials],
@@ -278,7 +279,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_signed_document,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: sse_decode_bridge_error,
         ),
         constMeta: kCrateApiSignerSignDocumentConstMeta,
         argValues: [xml, certificate, password],
@@ -316,7 +317,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_sunat_response,
-          decodeErrorData: sse_decode_AnyhowException,
+          decodeErrorData: sse_decode_bridge_error,
         ),
         constMeta: kCrateApiSunatVerifyTicketConstMeta,
         argValues: [xml, ticket, environment, credentials],
@@ -331,9 +332,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @protected
-  AnyhowException dco_decode_AnyhowException(dynamic raw) {
+  DateTime dco_decode_Chrono_Utc(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return AnyhowException(raw as String);
+    return dcoDecodeTimestamp(ts: dco_decode_i_64(raw).toInt(), isUtc: true);
   }
 
   @protected
@@ -352,6 +353,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SunatCredentials dco_decode_box_autoadd_sunat_credentials(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_sunat_credentials(raw);
+  }
+
+  @protected
+  BridgeError dco_decode_bridge_error(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return BridgeError(
+      kind: dco_decode_bridge_error_kind(arr[0]),
+      message: dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  BridgeErrorKind dco_decode_bridge_error_kind(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BridgeErrorKind.values[raw as int];
   }
 
   @protected
@@ -376,8 +395,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       subject: dco_decode_String(arr[0]),
       issuer: dco_decode_String(arr[1]),
       ruc: dco_decode_opt_String(arr[2]),
-      validFrom: dco_decode_i_64(arr[3]),
-      validUntil: dco_decode_i_64(arr[4]),
+      validFrom: dco_decode_Chrono_Utc(arr[3]),
+      validUntil: dco_decode_Chrono_Utc(arr[4]),
     );
   }
 
@@ -504,10 +523,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
+  DateTime sse_decode_Chrono_Utc(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_String(deserializer);
-    return AnyhowException(inner);
+    var inner = sse_decode_i_64(deserializer);
+    return DateTime.fromMicrosecondsSinceEpoch(inner.toInt(), isUtc: true);
   }
 
   @protected
@@ -534,6 +553,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BridgeError sse_decode_bridge_error(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_kind = sse_decode_bridge_error_kind(deserializer);
+    var var_message = sse_decode_String(deserializer);
+    return BridgeError(kind: var_kind, message: var_message);
+  }
+
+  @protected
+  BridgeErrorKind sse_decode_bridge_error_kind(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return BridgeErrorKind.values[inner];
+  }
+
+  @protected
   BuiltDocument sse_decode_built_document(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_xml = sse_decode_String(deserializer);
@@ -547,8 +581,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_subject = sse_decode_String(deserializer);
     var var_issuer = sse_decode_String(deserializer);
     var var_ruc = sse_decode_opt_String(deserializer);
-    var var_validFrom = sse_decode_i_64(deserializer);
-    var var_validUntil = sse_decode_i_64(deserializer);
+    var var_validFrom = sse_decode_Chrono_Utc(deserializer);
+    var var_validUntil = sse_decode_Chrono_Utc(deserializer);
     return CertificateInfo(
       subject: var_subject,
       issuer: var_issuer,
@@ -707,12 +741,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_AnyhowException(
-    AnyhowException self,
-    SseSerializer serializer,
-  ) {
+  void sse_encode_Chrono_Utc(DateTime self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.message, serializer);
+    sse_encode_i_64(
+      PlatformInt64Util.from(self.microsecondsSinceEpoch),
+      serializer,
+    );
   }
 
   @protected
@@ -740,6 +774,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_bridge_error(BridgeError self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bridge_error_kind(self.kind, serializer);
+    sse_encode_String(self.message, serializer);
+  }
+
+  @protected
+  void sse_encode_bridge_error_kind(
+    BridgeErrorKind self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
   void sse_encode_built_document(BuiltDocument self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.xml, serializer);
@@ -755,8 +805,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.subject, serializer);
     sse_encode_String(self.issuer, serializer);
     sse_encode_opt_String(self.ruc, serializer);
-    sse_encode_i_64(self.validFrom, serializer);
-    sse_encode_i_64(self.validUntil, serializer);
+    sse_encode_Chrono_Utc(self.validFrom, serializer);
+    sse_encode_Chrono_Utc(self.validUntil, serializer);
   }
 
   @protected

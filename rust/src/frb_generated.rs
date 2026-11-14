@@ -74,13 +74,11 @@ fn wire__crate__api__document__build_document_impl(
                 <crate::api::document::DocumentDefaults>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
-                    (move || {
-                        let output_ok =
-                            crate::api::document::build_document(api_document_json, api_defaults)?;
-                        std::result::Result::Ok(output_ok)
-                    })(),
-                )
+                transform_result_sse::<_, crate::api::error::BridgeError>((move || {
+                    let output_ok =
+                        crate::api::document::build_document(api_document_json, api_defaults)?;
+                    std::result::Result::Ok(output_ok)
+                })())
             }
         },
     )
@@ -145,13 +143,11 @@ fn wire__crate__api__signer__inspect_certificate_impl(
             let api_password = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
-                    (move || {
-                        let output_ok =
-                            crate::api::signer::inspect_certificate(api_certificate, api_password)?;
-                        std::result::Result::Ok(output_ok)
-                    })(),
-                )
+                transform_result_sse::<_, crate::api::error::BridgeError>((move || {
+                    let output_ok =
+                        crate::api::signer::inspect_certificate(api_certificate, api_password)?;
+                    std::result::Result::Ok(output_ok)
+                })())
             }
         },
     )
@@ -185,7 +181,7 @@ fn wire__crate__api__sunat__send_document_impl(
                 <crate::api::sunat::SunatCredentials>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                transform_result_sse::<_, crate::api::error::BridgeError>(
                     (move || async move {
                         let output_ok = crate::api::sunat::send_document(
                             api_xml,
@@ -228,16 +224,11 @@ fn wire__crate__api__signer__sign_document_impl(
             let api_password = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
-                    (move || {
-                        let output_ok = crate::api::signer::sign_document(
-                            api_xml,
-                            api_certificate,
-                            api_password,
-                        )?;
-                        std::result::Result::Ok(output_ok)
-                    })(),
-                )
+                transform_result_sse::<_, crate::api::error::BridgeError>((move || {
+                    let output_ok =
+                        crate::api::signer::sign_document(api_xml, api_certificate, api_password)?;
+                    std::result::Result::Ok(output_ok)
+                })())
             }
         },
     )
@@ -272,7 +263,7 @@ fn wire__crate__api__sunat__verify_ticket_impl(
                 <crate::api::sunat::SunatCredentials>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                transform_result_sse::<_, crate::api::error::BridgeError>(
                     (move || async move {
                         let output_ok = crate::api::sunat::verify_ticket(
                             api_xml,
@@ -292,11 +283,16 @@ fn wire__crate__api__sunat__verify_ticket_impl(
 
 // Section: dart2rust
 
-impl SseDecode for flutter_rust_bridge::for_generated::anyhow::Error {
+impl SseDecode for chrono::DateTime<chrono::Utc> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut inner = <String>::sse_decode(deserializer);
-        return flutter_rust_bridge::for_generated::anyhow::anyhow!("{}", inner);
+        let mut inner = <i64>::sse_decode(deserializer);
+        return chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            chrono::DateTime::from_timestamp_micros(inner)
+                .expect("invalid or out-of-range datetime")
+                .naive_utc(),
+            chrono::Utc,
+        );
     }
 }
 
@@ -305,6 +301,32 @@ impl SseDecode for String {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut inner = <Vec<u8>>::sse_decode(deserializer);
         return String::from_utf8(inner).unwrap();
+    }
+}
+
+impl SseDecode for crate::api::error::BridgeError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_kind = <crate::api::error::BridgeErrorKind>::sse_decode(deserializer);
+        let mut var_message = <String>::sse_decode(deserializer);
+        return crate::api::error::BridgeError {
+            kind: var_kind,
+            message: var_message,
+        };
+    }
+}
+
+impl SseDecode for crate::api::error::BridgeErrorKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::error::BridgeErrorKind::WrongPassword,
+            1 => crate::api::error::BridgeErrorKind::InvalidCertificate,
+            2 => crate::api::error::BridgeErrorKind::InvalidDocument,
+            3 => crate::api::error::BridgeErrorKind::Other,
+            _ => unreachable!("Invalid variant for BridgeErrorKind: {}", inner),
+        };
     }
 }
 
@@ -326,8 +348,8 @@ impl SseDecode for crate::api::signer::CertificateInfo {
         let mut var_subject = <String>::sse_decode(deserializer);
         let mut var_issuer = <String>::sse_decode(deserializer);
         let mut var_ruc = <Option<String>>::sse_decode(deserializer);
-        let mut var_validFrom = <i64>::sse_decode(deserializer);
-        let mut var_validUntil = <i64>::sse_decode(deserializer);
+        let mut var_validFrom = <chrono::DateTime<chrono::Utc>>::sse_decode(deserializer);
+        let mut var_validUntil = <chrono::DateTime<chrono::Utc>>::sse_decode(deserializer);
         return crate::api::signer::CertificateInfo {
             subject: var_subject,
             issuer: var_issuer,
@@ -543,6 +565,50 @@ fn pde_ffi_dispatcher_sync_impl(
 // Section: rust2dart
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::error::BridgeError {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.kind.into_into_dart().into_dart(),
+            self.message.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::error::BridgeError
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::error::BridgeError>
+    for crate::api::error::BridgeError
+{
+    fn into_into_dart(self) -> crate::api::error::BridgeError {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::error::BridgeErrorKind {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::WrongPassword => 0.into_dart(),
+            Self::InvalidCertificate => 1.into_dart(),
+            Self::InvalidDocument => 2.into_dart(),
+            Self::Other => 3.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::error::BridgeErrorKind
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::error::BridgeErrorKind>
+    for crate::api::error::BridgeErrorKind
+{
+    fn into_into_dart(self) -> crate::api::error::BridgeErrorKind {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::document::BuiltDocument {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -726,10 +792,10 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::sunat::SunatStatus>
     }
 }
 
-impl SseEncode for flutter_rust_bridge::for_generated::anyhow::Error {
+impl SseEncode for chrono::DateTime<chrono::Utc> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(format!("{:?}", self), serializer);
+        <i64>::sse_encode(self.timestamp_micros(), serializer);
     }
 }
 
@@ -737,6 +803,32 @@ impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <Vec<u8>>::sse_encode(self.into_bytes(), serializer);
+    }
+}
+
+impl SseEncode for crate::api::error::BridgeError {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <crate::api::error::BridgeErrorKind>::sse_encode(self.kind, serializer);
+        <String>::sse_encode(self.message, serializer);
+    }
+}
+
+impl SseEncode for crate::api::error::BridgeErrorKind {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::error::BridgeErrorKind::WrongPassword => 0,
+                crate::api::error::BridgeErrorKind::InvalidCertificate => 1,
+                crate::api::error::BridgeErrorKind::InvalidDocument => 2,
+                crate::api::error::BridgeErrorKind::Other => 3,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 
@@ -754,8 +846,8 @@ impl SseEncode for crate::api::signer::CertificateInfo {
         <String>::sse_encode(self.subject, serializer);
         <String>::sse_encode(self.issuer, serializer);
         <Option<String>>::sse_encode(self.ruc, serializer);
-        <i64>::sse_encode(self.valid_from, serializer);
-        <i64>::sse_encode(self.valid_until, serializer);
+        <chrono::DateTime<chrono::Utc>>::sse_encode(self.valid_from, serializer);
+        <chrono::DateTime<chrono::Utc>>::sse_encode(self.valid_until, serializer);
     }
 }
 

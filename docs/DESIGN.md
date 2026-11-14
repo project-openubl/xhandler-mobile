@@ -5,7 +5,7 @@ electronic documents, deliver them to its customers, and keep them backed up.
 Built with Flutter on top of the Rust libraries of
 [xhandler-rust](https://github.com/project-openubl/xhandler-rust).
 
-License: Apache-2.0. UI language: Spanish (Peru). Status: design (not started).
+License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §13.
 
 ---
 
@@ -16,7 +16,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: design (not started).
 | Stack | Flutter + flutter_rust_bridge v2; Rust facade crate wrapping xbuilder/xsigner/xsender |
 | Rust role | Stateless functions (build, sign, send, verify, consult). JSON at the boundary |
 | Dart role | Owns all data: companies, numbering, documents, delivery, backups |
-| Database | SQLite via Drift, encrypted with SQLCipher. XML/CDR as BLOBs |
+| Database | SQLite via Drift, encrypted with SQLite3MultipleCiphers (MIT, no OpenSSL). XML/CDR as BLOBs |
 | Multi-company | A company is a namespace: every business table has `company_id`; one active company |
 | Users | One person per device. App lock with biometrics/PIN. No roles |
 | Documents | Everything xbuilder supports: factura, boleta, nota de crédito/débito, guía de remisión, percepción, retención, resumen diario, comunicación de baja, reversión |
@@ -47,13 +47,13 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: design (not started).
 ┌──────────────────── Flutter (Dart) ────────────────────┐
 │ UI (screens, Spanish) → Riverpod state → repositories   │
 │                                     │                   │
-│      Drift/SQLCipher        flutter_secure_storage      │
+│      Drift/sqlite3mc        flutter_secure_storage      │
 │      outbox worker (workmanager)    PDF templates        │
 │      delivery (Gmail/Graph/SMTP/share)  backup           │
 └──────────────── flutter_rust_bridge ────────────────────┘
-┌──────────────── Rust: xhandler_mobile ──────────────────┐
-│ build_document · sign · inspect_certificate · send ·     │
-│ verify_ticket · get_status_cdr                           │
+┌──────────────── Rust: xhandler_bridge ──────────────────┐
+│ build_document · sign_document · inspect_certificate ·   │
+│ send_document · verify_ticket                            │
 │          → xbuilder · xsigner (pure Rust) · xsender      │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -83,18 +83,26 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 - `enriched_json` is the document after the enrichment pipeline (totals,
   legends); the PDF is rendered from it so tax math is never re-implemented
   in Dart.
-- `SunatStatus` is xsender's `Status` plus `NotDelivered`: SUNAT couldn't be
-  reached (network or HTTP error), retry later. Other errors (e.g. a guia in
-  beta, which SUNAT doesn't have) are returned as errors.
+- `SunatStatus` is xsender's `Status` plus `NotDelivered`: no answer (no
+  connection, timeout, HTTP 5xx/408/429, unexpected body); retry later. SUNAT
+  may still have received the document (timeout after sending): the retry
+  then answers 1033 and the CDR is recovered (§5). Permanent HTTP errors
+  (e.g. "HTTP 401", wrong credentials) are `Exception` with `code` set.
+- Errors are `BridgeError { kind, message }`: `kind` (`WrongPassword`,
+  `InvalidCertificate`, `InvalidDocument`, `Other`) drives the UI, `message`
+  is for support.
 - The FFI types are flat structs and field-less enums, so the Dart side needs
   no code generation besides flutter_rust_bridge's.
 - `get_status_cdr` (recovering a CDR after code 1033) will be added with the
   outbox in Phase 3.
 - Dependency: `xhandler` as a git dependency pinned by `rev`.
+- SUNAT's public demo certificate ships in `assets/demo/`: MODO PRUEBA
+  companies without their own certificate sign with it, and the diagnostics
+  screen uses it.
 
 ---
 
-## 3. Data model (SQLite / Drift)
+## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
 ```
 company           id, ruc, razon_social, nombre_comercial, direccion (ubigeo, departamento,
@@ -142,7 +150,7 @@ No sync in v1, but every synced table follows these rules so a later sync backen
 Secrets are **not** in the database. They live in `flutter_secure_storage`
 (Android Keystore / iOS Keychain) under `company/{id}/…`: certificate `.pfx`, its password,
 SOL user/password, GRE `client_id`/`client_secret`, SMTP password / OAuth tokens, lookup token.
-The SQLCipher key is generated once and also kept there.
+The database key is generated once and also kept there.
 
 ---
 
@@ -335,7 +343,7 @@ Every delivery is logged in `delivery`.
 - App lock (biometrics/PIN) on open and after N minutes in background (`local_auth`).
 - Certificate check on import (`inspect_certificate`): password, RUC match, expiry; warning
   30 days before expiry.
-- SQLCipher database; secrets in Keystore/Keychain; no secrets in logs.
+- Encrypted database (SQLite3MultipleCiphers); secrets in Keystore/Keychain; no secrets in logs.
 
 ---
 
@@ -374,7 +382,7 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 |---|---|---|
 | 0 | xhandler-rust | xsender on `rustls-tls`; xsigner rewritten in pure Rust (RustCrypto + exclusive C14N on quick-xml), byte-for-byte equal signatures vs current implementation, legacy PFX support; builds for Android and iOS targets |
 | 1 | mobile | Scaffold (flutter_rust_bridge create), facade crate, CI (APK + iOS simulator), sign a sample invoice on a real phone |
-| 2 | mobile | Drift schema + SQLCipher, company wizard, secure storage, certificate import, series, customers (+ lookup), products, GRE catalogs |
+| 2 | mobile | Drift schema + encryption (sqlite3mc), company wizard, secure storage, certificate import, series, customers (+ lookup), products, GRE catalogs |
 | 3 | mobile | Emit & send: invoice/boleta full form + quick sale, numbering, status machine, outbox, 1033 recovery, notifications, timeline |
 | 4 | mobile | Remaining documents: notes, GRE, percepción, retención, voiding (RA/RC/RR) |
 | 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, WhatsApp, share sheet), delivery log |

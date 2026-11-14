@@ -4,10 +4,11 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'error.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `delivered`, `from_cdr`, `from_fault`, `response`, `sender`
+// These functions are ignored because they are not marked as `pub`: `from_cdr`, `from_client_error`, `from_fault`, `into_response`, `response`, `sender`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`
 
 /// Sends a signed document. Guias de remision can't be sent to beta, which
@@ -78,7 +79,7 @@ enum SunatEnvironment {
 class SunatResponse {
   final SunatStatus status;
 
-  /// CDR `ResponseCode`, fault code or ticket status code
+  /// CDR `ResponseCode`, fault code, ticket status code or "HTTP <status>"
   final String? code;
   final String? description;
 
@@ -123,13 +124,19 @@ class SunatResponse {
 }
 
 /// Status of a document by SUNAT's answer (see xsender's `Status`), or
-/// `NotDelivered` when SUNAT could not be reached and the same request can
-/// be retried later
+/// `NotDelivered` when there was no answer
 enum SunatStatus {
   accepted,
   rejected,
+
+  /// Not processed by SUNAT; also permanent HTTP errors, e.g. "HTTP 401"
+  /// for wrong credentials. Needs the user to fix something.
   exception,
   inProgress,
   unknown,
+
+  /// No connection, timeout, server error or an unexpected answer: retry
+  /// later. SUNAT may still have received the document (a timeout after
+  /// sending); a retry then answers code 1033 (registered previously).
   notDelivered,
 }
