@@ -127,6 +127,8 @@ class DocumentTotals {
   String get exonerado =>
       _amount('total_impuestos', 'exonerado_base_imponible');
   String get inafecto => _amount('total_impuestos', 'inafecto_base_imponible');
+  String get exportacion =>
+      _amount('total_impuestos', 'exportacion_base_imponible');
   String get igv => _amount('total_impuestos', 'gravado_importe');
   String get isc => _amount('total_impuestos', 'isc_importe');
   String get icb => _amount('total_impuestos', 'icb_importe');

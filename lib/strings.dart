@@ -204,6 +204,7 @@ abstract final class Strings {
   static const opGravada = 'Op. gravada';
   static const opExonerada = 'Op. exonerada';
   static const opInafecta = 'Op. inafecta';
+  static const opExportacion = 'Op. exportación';
   static const igv = 'IGV';
   static const isc = 'ISC';
   static const icbper = 'ICBPER';
@@ -316,6 +317,7 @@ abstract final class Strings {
   // PDF and delivery
   static const share = 'Compartir';
   static const pdfFormat = 'Formato del PDF';
+  static const preparingFiles = 'Preparando los archivos…';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

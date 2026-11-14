@@ -17,15 +17,24 @@ abstract interface class PdfTemplate {
   Future<Uint8List> render(DocumentView view, pw.ThemeData theme);
 }
 
-/// Open Sans, so any name prints (the PDF base fonts only cover Latin-1)
-Future<pw.ThemeData> loadPdfTheme() async {
+/// Open Sans, so any name prints (the PDF base fonts only cover Latin-1).
+/// Loaded once.
+Future<pw.ThemeData> loadPdfTheme() => _theme ??= () async {
   Future<pw.Font> font(String name) async =>
       pw.Font.ttf(await rootBundle.load('assets/fonts/OpenSans-$name.ttf'));
   return pw.ThemeData.withFont(
     base: await font('Regular'),
     bold: await font('Bold'),
   );
-}
+}();
+
+Future<pw.ThemeData>? _theme;
+
+/// The totals rows, and the total when the document has one
+List<(String, String)> _totalRows(DocumentView view) => [
+  ...view.totals,
+  if (view.total case final total?) ('TOTAL', total),
+];
 
 const pdfTemplates = <PdfTemplate>[
   A4Template(),
@@ -34,7 +43,8 @@ const pdfTemplates = <PdfTemplate>[
 ];
 
 const _pendingNote =
-    'PENDIENTE DE ENVÍO A SUNAT: este documento aún no fue recibido por SUNAT.';
+    'PENDIENTE DE CONFIRMACIÓN DE SUNAT: este documento aún no fue aceptado '
+    'por SUNAT.';
 
 pw.Widget _qr(String data, double size) => pw.BarcodeWidget(
   barcode: pw.Barcode.qrCode(),
@@ -92,6 +102,7 @@ class A4Template implements PdfTemplate {
     document.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        maxPages: 1000,
         margin: const pw.EdgeInsets.all(32),
         header: (_) => pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -194,7 +205,6 @@ class A4Template implements PdfTemplate {
                   children: [
                     if (view.amountInWords case final words?)
                       pw.Text(words, style: bold),
-                    for (final note in view.notes) pw.Text(note, style: small),
                     if (view.qr case final qr?) ...[
                       pw.SizedBox(height: 8),
                       _qr(qr, 90),
@@ -202,17 +212,20 @@ class A4Template implements PdfTemplate {
                   ],
                 ),
               ),
-              if (view.total != null)
+              if (_totalRows(view).isNotEmpty)
                 pw.SizedBox(
                   width: 200,
                   child: _rows(
-                    [...view.totals, ('TOTAL', view.total!)],
+                    _totalRows(view),
                     style: small,
                     alignRight: true,
                   ),
                 ),
             ],
           ),
+          // Out of the row above, so many installments flow across pages
+          pw.SizedBox(height: 8),
+          for (final note in view.notes) pw.Text(note, style: small),
         ],
       ),
     );
@@ -303,12 +316,7 @@ class TicketTemplate implements PdfTemplate {
               ),
             ],
             pw.Divider(thickness: 0.5),
-            if (view.total != null)
-              _rows(
-                [...view.totals, ('TOTAL', view.total!)],
-                style: small,
-                alignRight: true,
-              ),
+            _rows(_totalRows(view), style: small, alignRight: true),
             if (view.amountInWords case final words?)
               pw.Text(words, style: small),
             for (final note in view.notes) pw.Text(note, style: small),

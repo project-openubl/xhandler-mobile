@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -97,12 +98,12 @@ void main() {
       _document('09', 'T001', draft('guia_transporte_privado'), '0.00'),
       _document('09', 'T001', draft('guia_transporte_publico'), '0.00'),
     ];
-    for (final document in documents) {
+    for (final (index, document) in documents.indexed) {
       final view = documentView(document, _company);
       for (final template in pdfTemplates) {
         final pdf = await template.render(view, theme);
         if (Platform.environment['PDF_SAMPLES'] case final dir?) {
-          File('$dir/${document.serie}-${template.id}.pdf')
+          File('$dir/$index-${document.serie}-${template.id}.pdf')
               .writeAsBytesSync(pdf);
         }
         expect(
@@ -154,5 +155,105 @@ void main() {
         'R-20123456789-01-F001-1.zip',
       ],
     );
+  });
+
+  group('what prints', () {
+    Map<String, Object?> draftSpec(String name) =>
+        (jsonDecode(
+              File('rust/tests/resources/drafts/$name.json').readAsStringSync(),
+            ) as Map<String, Object?>)['spec']!
+            as Map<String, Object?>;
+    Document fromSpec(String tipo, String serie, Map<String, Object?> spec) =>
+        _document(tipo, serie, jsonEncode({'spec': spec}), '1180.00');
+
+    test('only valid documents print; guías wait for SUNAT\'s QR', () {
+      expect(hasPrintedView(factura), isTrue);
+      for (final status in [
+        DocumentStatus.rejected,
+        DocumentStatus.voided,
+        DocumentStatus.voiding,
+        DocumentStatus.exception,
+      ]) {
+        expect(
+          hasPrintedView(factura.copyWith(status: status)),
+          isFalse,
+          reason: '$status',
+        );
+      }
+      final waiting = factura.copyWith(status: DocumentStatus.inProgress);
+      expect(hasPrintedView(waiting), isTrue);
+      expect(documentView(waiting, _company).pending, isTrue);
+      expect(
+        hasPrintedView(
+          fromSpec('09', 'T001', draftSpec('guia_transporte_privado')),
+        ),
+        isFalse,
+      );
+    });
+
+    test('a nota names the document it modifies', () {
+      final view = documentView(
+        fromSpec('07', 'FC01', draftSpec('nota_credito_anulacion')),
+        _company,
+      );
+      expect(
+        view.header,
+        contains(('Documento que modifica', 'Factura F001-1')),
+      );
+      expect(view.header, contains(('Motivo', 'Anulación de la operación')));
+    });
+
+    test('a boleta on credit shows what is owed and its cuotas', () {
+      final spec = draftSpec('boleta_credito');
+      (spec['forma_pago']! as Map)['total'] = '1180.00';
+      final document = fromSpec(
+        '03',
+        'B001',
+        spec,
+      ).copyWith(moneda: 'USD', total: '1180.00');
+      final view = documentView(document, _company);
+      expect(
+        view.header,
+        contains(('Monto pendiente de pago', 'US\$ 1180.00')),
+      );
+      expect(view.notes, contains('Cuota 1: US\$ 590.00 vence 2026-12-13'));
+      expect(view.amountInWords, endsWith('DÓLARES AMERICANOS'));
+    });
+
+    test('anonymous customers print without a document number', () {
+      final view = documentView(
+        fromSpec('03', 'B001', draftSpec('boleta_exonerada')),
+        _company,
+      );
+      expect(view.header.map((row) => row.$1), isNot(contains('Documento')));
+    });
+
+    test('percepciones show their amounts, not a second total', () {
+      final view = documentView(
+        fromSpec('40', 'P001', draftSpec('percepcion')),
+        _company,
+      );
+      expect(view.title, 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICO');
+      expect(view.footer, startsWith('Representación impresa del comprobante'));
+      expect(view.total, isNull);
+      expect(view.totals, contains(('Total cobrado', 'S/ 1203.60')));
+    });
+
+    test('many installments flow across A4 pages', () async {
+      final spec = draftSpec('boleta_credito');
+      spec['forma_pago'] = {
+        'tipo': 'Credito',
+        'total': '1180.00',
+        'cuotas': [
+          for (var i = 0; i < 80; i++)
+            {'importe': '14.75', 'fecha_pago': '2027-01-01'},
+        ],
+      };
+      final pdf = await pdfTemplates.first.render(
+        documentView(fromSpec('03', 'B001', spec), _company),
+        await loadPdfTheme(),
+      );
+      expect(String.fromCharCodes(pdf.take(4)), '%PDF');
+    });
   });
 }

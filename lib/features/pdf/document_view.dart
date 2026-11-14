@@ -4,6 +4,7 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../document/document_service.dart';
+import '../document/document_status.dart';
 import 'amount_words.dart';
 
 /// A line as printed: [precio] and [importe] are `null` on guías
@@ -80,28 +81,40 @@ class DocumentView {
 const consultaUrl =
     'https://ww1.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm';
 
+/// SUNAT's name of each printable document, and its article
 const _titles = {
-  '01': 'FACTURA ELECTRÓNICA',
-  '03': 'BOLETA DE VENTA ELECTRÓNICA',
-  '07': 'NOTA DE CRÉDITO ELECTRÓNICA',
-  '08': 'NOTA DE DÉBITO ELECTRÓNICA',
-  '09': 'GUÍA DE REMISIÓN REMITENTE ELECTRÓNICA',
-  '20': 'COMPROBANTE DE RETENCIÓN ELECTRÓNICA',
-  '40': 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA',
+  '01': ('FACTURA ELECTRÓNICA', 'la'),
+  '03': ('BOLETA DE VENTA ELECTRÓNICA', 'la'),
+  '07': ('NOTA DE CRÉDITO ELECTRÓNICA', 'la'),
+  '08': ('NOTA DE DÉBITO ELECTRÓNICA', 'la'),
+  '09': ('GUÍA DE REMISIÓN ELECTRÓNICA REMITENTE', 'la'),
+  '20': ('COMPROBANTE DE RETENCIÓN ELECTRÓNICO', 'del'),
+  '40': ('COMPROBANTE DE PERCEPCIÓN ELECTRÓNICO', 'del'),
 };
 
-/// Document types with a printed representation; voiding documents have none
-bool hasPrintedView(String tipoComprobante) =>
-    _titles.containsKey(tipoComprobante);
+/// Statuses whose documents can be printed: accepted, or still waiting
+/// for SUNAT (with a banner). Rejected and voided ones aren't valid.
+const _printableStatuses = {
+  DocumentStatus.accepted,
+  DocumentStatus.acceptedWithObservations,
+  DocumentStatus.pendingSend,
+  DocumentStatus.inProgress,
+};
+
+/// Whether [document] has a valid printed representation. Voiding
+/// documents have none; guías need the QR SUNAT returns in their CDR, not
+/// read yet (docs/DESIGN.md §14).
+bool hasPrintedView(Document document) =>
+    _titles.containsKey(document.tipoComprobante) &&
+    document.tipoComprobante != '09' &&
+    _printableStatuses.contains(document.status);
 
 /// The printed view of [document], issued by [company]
 DocumentView documentView(Document document, Company company) {
   final spec =
       (jsonDecode(document.enrichedJson) as Map<String, Object?>)['spec']!
           as Map<String, Object?>;
-  final title = _titles[document.tipoComprobante]!;
-  final serieNumero =
-      '${document.serie}-${document.numero.toString().padLeft(8, '0')}';
+  final (title, article) = _titles[document.tipoComprobante]!;
   final address = [
     company.direccion,
     company.distrito,
@@ -114,9 +127,13 @@ DocumentView documentView(Document document, Company company) {
     _ => _invoice(document, spec),
   };
   final hasAmounts = document.tipoComprobante != '09';
+  final isPerceptionRetention = const {
+    '20',
+    '40',
+  }.contains(document.tipoComprobante);
   return DocumentView(
     title: title,
-    serieNumero: serieNumero,
+    serieNumero: serieNumero(document.serie, document.numero),
     fechaEmision: document.fechaEmision,
     companyName: company.razonSocial,
     companyCommercialName: company.nombreComercial,
@@ -125,7 +142,10 @@ DocumentView documentView(Document document, Company company) {
     header: header,
     lines: lines,
     totals: totals,
-    total: hasAmounts ? formatMoney(document.moneda, document.total) : null,
+    // Percepciones and retenciones show their amount among the totals
+    total: hasAmounts && !isPerceptionRetention
+        ? formatMoney(document.moneda, document.total)
+        : null,
     amountInWords: hasAmounts
         ? 'SON: ${amountInWords(document.total, document.moneda)}'
         : null,
@@ -135,7 +155,7 @@ DocumentView documentView(Document document, Company company) {
         : null,
     pending: !DocumentService.accepted.contains(document.status),
     footer:
-        'Representación impresa de la ${title.toLowerCase()}. '
+        'Representación impresa $article ${title.toLowerCase()}. '
         'Consulte su validez en $consultaUrl',
   );
 }
@@ -167,10 +187,15 @@ String? _address(Map<String, Object?>? party) {
 
 String _unit(Object? code) => Catalogs.unidadesMedida[code] ?? '$code';
 
+/// "01" → "Factura"
+String _tipoName(Object? tipo) => Catalogs.tiposComprobante[tipo] ?? '$tipo';
+
 _Parts _invoice(Document document, Map<String, Object?> spec) {
   final moneda = document.moneda;
   final cliente = spec['cliente']! as Map<String, Object?>;
-  final anonymous = cliente['tipo_documento_identidad'] == '0';
+  final anonymous =
+      cliente['tipo_documento_identidad'] == '0' &&
+      cliente['numero_documento_identidad'] == '-';
   final header = <(String, String)>[
     ('Cliente', '${cliente['nombre']}'),
     if (!anonymous) ('Documento', _identity(cliente)),
@@ -178,11 +203,18 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
     ('Moneda', moneda),
   ];
   final notes = <String>[];
-  if (spec['forma_pago'] case {
-    'tipo': final String tipo,
-    'cuotas': final List cuotas,
-  }) {
-    header.add(('Forma de pago', tipo == 'Credito' ? 'Crédito' : 'Contado'));
+  if (spec['forma_pago'] case {'tipo': final String tipo} && final formaPago) {
+    final credito = tipo == 'Credito';
+    header.addAll([
+      ('Forma de pago', credito ? 'Crédito' : 'Contado'),
+      // R.S. 193-2020: what's still owed, with its installments
+      if (credito)
+        (
+          'Monto pendiente de pago',
+          formatMoney(moneda, roundAmount('${formaPago['total']}')),
+        ),
+    ]);
+    final cuotas = (formaPago['cuotas'] as List?) ?? const [];
     for (final (index, cuota) in cuotas.cast<Map<String, Object?>>().indexed) {
       notes.add(
         'Cuota ${index + 1}: ${formatMoney(moneda, roundAmount('${cuota['importe']}'))}'
@@ -196,7 +228,10 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
         ? Catalogs.tiposNotaCredito
         : Catalogs.tiposNotaDebito;
     header.addAll([
-      ('Documento que modifica', afectado),
+      (
+        'Documento que modifica',
+        '${_tipoName(spec['comprobante_afectado_tipo'])} $afectado',
+      ),
       ('Motivo', motivos[tipoNota] ?? tipoNota),
       ('Sustento', '${spec['descripcion_sustento']}'),
     ]);
@@ -216,7 +251,8 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
           roundAmount(
             addAmounts(
               // The value before taxes (ISC included in the IGV base)
-              '${line['isc_base_imponible'] ?? line['igv_base_imponible'] ?? 0}',
+              // (gratuito lines, not offered yet, would need their own)
+              '${line['isc_base_imponible'] ?? 0}',
               '${line['total_impuestos'] ?? 0}',
             ),
           ),
@@ -232,6 +268,7 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
         ('Op. gravada', totals.gravado),
         ('Op. exonerada', totals.exonerado),
         ('Op. inafecta', totals.inafecto),
+        ('Op. exportación', totals.exportacion),
         ('ISC', totals.isc),
         ('IGV', totals.igv),
         ('ICBPER', totals.icb),
@@ -262,7 +299,7 @@ _Parts _perceptionRetention(Document document, Map<String, Object?> spec) {
     [
       ViewLine(
         cantidad: '1',
-        unidad: 'Factura',
+        unidad: _tipoName(afectado['tipo_comprobante']),
         descripcion:
             '${afectado['serie_numero']} del ${afectado['fecha_emision']}, '
             'total ${money(afectado['importe_total'])}; '
@@ -326,11 +363,14 @@ _Parts _guia(Map<String, Object?> spec) {
           (
             'Conductor',
             '${chofer['nombres']} ${chofer['apellidos']}, '
-                'licencia ${chofer['licencia']}',
+                '${_identity(chofer)}, licencia ${chofer['licencia']}',
           ),
       ],
       for (final document in related)
-        ('Documento relacionado', '${document['numero']}'),
+        (
+          'Documento relacionado',
+          '${_tipoName(document['tipo_documento'])} ${document['numero']}',
+        ),
     ],
     [
       for (final item

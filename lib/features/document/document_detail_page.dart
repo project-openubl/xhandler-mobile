@@ -78,7 +78,7 @@ class DocumentDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(serieNumero(document.serie, document.numero)),
         actions: [
-          if (hasPrintedView(document.tipoComprobante))
+          if (hasPrintedView(document))
             Builder(
               // Its own context anchors the share sheet on iPads
               builder: (buttonContext) => IconButton(

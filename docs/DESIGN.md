@@ -289,8 +289,10 @@ Overflow option: "Emitir sin enviar".
   (legend from xbuilder), forma de pago, detracción/percepción info, SUNAT QR
   (`RUC|TIPO|SERIE|NUMERO|IGV|TOTAL|FECHA|TIPO_DOC_CLIENTE|NUM_DOC_CLIENTE|HASH|`,
   HASH = `digest_value`), "Representación impresa de …", consult URL.
-- GRE uses the QR/link returned by SUNAT for the guía.
-- While `pending_send`/`in_progress`: banner "Pendiente de envío a SUNAT".
+- GRE uses the QR/link returned by SUNAT for the guía (§14: not read yet, so guías
+  aren't printed).
+- While `pending_send`/`in_progress`: banner "Pendiente de confirmación de SUNAT".
+  Rejected, voided and voiding documents aren't printed.
 
 ### 7.1 Templates
 
@@ -429,5 +431,8 @@ One PR per phase, each followed by a senior-engineer review.
 - Notas de crédito type 13 (correcting the amount or cuotas of a factura al crédito) and
   catalog 9 codes 11/12, catalog 10 codes 10/11: xbuilder's `Catalog9`/`Catalog10` stop at
   10/03 and `CreditNote` has no `forma_pago`. Add them upstream, then to the app catalogs.
+- Printed guías: SUNAT returns the guía's QR link in its CDR (`cbc:DocumentDescription`,
+  `…/gre/comprobantes/descargaqr?hashqr=…`); xsender's `CdrMetadata` doesn't read it yet.
+  Until it does, guías can't be shared as PDF (the view model already lays them out).
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).

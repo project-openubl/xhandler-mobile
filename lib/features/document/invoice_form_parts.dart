@@ -478,6 +478,7 @@ class TotalsSection extends StatelessWidget {
       (Strings.opGravada, totals.gravado),
       (Strings.opExonerada, totals.exonerado),
       (Strings.opInafecta, totals.inafecto),
+      (Strings.opExportacion, totals.exportacion),
       (Strings.isc, totals.isc),
       (Strings.igv, totals.igv),
       (Strings.icbper, totals.icb),

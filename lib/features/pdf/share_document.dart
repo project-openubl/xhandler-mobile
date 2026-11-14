@@ -44,6 +44,9 @@ Future<List<DeliveryFile>> deliveryFiles({
   ];
 }
 
+/// A share in progress; a second tap meanwhile does nothing
+bool _sharing = false;
+
 /// Asks the format and shares the document's files with any app
 Future<void> shareDocument(
   BuildContext context,
@@ -67,8 +70,10 @@ Future<void> shareDocument(
       ),
     ),
   );
-  if (template == null || !context.mounted) return;
+  if (template == null || !context.mounted || _sharing) return;
   final box = context.findRenderObject() as RenderBox?;
+  _sharing = true;
+  showMessage(context, Strings.preparingFiles);
   try {
     final company = await ref
         .read(companyRepositoryProvider)
@@ -100,5 +105,7 @@ Future<void> shareDocument(
   } on Object catch (error) {
     debugPrint('Share: $error');
     if (context.mounted) showMessage(context, Strings.unexpectedError);
+  } finally {
+    _sharing = false;
   }
 }
