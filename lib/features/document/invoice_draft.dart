@@ -301,7 +301,7 @@ class NoteDraft implements DocumentDraft {
     required this.sustento,
     required this.customer,
     required this.lines,
-  });
+  }) : assert(tipoComprobante == '07' || tipoComprobante == '08');
 
   @override
   final String tipoComprobante;

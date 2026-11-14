@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:xhandler_mobile/catalogs.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/providers.dart';
 import 'package:xhandler_mobile/features/document/background_outbox.dart';
@@ -328,17 +329,18 @@ void main() {
     });
   });
 
-  testWidgets('a nota de crédito copies the factura and is issued with FC01', (
-    tester,
+  /// A factura SUNAT accepted
+  Future<Document> acceptedFactura(
+    WidgetTester tester,
+    TestData data,
+    DocumentService service,
+    FakeBridge bridge,
   ) async {
-    final data = TestData();
-    final company = await tester.runAsync(data.createCompany);
-    final bridge = FakeBridge();
-    final service = serviceFor(data, bridge);
+    final company = (await tester.runAsync(data.createCompany))!;
     final f001 = await serie(tester, data, 'F001');
-    final factura = (await tester.runAsync(() async {
+    return (await tester.runAsync(() async {
       final id = await service.emit(
-        company: company!,
+        company: company,
         serie: f001,
         draft: const InvoiceDraft(
           tipoComprobante: '01',
@@ -355,6 +357,15 @@ void main() {
       await service.send(id);
       return DocumentRepository(data.database).find(id);
     }))!;
+  }
+
+  testWidgets('a nota de crédito copies the factura and is issued with FC01', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
 
     await pumpPage(
       tester,
@@ -382,6 +393,112 @@ void main() {
       )..where((d) => d.serie.equals('FC01'))).getSingle(),
     ))!;
     expect(note.affectedDocumentId, factura.id);
+    await data.unmount(tester);
+  });
+
+  testWidgets('a whole-invoice nota keeps its lines; others can change', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.database.select(data.database.companies).getSingle(),
+    ))!;
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      NoteFormPage(company, affected: factura, tipoComprobante: '07'),
+    );
+    await pumpUntil(tester, () => shows('FC01-00000001'));
+    // Anulación de la operación: the factura's lines, read-only
+    expect(find.text(Strings.freeLine), findsNothing);
+    expect(find.byTooltip(Strings.delete), findsNothing);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, Strings.sustento),
+      'Pedido duplicado',
+    );
+    await tester.tap(find.text(Catalogs.tiposNotaCredito['01']!));
+    await pumpUntil(tester, () => shows(Catalogs.tiposNotaCredito['07']!));
+    await tester.tap(find.text(Catalogs.tiposNotaCredito['07']!).last);
+    await pumpUntil(tester, () => shows(Strings.freeLine));
+    expect(find.byTooltip(Strings.delete), findsOneWidget);
+    expect(find.text('Pedido duplicado'), findsOneWidget); // kept
+    await data.unmount(tester);
+  });
+
+  testWidgets('a nota de débito needs a line', (tester) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.database.select(data.database.companies).getSingle(),
+    ))!;
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      NoteFormPage(company, affected: factura, tipoComprobante: '08'),
+    );
+    await pumpUntil(tester, () => shows('FD01-00000001'));
+    final emit = find.ancestor(
+      of: find.text(Strings.emit),
+      matching: find.byType(FilledButton),
+    );
+    expect(tester.widget<FilledButton>(emit).onPressed, isNull);
+
+    await addFreeLine(tester, '10');
+    await pumpUntil(
+      tester,
+      () => tester.widget<FilledButton>(emit).onPressed != null,
+    );
+    await data.unmount(tester);
+  });
+
+  testWidgets('a factura is voided from its page', (tester) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      DocumentDetailPage(documentId: factura.id),
+    );
+    await pumpUntil(tester, () => shows(Strings.voidDocument));
+    await tester.tap(find.text(Strings.voidDocument));
+    await pumpUntil(tester, () => shows(Strings.voidTitle));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, Strings.motivo),
+      'Precio errado',
+    );
+    // SUNAT beta answers with a ticket, taken as accepted
+    bridge.responses.add(
+      const SunatResponse(
+        status: SunatStatus.inProgress,
+        ticket: '123',
+        notes: [],
+      ),
+    );
+    await tester.tap(find.text(Strings.voidDocument).last);
+    await pumpUntil(tester, () => shows(DocumentStatus.voided.help));
+    await pumpUntil(
+      tester,
+      () => find.textContaining('Anulado por RA-').evaluate().isNotEmpty,
+      'link',
+    );
+    expect(find.text(Strings.voidDocument), findsNothing);
     await data.unmount(tester);
   });
 

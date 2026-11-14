@@ -309,5 +309,40 @@ void main() {
     );
     final copy = DraftLine.fromJson(line.toJson());
     expect(copy.toJson(), line.toJson());
+
+    const exonerated = DraftLine(
+      descripcion: 'Asesoría',
+      cantidad: '1.5',
+      precio: '200',
+      precioIncluyeIgv: false,
+      igvTipo: '20',
+      unidadMedida: 'ZZ',
+      codigoSunat: '80101500',
+      iscTipo: '01',
+      iscTasa: '12.5',
+    );
+    expect(
+      DraftLine.fromJson(exonerated.toJson()).toJson(),
+      exonerated.toJson(),
+    );
+  });
+
+  test('DraftCustomer.fromJson reads back what toJson wrote', () {
+    const customer = DraftCustomer(
+      tipoDocumentoIdentidad: '6',
+      numeroDocumentoIdentidad: '20100070970',
+      nombre: 'SUPERMERCADOS PERUANOS S.A.',
+      direccion: 'CAL. MORELLI 181',
+      distrito: 'SAN BORJA',
+      provincia: 'LIMA',
+      departamento: 'LIMA',
+      ubigeo: '150130',
+      email: 'compras@example.com',
+    );
+    for (final original in [customer, anonymousCustomer]) {
+      final copy = DraftCustomer.fromJson(original.toJson());
+      expect(copy.toJson(), original.toJson());
+      expect(copy.isAnonymous, original.isAnonymous);
+    }
   });
 }

@@ -11,6 +11,7 @@ import '../customer/customer_form_page.dart';
 import '../customer/customers_page.dart';
 import '../product/products_page.dart';
 import '../../src/rust/api/error.dart';
+import '../series/series_repository.dart';
 import 'document_status.dart';
 import 'document_service.dart';
 import 'invoice_draft.dart';
@@ -327,6 +328,192 @@ class _CuotaDialogState extends State<CuotaDialog> {
           child: const Text(Strings.add),
         ),
       ],
+    );
+  }
+}
+
+/// The serie to issue with, showing the number it will take
+class SerieDropdown extends StatelessWidget {
+  const SerieDropdown({
+    super.key,
+    required this.series,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final List<Serie> series;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: const InputDecoration(labelText: Strings.serie),
+      items: [
+        for (final serie in series)
+          DropdownMenuItem(
+            value: serie.id,
+            child: Text(serieNumero(serie.serie, serie.nextNumber)),
+          ),
+      ],
+      onChanged: onChanged,
+    );
+  }
+}
+
+/// The active series of [tipoComprobante] whose name starts with [prefix]
+List<Serie> activeSeries(
+  List<Serie> series,
+  String tipoComprobante, {
+  String prefix = '',
+}) => [
+  for (final serie in series)
+    if (serie.active &&
+        serie.tipoComprobante == tipoComprobante &&
+        serie.serie.startsWith(prefix))
+      serie,
+];
+
+/// The default serie among [series], or the one the user chose
+String? chosenSerieId(List<Serie> series, String? chosen, String tipo) =>
+    series.any((s) => s.id == chosen) ? chosen : defaultSerie(series, tipo)?.id;
+
+class MissingSerieWarning extends StatelessWidget {
+  const MissingSerieWarning(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(Icons.warning, color: Theme.of(context).colorScheme.error),
+      title: Text(message),
+    );
+  }
+}
+
+/// The lines of a draft; tapping one edits it. Without [onEdit] and
+/// [onRemove] they are read-only.
+class DraftLinesList extends StatelessWidget {
+  const DraftLinesList({
+    super.key,
+    required this.lines,
+    required this.moneda,
+    this.onEdit,
+    this.onRemove,
+  });
+
+  final List<DraftLine> lines;
+  final String moneda;
+  final void Function(int index)? onEdit;
+  final void Function(int index)? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final onEdit = this.onEdit;
+    final onRemove = this.onRemove;
+    return Column(
+      children: [
+        for (final (index, line) in lines.indexed)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(line.descripcion),
+            subtitle: Text(
+              '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
+              '${line.precioIncluyeIgv ? '' : ' + IGV'}',
+            ),
+            onTap: onEdit == null ? null : () => onEdit(index),
+            trailing: onRemove == null
+                ? null
+                : IconButton(
+                    tooltip: Strings.delete,
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => onRemove(index),
+                  ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The totals xbuilder computed, or why it couldn't
+class TotalsSection extends StatelessWidget {
+  const TotalsSection({
+    super.key,
+    required this.totals,
+    required this.error,
+    required this.moneda,
+  });
+
+  final DocumentTotals? totals;
+  final String? error;
+  final String moneda;
+
+  @override
+  Widget build(BuildContext context) {
+    final totals = this.totals;
+    final error = this.error;
+    if (error != null) {
+      return ListTile(
+        leading: Icon(
+          Icons.error_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: Text(error),
+      );
+    }
+    if (totals == null) return const SizedBox.shrink();
+    final rows = [
+      (Strings.opGravada, totals.gravado),
+      (Strings.opExonerada, totals.exonerado),
+      (Strings.opInafecta, totals.inafecto),
+      (Strings.isc, totals.isc),
+      (Strings.igv, totals.igv),
+      (Strings.icbper, totals.icb),
+    ].where((row) => toCents(row.$2) != BigInt.zero);
+    final bold = Theme.of(context).textTheme.titleMedium;
+    return Card(
+      margin: const EdgeInsets.only(top: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            for (final (label, amount) in rows)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [Text(label), Text(formatMoney(moneda, amount))],
+              ),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(Strings.total, style: bold),
+                Text(formatMoney(moneda, totals.total), style: bold),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A warning in the error color, under the totals
+class DraftWarning extends StatelessWidget {
+  const DraftWarning(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Text(
+        message,
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      ),
     );
   }
 }

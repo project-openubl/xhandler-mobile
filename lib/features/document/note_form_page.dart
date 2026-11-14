@@ -11,7 +11,7 @@ import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../series/series_repository.dart';
-import 'document_detail_page.dart';
+import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
@@ -36,6 +36,10 @@ class NoteFormPage extends ConsumerStatefulWidget {
   ConsumerState<NoteFormPage> createState() => _NoteFormPageState();
 }
 
+/// Notas de crédito that take back the whole invoice: annulment, wrong RUC
+/// and full return carry its lines as they were
+const _wholeInvoiceTipos = {'01', '02', '06'};
+
 class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   late final _spec =
       (jsonDecode(widget.affected.inputJson) as Map<String, Object?>)['spec']
@@ -45,28 +49,41 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   );
 
   /// A nota de crédito starts with the invoice's lines, to edit or remove
-  late final _lines = <DraftLine>[
-    if (_isCredito)
-      for (final line in _spec['detalles']! as List)
-        DraftLine.fromJson(line as Map<String, Object?>),
-  ];
-  late String _tipoNota = '01';
+  late final _lines = _isCredito ? _invoiceLines() : <DraftLine>[];
+  String _tipoNota = '01';
   late final _sustento = TextEditingController(text: _tiposNota[_tipoNota]);
+  String? _serieId;
+  Serie? _serie;
   DocumentTotals? _totals;
-  late final _preview = TotalsPreview((totals, _) {
-    if (mounted) setState(() => _totals = totals);
+  String? _previewError;
+  late final _preview = TotalsPreview((totals, error) {
+    if (mounted) {
+      setState(() {
+        _totals = totals;
+        _previewError = error;
+      });
+    }
   });
 
   bool get _isCredito => widget.tipoComprobante == '07';
 
-  Map<String, String> get _tiposNota =>
-      _isCredito ? Catalogs.tiposNotaCredito : Catalogs.tiposNotaDebito;
+  bool get _wholeInvoice =>
+      _isCredito && _wholeInvoiceTipos.contains(_tipoNota);
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _changed());
-  }
+  /// Wrong RUC only happens on facturas
+  Map<String, String> get _tiposNota => _isCredito
+      ? {
+          for (final MapEntry(:key, :value)
+              in Catalogs.tiposNotaCredito.entries)
+            if (key != '02' || widget.affected.tipoComprobante == '01')
+              key: value,
+        }
+      : Catalogs.tiposNotaDebito;
+
+  List<DraftLine> _invoiceLines() => [
+    for (final line in _spec['detalles']! as List)
+      DraftLine.fromJson(line as Map<String, Object?>),
+  ];
 
   @override
   void dispose() {
@@ -74,14 +91,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     _sustento.dispose();
     super.dispose();
   }
-
-  /// Series of the note type with the affected invoice's letter
-  Serie? get _serie => defaultSerie(
-    (ref.read(seriesProvider(widget.company.id)).value ?? const []).where(
-      (s) => s.serie.startsWith(widget.affected.serie[0]),
-    ),
-    widget.tipoComprobante,
-  );
 
   NoteDraft? get _draft {
     final sustento = _sustento.text.trim();
@@ -109,6 +118,20 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     );
   }
 
+  void _changeTipo(String tipo) {
+    // A sustento the user wrote is kept
+    if (_sustento.text == _tiposNota[_tipoNota]) {
+      _sustento.text = _tiposNota[tipo]!;
+    }
+    _tipoNota = tipo;
+    if (_wholeInvoice) {
+      _lines
+        ..clear()
+        ..addAll(_invoiceLines());
+    }
+    _changed();
+  }
+
   Future<void> _editLine({int? index}) async {
     final line = await showDialog<DraftLine>(
       context: context,
@@ -130,38 +153,45 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     final draft = _draft;
     final serie = _serie;
     if (draft == null || serie == null) return;
-    final issued = await issueDocument(
+    await issueAndShowResult(
       context,
       ref,
       company: widget.company,
       serie: serie,
       draft: draft,
     );
-    if (issued == null || !mounted) return;
-    final view = await showModalBottomSheet<bool>(
-      context: context,
-      builder: (_) => EmitResultSheet(status: issued.status),
-    );
-    if (!mounted) return;
-    final navigator = Navigator.of(context);
-    if (view ?? false) {
-      navigator.pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => DocumentDetailPage(documentId: issued.id),
-        ),
-      );
-    } else {
-      navigator.pop();
-    }
+  }
+
+  /// A nota de crédito over what's left to credit of the invoice
+  String? get _warning {
+    final total = _totals?.total;
+    if (!_isCredito || total == null) return null;
+    final related =
+        ref.watch(relatedDocumentsProvider(widget.affected.id)).value ??
+        const [];
+    return creditedCents(related) + toCents(total) >
+            toCents(widget.affected.total)
+        ? draftProblemMessage(DraftProblem.noteExceedsInvoice)
+        : null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final series = ref.watch(seriesProvider(widget.company.id)).value;
-    final serie = _serie;
+    // The first preview waits for the series
+    ref.listen(seriesProvider(widget.company.id), (_, _) => _changed());
+    final seriesValue = ref.watch(seriesProvider(widget.company.id)).value;
+    final letter = widget.affected.serie.substring(0, 1);
+    final series = activeSeries(
+      seriesValue ?? const [],
+      widget.tipoComprobante,
+      prefix: letter,
+    );
+    _serieId = chosenSerieId(series, _serieId, widget.tipoComprobante);
+    _serie = series.where((s) => s.id == _serieId).firstOrNull;
     final moneda = widget.affected.moneda;
     final title = _isCredito ? Strings.notaCredito : Strings.notaDebito;
-    final totals = _totals;
+    final warning = _warning;
+    final editable = !_wholeInvoice;
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -178,27 +208,27 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
               ),
             ),
             subtitle: Text(_customer.nombre),
-            trailing: Text(
-              serie == null ? '' : serieNumero(serie.serie, serie.nextNumber),
-            ),
           ),
-          if (series != null && serie == null)
-            ListTile(
-              leading: Icon(
-                Icons.warning,
-                color: Theme.of(context).colorScheme.error,
+          if (seriesValue != null && series.isEmpty)
+            MissingSerieWarning(
+              Strings.noNoteSerie(
+                title.toLowerCase(),
+                '$letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
               ),
-              title: Text(Strings.noSerie(title.toLowerCase())),
             ),
+          SerieDropdown(
+            series: series,
+            value: _serie?.id,
+            onChanged: (id) {
+              _serieId = id;
+              _changed();
+            },
+          ),
           CatalogDropdown(
             label: Strings.tipoNota,
             value: _tipoNota,
             options: _tiposNota,
-            onChanged: (tipo) {
-              _tipoNota = tipo!;
-              _sustento.text = _tiposNota[tipo]!;
-              _changed();
-            },
+            onChanged: (tipo) => _changeTipo(tipo!),
           ),
           TextField(
             controller: _sustento,
@@ -206,43 +236,32 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             onChanged: (_) => _changed(),
           ),
           const FormSection(Strings.lines),
-          for (final (index, line) in _lines.indexed)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(line.descripcion),
-              subtitle: Text(
-                '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
-                '${line.precioIncluyeIgv ? '' : ' + IGV'}',
-              ),
-              onTap: () => _editLine(index: index),
-              trailing: IconButton(
-                tooltip: Strings.delete,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () {
-                  _lines.removeAt(index);
-                  _changed();
-                },
-              ),
-            ),
-          OutlinedButton.icon(
-            onPressed: _editLine,
-            icon: const Icon(Icons.edit_note),
-            label: const Text(Strings.freeLine),
+          DraftLinesList(
+            lines: _lines,
+            moneda: moneda,
+            onEdit: editable ? (index) => _editLine(index: index) : null,
+            onRemove: editable
+                ? (index) {
+                    _lines.removeAt(index);
+                    _changed();
+                  }
+                : null,
           ),
-          if (totals != null)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.total),
-              trailing: Text(
-                formatMoney(moneda, totals.total),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+          if (editable)
+            OutlinedButton.icon(
+              onPressed: _editLine,
+              icon: const Icon(Icons.edit_note),
+              label: const Text(Strings.freeLine),
             ),
+          TotalsSection(totals: _totals, error: _previewError, moneda: moneda),
+          if (warning != null) DraftWarning(warning),
           const SizedBox(height: 24),
           SaveButton(
             label: Strings.emit,
             filled: true,
-            onPressed: _draft == null || serie == null ? null : _emit,
+            onPressed: _draft == null || _serie == null || warning != null
+                ? null
+                : _emit,
           ),
         ],
       ),

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -12,7 +10,6 @@ import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../series/series_repository.dart';
-import 'document_detail_page.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
@@ -104,29 +101,13 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final draft = _draft;
     final serie = _serie;
     if (draft == null || serie == null) return;
-    final issued = await issueDocument(
+    await issueAndShowResult(
       context,
       ref,
       company: widget.company,
       serie: serie,
       draft: draft,
     );
-    if (issued == null || !mounted) return;
-    final view = await showModalBottomSheet<bool>(
-      context: context,
-      builder: (_) => EmitResultSheet(status: issued.status),
-    );
-    if (!mounted) return;
-    final navigator = Navigator.of(context);
-    if (view ?? false) {
-      navigator.pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => DocumentDetailPage(documentId: issued.id),
-        ),
-      );
-    } else {
-      navigator.pop();
-    }
   }
 
   Future<void> _pickCustomer() async {
@@ -205,10 +186,11 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   @override
   Widget build(BuildContext context) {
     final seriesValue = ref.watch(seriesProvider(widget.company.id)).value;
-    final series = (seriesValue ?? const <Serie>[])
-        .where((s) => s.tipoComprobante == widget.tipoComprobante && s.active)
-        .toList();
-    _serieId ??= defaultSerie(series, widget.tipoComprobante)?.id;
+    final series = activeSeries(
+      seriesValue ?? const [],
+      widget.tipoComprobante,
+    );
+    _serieId = chosenSerieId(series, _serieId, widget.tipoComprobante);
     _serie = series.where((s) => s.id == _serieId).firstOrNull;
     final customer = _customer;
     final totals = _totals;
@@ -224,26 +206,13 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
           if (widget.company.sunatEnvironment == SunatEnvironment.beta)
             const TestModeBanner(),
           if (seriesValue != null && series.isEmpty)
-            ListTile(
-              leading: Icon(
-                Icons.warning,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(Strings.noSerie(title.toLowerCase())),
-            ),
+            MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
           Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _serie?.id,
-                  decoration: const InputDecoration(labelText: Strings.serie),
-                  items: [
-                    for (final serie in series)
-                      DropdownMenuItem(
-                        value: serie.id,
-                        child: Text(serieNumero(serie.serie, serie.nextNumber)),
-                      ),
-                  ],
+                child: SerieDropdown(
+                  series: series,
+                  value: _serie?.id,
                   onChanged: (id) {
                     _serieId = id;
                     _changed();
@@ -269,24 +238,15 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
             onTap: _pickCustomer,
           ),
           const FormSection(Strings.lines),
-          for (final (index, line) in _lines.indexed)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(line.descripcion),
-              subtitle: Text(
-                '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
-                '${line.precioIncluyeIgv ? '' : ' + IGV'}',
-              ),
-              onTap: () => _editLine(index: index),
-              trailing: IconButton(
-                tooltip: Strings.delete,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () {
-                  _lines.removeAt(index);
-                  _changed();
-                },
-              ),
-            ),
+          DraftLinesList(
+            lines: _lines,
+            moneda: moneda,
+            onEdit: (index) => _editLine(index: index),
+            onRemove: (index) {
+              _lines.removeAt(index);
+              _changed();
+            },
+          ),
           Wrap(
             spacing: 8,
             children: [
@@ -332,24 +292,8 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
               label: const Text(Strings.addCuota),
             ),
           ],
-          if (_previewError != null)
-            ListTile(
-              leading: Icon(
-                Icons.error_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(_previewError!),
-            )
-          else if (totals != null)
-            _TotalsCard(totals, moneda: moneda),
-          if (warning != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                warning,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
+          TotalsSection(totals: totals, error: _previewError, moneda: moneda),
+          if (warning != null) DraftWarning(warning),
           const SizedBox(height: 24),
           SaveButton(
             label: Strings.emit,
@@ -359,49 +303,6 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                 : _emit,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TotalsCard extends StatelessWidget {
-  const _TotalsCard(this.totals, {required this.moneda});
-
-  final DocumentTotals totals;
-  final String moneda;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = [
-      (Strings.opGravada, totals.gravado),
-      (Strings.opExonerada, totals.exonerado),
-      (Strings.opInafecta, totals.inafecto),
-      (Strings.isc, totals.isc),
-      (Strings.igv, totals.igv),
-      (Strings.icbper, totals.icb),
-    ].where((row) => toCents(row.$2) != BigInt.zero);
-    final bold = Theme.of(context).textTheme.titleMedium;
-    return Card(
-      margin: const EdgeInsets.only(top: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            for (final (label, amount) in rows)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text(label), Text(formatMoney(moneda, amount))],
-              ),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(Strings.total, style: bold),
-                Text(formatMoney(moneda, totals.total), style: bold),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

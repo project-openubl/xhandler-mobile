@@ -41,6 +41,13 @@ enum DraftProblem {
   /// Notas of facturas use F series, notas of boletas B series
   noteSerieMismatch,
 
+  /// Notas modify facturas and boletas accepted by SUNAT, in the same
+  /// environment
+  invalidAffectedDocument,
+
+  /// Notas de crédito can't credit more than the invoice's total
+  noteExceedsInvoice,
+
   /// Only accepted facturas, boletas and notas can be voided
   notVoidable,
 
@@ -102,6 +109,17 @@ bool exceedsAnonymousLimit(
   String moneda,
   String total,
 ) => customer.isAnonymous && moneda == 'PEN' && toCents(total) > toCents('700');
+
+/// What the notas de crédito among [related] (the documents that modify
+/// an invoice) credit, unless SUNAT rejected or voided them
+BigInt creditedCents(Iterable<Document> related) => related
+    .where(
+      (d) =>
+          d.tipoComprobante == '07' &&
+          d.status != DocumentStatus.rejected &&
+          d.status != DocumentStatus.voided,
+    )
+    .fold(BigInt.zero, (sum, d) => sum + toCents(d.total));
 
 /// SUNAT's public demo certificate, used in test mode without a certificate
 Future<Uint8List> loadDemoCertificate() async =>
@@ -201,9 +219,7 @@ class DocumentService {
         draft.customer.tipoDocumentoIdentidad != '6') {
       throw const InvalidDraftError(DraftProblem.facturaWithoutRuc);
     }
-    if (draft is NoteDraft && serie.serie[0] != draft.affected.serie[0]) {
-      throw const InvalidDraftError(DraftProblem.noteSerieMismatch);
-    }
+    if (draft is NoteDraft) _checkAffected(draft, company, serie);
     final secrets = await _secureStore.readCompanySecrets(company.id);
     final (certificate, password) = await _certificate(company, secrets);
     final deviceId = await _db.deviceId();
@@ -247,6 +263,14 @@ class DocumentService {
       final spec = (jsonDecode(built.enrichedJson) as Map)['spec'] as Map;
       final total = roundAmount('${(spec['total_importe'] as Map)['importe']}');
       _checkTotals(draft, total, fechaEmision);
+      if (draft is NoteDraft && draft.tipoComprobante == '07') {
+        final credited = creditedCents(
+          await _documents.related(draft.affected.id),
+        );
+        if (credited + toCents(total) > toCents(draft.affected.total)) {
+          throw const InvalidDraftError(DraftProblem.noteExceedsInvoice);
+        }
+      }
       final signed = await _bridge.sign(built.xml, certificate, password);
 
       final document = await _store(
@@ -444,6 +468,19 @@ class DocumentService {
       null,
       serieNumero(voiding.serie, voiding.numero),
     );
+  }
+
+  static void _checkAffected(NoteDraft draft, Company company, Serie serie) {
+    final affected = draft.affected;
+    if (!const {'01', '03'}.contains(affected.tipoComprobante) ||
+        !accepted.contains(affected.status) ||
+        affected.companyId != company.id ||
+        affected.environment != company.sunatEnvironment) {
+      throw const InvalidDraftError(DraftProblem.invalidAffectedDocument);
+    }
+    if (!serie.serie.startsWith(affected.serie.substring(0, 1))) {
+      throw const InvalidDraftError(DraftProblem.noteSerieMismatch);
+    }
   }
 
   void _checkTotals(DocumentDraft draft, String total, String fechaEmision) {

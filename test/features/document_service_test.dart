@@ -704,6 +704,71 @@ void main() {
       database.series,
     )..where((s) => s.serie.equals(serie))).getSingle();
 
+    NoteDraft credit(Document affected) => NoteDraft(
+      tipoComprobante: '07',
+      affected: affected,
+      tipoNota: '07',
+      sustento: 'Devolución',
+      customer: _draft.customer,
+      lines: _draft.lines,
+    );
+
+    Matcher problem(DraftProblem problem) => throwsA(
+      isA<InvalidDraftError>().having((e) => e.problem, 'problem', problem),
+    );
+
+    test('notas de crédito credit at most the invoice total', () async {
+      final factura = await acceptedFactura();
+      final fc01 = await serieNamed('FC01');
+      // The fake bridge totals 118, the factura's whole total
+      final first = await service.emit(
+        company: company,
+        serie: fc01,
+        draft: credit(factura),
+      );
+      await expectLater(
+        service.emit(company: company, serie: fc01, draft: credit(factura)),
+        problem(DraftProblem.noteExceedsInvoice),
+      );
+
+      // A rejected nota credits nothing
+      await (database.update(
+        database.documents,
+      )..where((d) => d.id.equals(first))).write(
+        const DocumentsCompanion(status: Value(DocumentStatus.rejected)),
+      );
+      await service.emit(company: company, serie: fc01, draft: credit(factura));
+    });
+
+    test('notas modify accepted invoices of the same environment', () async {
+      final pending = await document(await emit());
+      final fc01 = await serieNamed('FC01');
+      await expectLater(
+        service.emit(company: company, serie: fc01, draft: credit(pending)),
+        problem(DraftProblem.invalidAffectedDocument),
+      );
+
+      final factura = await acceptedFactura();
+      await expectLater(
+        service.emit(
+          company: company.copyWith(
+            sunatEnvironment: SunatEnvironment.production,
+          ),
+          serie: fc01,
+          draft: credit(factura),
+        ),
+        problem(DraftProblem.invalidAffectedDocument),
+      );
+      await expectLater(
+        service.emit(
+          company: company,
+          serie: await serieNamed('BC01'),
+          draft: credit(factura),
+        ),
+        problem(DraftProblem.noteSerieMismatch),
+      );
+    });
+
     test('a nota de crédito points to the invoice it modifies', () async {
       final factura = await acceptedFactura();
       final note = await service.emit(

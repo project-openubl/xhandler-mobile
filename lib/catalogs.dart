@@ -68,7 +68,9 @@ abstract final class Catalogs {
     'A': 15,
   };
 
-  /// Catalog 9, why a nota de crédito is issued
+  /// Catalog 9, why a nota de crédito is issued; the codes xbuilder
+  /// supports (13, correcting the cuotas of a factura, isn't yet:
+  /// docs/DESIGN.md §14)
   static const tiposNotaCredito = {
     '01': 'Anulación de la operación',
     '02': 'Anulación por error en el RUC',
@@ -82,7 +84,7 @@ abstract final class Catalogs {
     '10': 'Otros conceptos',
   };
 
-  /// Catalog 10, why a nota de débito is issued
+  /// Catalog 10, why a nota de débito is issued; the codes xbuilder supports
   static const tiposNotaDebito = {
     '01': 'Intereses por mora',
     '02': 'Aumento en el valor',

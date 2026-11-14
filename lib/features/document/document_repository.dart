@@ -34,14 +34,16 @@ class DocumentRepository {
       (_db.select(_db.documents)..where((d) => d.id.equals(id))).watchSingle();
 
   /// Notas, comunicaciones de baja and resúmenes of a document
-  Stream<List<Document>> watchRelated(String documentId) {
-    final query = _db.select(_db.documents)
-      ..where(
-        (d) => d.affectedDocumentId.equals(documentId) & d.deletedAt.isNull(),
-      )
-      ..orderBy([(d) => OrderingTerm(expression: d.createdAt)]);
-    return query.watch();
-  }
+  Stream<List<Document>> watchRelated(String documentId) =>
+      _related(documentId).watch();
+
+  Future<List<Document>> related(String documentId) =>
+      _related(documentId).get();
+
+  SimpleSelectStatement<$DocumentsTable, Document> _related(String id) =>
+      _db.select(_db.documents)
+        ..where((d) => d.affectedDocumentId.equals(id) & d.deletedAt.isNull())
+        ..orderBy([(d) => OrderingTerm(expression: d.createdAt)]);
 
   Future<Document> find(String id) =>
       (_db.select(_db.documents)..where((d) => d.id.equals(id))).getSingle();

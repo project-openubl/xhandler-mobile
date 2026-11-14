@@ -134,6 +134,10 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
     'Las cuotas deben sumar el total y vencer después de hoy.',
   DraftProblem.noteSerieMismatch =>
     'Las notas de facturas usan series F y las de boletas, series B.',
+  DraftProblem.invalidAffectedDocument =>
+    'Las notas modifican facturas y boletas aceptadas por SUNAT.',
+  DraftProblem.noteExceedsInvoice =>
+    'Las notas de crédito no pueden sumar más que el comprobante.',
   DraftProblem.notVoidable =>
     'Solo se anulan facturas, boletas y notas aceptadas por SUNAT.',
   DraftProblem.voidingTooLate =>

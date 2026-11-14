@@ -9,6 +9,7 @@ import '../../notifications.dart';
 import '../../src/rust/api/error.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import 'document_detail_page.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'invoice_draft.dart';
@@ -52,6 +53,42 @@ Future<({String id, DocumentStatus status})?> issueDocument(
     );
   }
   return (id: id, status: status);
+}
+
+/// Issues [draft], shows what happened, and then opens the document or
+/// closes the form
+Future<void> issueAndShowResult(
+  BuildContext context,
+  WidgetRef ref, {
+  required Company company,
+  required Serie serie,
+  required DocumentDraft draft,
+}) async {
+  final issued = await issueDocument(
+    context,
+    ref,
+    company: company,
+    serie: serie,
+    draft: draft,
+  );
+  if (issued == null || !context.mounted) return;
+  final view = await showModalBottomSheet<bool>(
+    context: context,
+    builder: (_) => EmitResultSheet(status: issued.status),
+  );
+  if (!context.mounted) return;
+  final navigator = Navigator.of(context);
+  if (view ?? false) {
+    unawaited(
+      navigator.pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => DocumentDetailPage(documentId: issued.id),
+        ),
+      ),
+    );
+  } else {
+    navigator.pop();
+  }
 }
 
 /// What happened right after issuing: the document's status and next steps.

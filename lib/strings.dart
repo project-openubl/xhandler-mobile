@@ -230,6 +230,8 @@ abstract final class Strings {
   static const sustento = 'Sustento';
   static String affectedDocument(String serieNumero) => 'Modifica $serieNumero';
   static const notes = 'Notas';
+  static String noNoteSerie(String tipo, String prefix) =>
+      'No tienes una serie activa $prefix.. de $tipo. Créala en Empresa → Series.';
 
   // Voiding
   static const voidDocument = 'Anular';

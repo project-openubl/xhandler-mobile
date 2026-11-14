@@ -410,5 +410,8 @@ One PR per phase, each followed by a senior-engineer review.
   terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, with two
   implementations: the commercial provider (default, company token) and `searchpe`
   (OpenUBL, padrón reducido, company-provided URL). Results are cached in `customer`.
+- Notas de crédito type 13 (correcting the amount or cuotas of a factura al crédito) and
+  catalog 9 codes 11/12, catalog 10 codes 10/11: xbuilder's `Catalog9`/`Catalog10` stop at
+  10/03 and `CreditNote` has no `forma_pago`. Add them upstream, then to the app catalogs.
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).
