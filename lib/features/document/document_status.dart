@@ -118,6 +118,11 @@ String? localCodeMessage(String? code) => switch (code) {
   LocalCodes.noCredentials =>
     'Faltan las credenciales SOL de la empresa (Empresa → Credenciales).',
   LocalCodes.error => 'Error de la aplicación al enviar.',
+  LocalCodes.noGreCredentials =>
+    'Faltan las credenciales de la API de guías (Empresa → Credenciales).',
+  LocalCodes.betaGuia =>
+    'Modo prueba: SUNAT no tiene ambiente de pruebas para guías; se firmó '
+        'pero no se envió.',
   LocalCodes.betaTicket =>
     'SUNAT recibió la anulación. En modo prueba se da por aceptada: '
         'SUNAT beta no permite consultar su respuesta.',
@@ -131,6 +136,10 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.facturaWithoutRuc => 'Las facturas son para clientes con RUC.',
   DraftProblem.customerWithoutRuc =>
     'Las percepciones y retenciones son para empresas con RUC.',
+  DraftProblem.missingAddresses => 'Indica el punto de partida y de llegada.',
+  DraftProblem.missingTransport =>
+    'Indica el vehículo y el conductor, o el transportista con RUC.',
+  DraftProblem.missingMotivo => 'Describe el motivo del traslado.',
   DraftProblem.operacionOverTotal =>
     'El importe debe ser mayor que cero y no superar el total de la factura.',
   DraftProblem.anonymousOver700 =>

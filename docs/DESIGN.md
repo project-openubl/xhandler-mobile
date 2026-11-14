@@ -207,6 +207,12 @@ Rules:
   reversión (RR), up to 7 days after issue. An invoice with live notas is voided after
   them. Rejections meaning SUNAT already has the voiding (2223, 2323, 2324, 2987) keep
   the document `voiding` instead of accepting it again.
+- Guías de remisión remitente (09): transporte propio (vehicle + driver, or an M1/L
+  car with SUNAT's indicator) or by a carrier; vehicles, drivers and addresses are
+  saved as they are first used. A guía started from a factura/boleta carries its goods
+  and references it (catalog 61). SUNAT has no beta for guías, so in test mode they
+  are signed but not sent (local code `BETA_GUIA`); production needs the GRE API
+  credentials (`NO_GRE_CREDENTIALS` otherwise).
 - Percepciones (40) and retenciones (20) cover one collection or payment of one factura,
   in soles; the app computes the amounts (catalog 22: 2 %, 1 %, 0.5 %; catalog 23: 3 %),
   rounding half up to cents. SUNAT

@@ -6741,6 +6741,1683 @@ class DeviceSettingsCompanion extends UpdateCompanion<DeviceSetting> {
   }
 }
 
+class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VehiclesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES companies (id)',
+    ),
+  );
+  static const VerificationMeta _placaMeta = const VerificationMeta('placa');
+  @override
+  late final GeneratedColumn<String> placa = GeneratedColumn<String>(
+    'placa',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numeroCirculacionMeta = const VerificationMeta(
+    'numeroCirculacion',
+  );
+  @override
+  late final GeneratedColumn<String> numeroCirculacion =
+      GeneratedColumn<String>(
+        'numero_circulacion',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    placa,
+    numeroCirculacion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vehicles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Vehicle> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('placa')) {
+      context.handle(
+        _placaMeta,
+        placa.isAcceptableOrUnknown(data['placa']!, _placaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_placaMeta);
+    }
+    if (data.containsKey('numero_circulacion')) {
+      context.handle(
+        _numeroCirculacionMeta,
+        numeroCirculacion.isAcceptableOrUnknown(
+          data['numero_circulacion']!,
+          _numeroCirculacionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Vehicle map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Vehicle(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      placa: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}placa'],
+      )!,
+      numeroCirculacion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero_circulacion'],
+      ),
+    );
+  }
+
+  @override
+  $VehiclesTable createAlias(String alias) {
+    return $VehiclesTable(attachedDatabase, alias);
+  }
+}
+
+class Vehicle extends DataClass implements Insertable<Vehicle> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String companyId;
+
+  /// Uppercase, without dashes or spaces, e.g. "ABC123"
+  final String placa;
+
+  /// Tarjeta única de circulación or certificado de habilitación
+  final String? numeroCirculacion;
+  const Vehicle({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.companyId,
+    required this.placa,
+    this.numeroCirculacion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['company_id'] = Variable<String>(companyId);
+    map['placa'] = Variable<String>(placa);
+    if (!nullToAbsent || numeroCirculacion != null) {
+      map['numero_circulacion'] = Variable<String>(numeroCirculacion);
+    }
+    return map;
+  }
+
+  VehiclesCompanion toCompanion(bool nullToAbsent) {
+    return VehiclesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      companyId: Value(companyId),
+      placa: Value(placa),
+      numeroCirculacion: numeroCirculacion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numeroCirculacion),
+    );
+  }
+
+  factory Vehicle.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Vehicle(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      placa: serializer.fromJson<String>(json['placa']),
+      numeroCirculacion: serializer.fromJson<String?>(
+        json['numeroCirculacion'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'companyId': serializer.toJson<String>(companyId),
+      'placa': serializer.toJson<String>(placa),
+      'numeroCirculacion': serializer.toJson<String?>(numeroCirculacion),
+    };
+  }
+
+  Vehicle copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? companyId,
+    String? placa,
+    Value<String?> numeroCirculacion = const Value.absent(),
+  }) => Vehicle(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    companyId: companyId ?? this.companyId,
+    placa: placa ?? this.placa,
+    numeroCirculacion: numeroCirculacion.present
+        ? numeroCirculacion.value
+        : this.numeroCirculacion,
+  );
+  Vehicle copyWithCompanion(VehiclesCompanion data) {
+    return Vehicle(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      placa: data.placa.present ? data.placa.value : this.placa,
+      numeroCirculacion: data.numeroCirculacion.present
+          ? data.numeroCirculacion.value
+          : this.numeroCirculacion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Vehicle(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('placa: $placa, ')
+          ..write('numeroCirculacion: $numeroCirculacion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    placa,
+    numeroCirculacion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Vehicle &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.companyId == this.companyId &&
+          other.placa == this.placa &&
+          other.numeroCirculacion == this.numeroCirculacion);
+}
+
+class VehiclesCompanion extends UpdateCompanion<Vehicle> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> companyId;
+  final Value<String> placa;
+  final Value<String?> numeroCirculacion;
+  final Value<int> rowid;
+  const VehiclesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.placa = const Value.absent(),
+    this.numeroCirculacion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VehiclesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String companyId,
+    required String placa,
+    this.numeroCirculacion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : companyId = Value(companyId),
+       placa = Value(placa);
+  static Insertable<Vehicle> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? companyId,
+    Expression<String>? placa,
+    Expression<String>? numeroCirculacion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (companyId != null) 'company_id': companyId,
+      if (placa != null) 'placa': placa,
+      if (numeroCirculacion != null) 'numero_circulacion': numeroCirculacion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VehiclesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? companyId,
+    Value<String>? placa,
+    Value<String?>? numeroCirculacion,
+    Value<int>? rowid,
+  }) {
+    return VehiclesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      companyId: companyId ?? this.companyId,
+      placa: placa ?? this.placa,
+      numeroCirculacion: numeroCirculacion ?? this.numeroCirculacion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (placa.present) {
+      map['placa'] = Variable<String>(placa.value);
+    }
+    if (numeroCirculacion.present) {
+      map['numero_circulacion'] = Variable<String>(numeroCirculacion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehiclesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('placa: $placa, ')
+          ..write('numeroCirculacion: $numeroCirculacion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DriversTable extends Drivers with TableInfo<$DriversTable, Driver> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DriversTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES companies (id)',
+    ),
+  );
+  static const VerificationMeta _tipoDocumentoIdentidadMeta =
+      const VerificationMeta('tipoDocumentoIdentidad');
+  @override
+  late final GeneratedColumn<String> tipoDocumentoIdentidad =
+      GeneratedColumn<String>(
+        'tipo_documento_identidad',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _numeroDocumentoIdentidadMeta =
+      const VerificationMeta('numeroDocumentoIdentidad');
+  @override
+  late final GeneratedColumn<String> numeroDocumentoIdentidad =
+      GeneratedColumn<String>(
+        'numero_documento_identidad',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _nombresMeta = const VerificationMeta(
+    'nombres',
+  );
+  @override
+  late final GeneratedColumn<String> nombres = GeneratedColumn<String>(
+    'nombres',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _apellidosMeta = const VerificationMeta(
+    'apellidos',
+  );
+  @override
+  late final GeneratedColumn<String> apellidos = GeneratedColumn<String>(
+    'apellidos',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _licenciaMeta = const VerificationMeta(
+    'licencia',
+  );
+  @override
+  late final GeneratedColumn<String> licencia = GeneratedColumn<String>(
+    'licencia',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    tipoDocumentoIdentidad,
+    numeroDocumentoIdentidad,
+    nombres,
+    apellidos,
+    licencia,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'drivers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Driver> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('tipo_documento_identidad')) {
+      context.handle(
+        _tipoDocumentoIdentidadMeta,
+        tipoDocumentoIdentidad.isAcceptableOrUnknown(
+          data['tipo_documento_identidad']!,
+          _tipoDocumentoIdentidadMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoDocumentoIdentidadMeta);
+    }
+    if (data.containsKey('numero_documento_identidad')) {
+      context.handle(
+        _numeroDocumentoIdentidadMeta,
+        numeroDocumentoIdentidad.isAcceptableOrUnknown(
+          data['numero_documento_identidad']!,
+          _numeroDocumentoIdentidadMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_numeroDocumentoIdentidadMeta);
+    }
+    if (data.containsKey('nombres')) {
+      context.handle(
+        _nombresMeta,
+        nombres.isAcceptableOrUnknown(data['nombres']!, _nombresMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nombresMeta);
+    }
+    if (data.containsKey('apellidos')) {
+      context.handle(
+        _apellidosMeta,
+        apellidos.isAcceptableOrUnknown(data['apellidos']!, _apellidosMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_apellidosMeta);
+    }
+    if (data.containsKey('licencia')) {
+      context.handle(
+        _licenciaMeta,
+        licencia.isAcceptableOrUnknown(data['licencia']!, _licenciaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_licenciaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Driver map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Driver(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      tipoDocumentoIdentidad: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_documento_identidad'],
+      )!,
+      numeroDocumentoIdentidad: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}numero_documento_identidad'],
+      )!,
+      nombres: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombres'],
+      )!,
+      apellidos: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}apellidos'],
+      )!,
+      licencia: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}licencia'],
+      )!,
+    );
+  }
+
+  @override
+  $DriversTable createAlias(String alias) {
+    return $DriversTable(attachedDatabase, alias);
+  }
+}
+
+class Driver extends DataClass implements Insertable<Driver> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String companyId;
+
+  /// Catalog 6, usually "1" DNI
+  final String tipoDocumentoIdentidad;
+  final String numeroDocumentoIdentidad;
+  final String nombres;
+  final String apellidos;
+  final String licencia;
+  const Driver({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.companyId,
+    required this.tipoDocumentoIdentidad,
+    required this.numeroDocumentoIdentidad,
+    required this.nombres,
+    required this.apellidos,
+    required this.licencia,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['company_id'] = Variable<String>(companyId);
+    map['tipo_documento_identidad'] = Variable<String>(tipoDocumentoIdentidad);
+    map['numero_documento_identidad'] = Variable<String>(
+      numeroDocumentoIdentidad,
+    );
+    map['nombres'] = Variable<String>(nombres);
+    map['apellidos'] = Variable<String>(apellidos);
+    map['licencia'] = Variable<String>(licencia);
+    return map;
+  }
+
+  DriversCompanion toCompanion(bool nullToAbsent) {
+    return DriversCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      companyId: Value(companyId),
+      tipoDocumentoIdentidad: Value(tipoDocumentoIdentidad),
+      numeroDocumentoIdentidad: Value(numeroDocumentoIdentidad),
+      nombres: Value(nombres),
+      apellidos: Value(apellidos),
+      licencia: Value(licencia),
+    );
+  }
+
+  factory Driver.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Driver(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      tipoDocumentoIdentidad: serializer.fromJson<String>(
+        json['tipoDocumentoIdentidad'],
+      ),
+      numeroDocumentoIdentidad: serializer.fromJson<String>(
+        json['numeroDocumentoIdentidad'],
+      ),
+      nombres: serializer.fromJson<String>(json['nombres']),
+      apellidos: serializer.fromJson<String>(json['apellidos']),
+      licencia: serializer.fromJson<String>(json['licencia']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'companyId': serializer.toJson<String>(companyId),
+      'tipoDocumentoIdentidad': serializer.toJson<String>(
+        tipoDocumentoIdentidad,
+      ),
+      'numeroDocumentoIdentidad': serializer.toJson<String>(
+        numeroDocumentoIdentidad,
+      ),
+      'nombres': serializer.toJson<String>(nombres),
+      'apellidos': serializer.toJson<String>(apellidos),
+      'licencia': serializer.toJson<String>(licencia),
+    };
+  }
+
+  Driver copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? companyId,
+    String? tipoDocumentoIdentidad,
+    String? numeroDocumentoIdentidad,
+    String? nombres,
+    String? apellidos,
+    String? licencia,
+  }) => Driver(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    companyId: companyId ?? this.companyId,
+    tipoDocumentoIdentidad:
+        tipoDocumentoIdentidad ?? this.tipoDocumentoIdentidad,
+    numeroDocumentoIdentidad:
+        numeroDocumentoIdentidad ?? this.numeroDocumentoIdentidad,
+    nombres: nombres ?? this.nombres,
+    apellidos: apellidos ?? this.apellidos,
+    licencia: licencia ?? this.licencia,
+  );
+  Driver copyWithCompanion(DriversCompanion data) {
+    return Driver(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      tipoDocumentoIdentidad: data.tipoDocumentoIdentidad.present
+          ? data.tipoDocumentoIdentidad.value
+          : this.tipoDocumentoIdentidad,
+      numeroDocumentoIdentidad: data.numeroDocumentoIdentidad.present
+          ? data.numeroDocumentoIdentidad.value
+          : this.numeroDocumentoIdentidad,
+      nombres: data.nombres.present ? data.nombres.value : this.nombres,
+      apellidos: data.apellidos.present ? data.apellidos.value : this.apellidos,
+      licencia: data.licencia.present ? data.licencia.value : this.licencia,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Driver(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('tipoDocumentoIdentidad: $tipoDocumentoIdentidad, ')
+          ..write('numeroDocumentoIdentidad: $numeroDocumentoIdentidad, ')
+          ..write('nombres: $nombres, ')
+          ..write('apellidos: $apellidos, ')
+          ..write('licencia: $licencia')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    tipoDocumentoIdentidad,
+    numeroDocumentoIdentidad,
+    nombres,
+    apellidos,
+    licencia,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Driver &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.companyId == this.companyId &&
+          other.tipoDocumentoIdentidad == this.tipoDocumentoIdentidad &&
+          other.numeroDocumentoIdentidad == this.numeroDocumentoIdentidad &&
+          other.nombres == this.nombres &&
+          other.apellidos == this.apellidos &&
+          other.licencia == this.licencia);
+}
+
+class DriversCompanion extends UpdateCompanion<Driver> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> companyId;
+  final Value<String> tipoDocumentoIdentidad;
+  final Value<String> numeroDocumentoIdentidad;
+  final Value<String> nombres;
+  final Value<String> apellidos;
+  final Value<String> licencia;
+  final Value<int> rowid;
+  const DriversCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.tipoDocumentoIdentidad = const Value.absent(),
+    this.numeroDocumentoIdentidad = const Value.absent(),
+    this.nombres = const Value.absent(),
+    this.apellidos = const Value.absent(),
+    this.licencia = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DriversCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String companyId,
+    required String tipoDocumentoIdentidad,
+    required String numeroDocumentoIdentidad,
+    required String nombres,
+    required String apellidos,
+    required String licencia,
+    this.rowid = const Value.absent(),
+  }) : companyId = Value(companyId),
+       tipoDocumentoIdentidad = Value(tipoDocumentoIdentidad),
+       numeroDocumentoIdentidad = Value(numeroDocumentoIdentidad),
+       nombres = Value(nombres),
+       apellidos = Value(apellidos),
+       licencia = Value(licencia);
+  static Insertable<Driver> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? companyId,
+    Expression<String>? tipoDocumentoIdentidad,
+    Expression<String>? numeroDocumentoIdentidad,
+    Expression<String>? nombres,
+    Expression<String>? apellidos,
+    Expression<String>? licencia,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (companyId != null) 'company_id': companyId,
+      if (tipoDocumentoIdentidad != null)
+        'tipo_documento_identidad': tipoDocumentoIdentidad,
+      if (numeroDocumentoIdentidad != null)
+        'numero_documento_identidad': numeroDocumentoIdentidad,
+      if (nombres != null) 'nombres': nombres,
+      if (apellidos != null) 'apellidos': apellidos,
+      if (licencia != null) 'licencia': licencia,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DriversCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? companyId,
+    Value<String>? tipoDocumentoIdentidad,
+    Value<String>? numeroDocumentoIdentidad,
+    Value<String>? nombres,
+    Value<String>? apellidos,
+    Value<String>? licencia,
+    Value<int>? rowid,
+  }) {
+    return DriversCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      companyId: companyId ?? this.companyId,
+      tipoDocumentoIdentidad:
+          tipoDocumentoIdentidad ?? this.tipoDocumentoIdentidad,
+      numeroDocumentoIdentidad:
+          numeroDocumentoIdentidad ?? this.numeroDocumentoIdentidad,
+      nombres: nombres ?? this.nombres,
+      apellidos: apellidos ?? this.apellidos,
+      licencia: licencia ?? this.licencia,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (tipoDocumentoIdentidad.present) {
+      map['tipo_documento_identidad'] = Variable<String>(
+        tipoDocumentoIdentidad.value,
+      );
+    }
+    if (numeroDocumentoIdentidad.present) {
+      map['numero_documento_identidad'] = Variable<String>(
+        numeroDocumentoIdentidad.value,
+      );
+    }
+    if (nombres.present) {
+      map['nombres'] = Variable<String>(nombres.value);
+    }
+    if (apellidos.present) {
+      map['apellidos'] = Variable<String>(apellidos.value);
+    }
+    if (licencia.present) {
+      map['licencia'] = Variable<String>(licencia.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DriversCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('tipoDocumentoIdentidad: $tipoDocumentoIdentidad, ')
+          ..write('numeroDocumentoIdentidad: $numeroDocumentoIdentidad, ')
+          ..write('nombres: $nombres, ')
+          ..write('apellidos: $apellidos, ')
+          ..write('licencia: $licencia, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AddressesTable extends Addresses
+    with TableInfo<$AddressesTable, Address> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AddressesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES companies (id)',
+    ),
+  );
+  static const VerificationMeta _nombreMeta = const VerificationMeta('nombre');
+  @override
+  late final GeneratedColumn<String> nombre = GeneratedColumn<String>(
+    'nombre',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ubigeoMeta = const VerificationMeta('ubigeo');
+  @override
+  late final GeneratedColumn<String> ubigeo = GeneratedColumn<String>(
+    'ubigeo',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _direccionMeta = const VerificationMeta(
+    'direccion',
+  );
+  @override
+  late final GeneratedColumn<String> direccion = GeneratedColumn<String>(
+    'direccion',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codigoLocalMeta = const VerificationMeta(
+    'codigoLocal',
+  );
+  @override
+  late final GeneratedColumn<String> codigoLocal = GeneratedColumn<String>(
+    'codigo_local',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    nombre,
+    ubigeo,
+    direccion,
+    codigoLocal,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'addresses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Address> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('nombre')) {
+      context.handle(
+        _nombreMeta,
+        nombre.isAcceptableOrUnknown(data['nombre']!, _nombreMeta),
+      );
+    }
+    if (data.containsKey('ubigeo')) {
+      context.handle(
+        _ubigeoMeta,
+        ubigeo.isAcceptableOrUnknown(data['ubigeo']!, _ubigeoMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ubigeoMeta);
+    }
+    if (data.containsKey('direccion')) {
+      context.handle(
+        _direccionMeta,
+        direccion.isAcceptableOrUnknown(data['direccion']!, _direccionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_direccionMeta);
+    }
+    if (data.containsKey('codigo_local')) {
+      context.handle(
+        _codigoLocalMeta,
+        codigoLocal.isAcceptableOrUnknown(
+          data['codigo_local']!,
+          _codigoLocalMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Address map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Address(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      nombre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre'],
+      ),
+      ubigeo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ubigeo'],
+      )!,
+      direccion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}direccion'],
+      )!,
+      codigoLocal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}codigo_local'],
+      ),
+    );
+  }
+
+  @override
+  $AddressesTable createAlias(String alias) {
+    return $AddressesTable(attachedDatabase, alias);
+  }
+}
+
+class Address extends DataClass implements Insertable<Address> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String companyId;
+
+  /// What the user calls it, e.g. "Almacén Ate"
+  final String? nombre;
+  final String ubigeo;
+  final String direccion;
+
+  /// SUNAT's code of the establishment, for transfers between the
+  /// company's own (motivo 04)
+  final String? codigoLocal;
+  const Address({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.companyId,
+    this.nombre,
+    required this.ubigeo,
+    required this.direccion,
+    this.codigoLocal,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['company_id'] = Variable<String>(companyId);
+    if (!nullToAbsent || nombre != null) {
+      map['nombre'] = Variable<String>(nombre);
+    }
+    map['ubigeo'] = Variable<String>(ubigeo);
+    map['direccion'] = Variable<String>(direccion);
+    if (!nullToAbsent || codigoLocal != null) {
+      map['codigo_local'] = Variable<String>(codigoLocal);
+    }
+    return map;
+  }
+
+  AddressesCompanion toCompanion(bool nullToAbsent) {
+    return AddressesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      companyId: Value(companyId),
+      nombre: nombre == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nombre),
+      ubigeo: Value(ubigeo),
+      direccion: Value(direccion),
+      codigoLocal: codigoLocal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(codigoLocal),
+    );
+  }
+
+  factory Address.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Address(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      nombre: serializer.fromJson<String?>(json['nombre']),
+      ubigeo: serializer.fromJson<String>(json['ubigeo']),
+      direccion: serializer.fromJson<String>(json['direccion']),
+      codigoLocal: serializer.fromJson<String?>(json['codigoLocal']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'companyId': serializer.toJson<String>(companyId),
+      'nombre': serializer.toJson<String?>(nombre),
+      'ubigeo': serializer.toJson<String>(ubigeo),
+      'direccion': serializer.toJson<String>(direccion),
+      'codigoLocal': serializer.toJson<String?>(codigoLocal),
+    };
+  }
+
+  Address copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? companyId,
+    Value<String?> nombre = const Value.absent(),
+    String? ubigeo,
+    String? direccion,
+    Value<String?> codigoLocal = const Value.absent(),
+  }) => Address(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    companyId: companyId ?? this.companyId,
+    nombre: nombre.present ? nombre.value : this.nombre,
+    ubigeo: ubigeo ?? this.ubigeo,
+    direccion: direccion ?? this.direccion,
+    codigoLocal: codigoLocal.present ? codigoLocal.value : this.codigoLocal,
+  );
+  Address copyWithCompanion(AddressesCompanion data) {
+    return Address(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      nombre: data.nombre.present ? data.nombre.value : this.nombre,
+      ubigeo: data.ubigeo.present ? data.ubigeo.value : this.ubigeo,
+      direccion: data.direccion.present ? data.direccion.value : this.direccion,
+      codigoLocal: data.codigoLocal.present
+          ? data.codigoLocal.value
+          : this.codigoLocal,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Address(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('nombre: $nombre, ')
+          ..write('ubigeo: $ubigeo, ')
+          ..write('direccion: $direccion, ')
+          ..write('codigoLocal: $codigoLocal')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    nombre,
+    ubigeo,
+    direccion,
+    codigoLocal,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Address &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.companyId == this.companyId &&
+          other.nombre == this.nombre &&
+          other.ubigeo == this.ubigeo &&
+          other.direccion == this.direccion &&
+          other.codigoLocal == this.codigoLocal);
+}
+
+class AddressesCompanion extends UpdateCompanion<Address> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> companyId;
+  final Value<String?> nombre;
+  final Value<String> ubigeo;
+  final Value<String> direccion;
+  final Value<String?> codigoLocal;
+  final Value<int> rowid;
+  const AddressesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.nombre = const Value.absent(),
+    this.ubigeo = const Value.absent(),
+    this.direccion = const Value.absent(),
+    this.codigoLocal = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AddressesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String companyId,
+    this.nombre = const Value.absent(),
+    required String ubigeo,
+    required String direccion,
+    this.codigoLocal = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : companyId = Value(companyId),
+       ubigeo = Value(ubigeo),
+       direccion = Value(direccion);
+  static Insertable<Address> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? companyId,
+    Expression<String>? nombre,
+    Expression<String>? ubigeo,
+    Expression<String>? direccion,
+    Expression<String>? codigoLocal,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (companyId != null) 'company_id': companyId,
+      if (nombre != null) 'nombre': nombre,
+      if (ubigeo != null) 'ubigeo': ubigeo,
+      if (direccion != null) 'direccion': direccion,
+      if (codigoLocal != null) 'codigo_local': codigoLocal,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AddressesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? companyId,
+    Value<String?>? nombre,
+    Value<String>? ubigeo,
+    Value<String>? direccion,
+    Value<String?>? codigoLocal,
+    Value<int>? rowid,
+  }) {
+    return AddressesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      companyId: companyId ?? this.companyId,
+      nombre: nombre ?? this.nombre,
+      ubigeo: ubigeo ?? this.ubigeo,
+      direccion: direccion ?? this.direccion,
+      codigoLocal: codigoLocal ?? this.codigoLocal,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (nombre.present) {
+      map['nombre'] = Variable<String>(nombre.value);
+    }
+    if (ubigeo.present) {
+      map['ubigeo'] = Variable<String>(ubigeo.value);
+    }
+    if (direccion.present) {
+      map['direccion'] = Variable<String>(direccion.value);
+    }
+    if (codigoLocal.present) {
+      map['codigo_local'] = Variable<String>(codigoLocal.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AddressesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('nombre: $nombre, ')
+          ..write('ubigeo: $ubigeo, ')
+          ..write('direccion: $direccion, ')
+          ..write('codigoLocal: $codigoLocal, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6752,6 +8429,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DocumentFilesTable documentFiles = $DocumentFilesTable(this);
   late final $DocumentEventsTable documentEvents = $DocumentEventsTable(this);
   late final $DeviceSettingsTable deviceSettings = $DeviceSettingsTable(this);
+  late final $VehiclesTable vehicles = $VehiclesTable(this);
+  late final $DriversTable drivers = $DriversTable(this);
+  late final $AddressesTable addresses = $AddressesTable(this);
   late final Index companiesRuc = Index(
     'companies_ruc',
     'CREATE UNIQUE INDEX companies_ruc ON companies (ruc) WHERE deleted_at IS NULL',
@@ -6789,6 +8469,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     documentFiles,
     documentEvents,
     deviceSettings,
+    vehicles,
+    drivers,
+    addresses,
     companiesRuc,
     customersDocument,
     documentsNumber,
@@ -6929,6 +8612,62 @@ final class $$CompaniesTableReferences
     ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_documentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$VehiclesTable, List<Vehicle>> _vehiclesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.vehicles,
+    aliasName: 'companies__id__vehicles__company_id',
+  );
+
+  $$VehiclesTableProcessedTableManager get vehiclesRefs {
+    final manager = $$VehiclesTableTableManager(
+      $_db,
+      $_db.vehicles,
+    ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vehiclesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DriversTable, List<Driver>> _driversRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.drivers,
+    aliasName: 'companies__id__drivers__company_id',
+  );
+
+  $$DriversTableProcessedTableManager get driversRefs {
+    final manager = $$DriversTableTableManager(
+      $_db,
+      $_db.drivers,
+    ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_driversRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AddressesTable, List<Address>>
+  _addressesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.addresses,
+    aliasName: 'companies__id__addresses__company_id',
+  );
+
+  $$AddressesTableProcessedTableManager get addressesRefs {
+    final manager = $$AddressesTableTableManager(
+      $_db,
+      $_db.addresses,
+    ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_addressesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -7157,6 +8896,81 @@ class $$CompaniesTableFilterComposer
           }) => $$DocumentsTableFilterComposer(
             $db: $db,
             $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> vehiclesRefs(
+    Expression<bool> Function($$VehiclesTableFilterComposer f) f,
+  ) {
+    final $$VehiclesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vehicles,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VehiclesTableFilterComposer(
+            $db: $db,
+            $table: $db.vehicles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> driversRefs(
+    Expression<bool> Function($$DriversTableFilterComposer f) f,
+  ) {
+    final $$DriversTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.drivers,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DriversTableFilterComposer(
+            $db: $db,
+            $table: $db.drivers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> addressesRefs(
+    Expression<bool> Function($$AddressesTableFilterComposer f) f,
+  ) {
+    final $$AddressesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.addresses,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AddressesTableFilterComposer(
+            $db: $db,
+            $table: $db.addresses,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7499,6 +9313,81 @@ class $$CompaniesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> vehiclesRefs<T extends Object>(
+    Expression<T> Function($$VehiclesTableAnnotationComposer a) f,
+  ) {
+    final $$VehiclesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.vehicles,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VehiclesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vehicles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> driversRefs<T extends Object>(
+    Expression<T> Function($$DriversTableAnnotationComposer a) f,
+  ) {
+    final $$DriversTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.drivers,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DriversTableAnnotationComposer(
+            $db: $db,
+            $table: $db.drivers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> addressesRefs<T extends Object>(
+    Expression<T> Function($$AddressesTableAnnotationComposer a) f,
+  ) {
+    final $$AddressesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.addresses,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AddressesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.addresses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CompaniesTableTableManager
@@ -7519,6 +9408,9 @@ class $$CompaniesTableTableManager
             bool customersRefs,
             bool productsRefs,
             bool documentsRefs,
+            bool vehiclesRefs,
+            bool driversRefs,
+            bool addressesRefs,
           })
         > {
   $$CompaniesTableTableManager(_$AppDatabase db, $CompaniesTable table)
@@ -7654,6 +9546,9 @@ class $$CompaniesTableTableManager
                 customersRefs = false,
                 productsRefs = false,
                 documentsRefs = false,
+                vehiclesRefs = false,
+                driversRefs = false,
+                addressesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -7662,6 +9557,9 @@ class $$CompaniesTableTableManager
                     if (customersRefs) db.customers,
                     if (productsRefs) db.products,
                     if (documentsRefs) db.documents,
+                    if (vehiclesRefs) db.vehicles,
+                    if (driversRefs) db.drivers,
+                    if (addressesRefs) db.addresses,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -7746,6 +9644,66 @@ class $$CompaniesTableTableManager
                           referencedColumn: 'company_id',
                           typedResults: items,
                         ),
+                      if (vehiclesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Company,
+                          $CompaniesTable,
+                          Vehicle,
+                          $VehiclesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CompaniesTableReferences
+                              ._vehiclesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CompaniesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).vehiclesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'company_id',
+                          typedResults: items,
+                        ),
+                      if (driversRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Company,
+                          $CompaniesTable,
+                          Driver,
+                          $DriversTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CompaniesTableReferences
+                              ._driversRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CompaniesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).driversRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'company_id',
+                          typedResults: items,
+                        ),
+                      if (addressesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Company,
+                          $CompaniesTable,
+                          Address,
+                          $AddressesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CompaniesTableReferences
+                              ._addressesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CompaniesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).addressesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'company_id',
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -7771,6 +9729,9 @@ typedef $$CompaniesTableProcessedTableManager =
         bool customersRefs,
         bool productsRefs,
         bool documentsRefs,
+        bool vehiclesRefs,
+        bool driversRefs,
+        bool addressesRefs,
       })
     >;
 typedef $$SeriesTableCreateCompanionBuilder = SeriesCompanion Function({
@@ -11313,6 +13274,1162 @@ typedef $$DeviceSettingsTableProcessedTableManager =
       DeviceSetting,
       PrefetchHooks Function()
     >;
+typedef $$VehiclesTableCreateCompanionBuilder = VehiclesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  required String companyId,
+  required String placa,
+  Value<String?> numeroCirculacion,
+  Value<int> rowid,
+});
+typedef $$VehiclesTableUpdateCompanionBuilder = VehiclesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> companyId,
+  Value<String> placa,
+  Value<String?> numeroCirculacion,
+  Value<int> rowid,
+});
+
+final class $$VehiclesTableReferences
+    extends BaseReferences<_$AppDatabase, $VehiclesTable, Vehicle> {
+  $$VehiclesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CompaniesTable _companyIdTable(_$AppDatabase db) =>
+      db.companies.createAlias('vehicles__company_id__companies__id');
+
+  $$CompaniesTableProcessedTableManager get companyId {
+    final $_column = $_itemColumn<String>('company_id')!;
+
+    final manager = $$CompaniesTableTableManager(
+      $_db,
+      $_db.companies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_companyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$VehiclesTableFilterComposer
+    extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get placa => $composableBuilder(
+    column: $table.placa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numeroCirculacion => $composableBuilder(
+    column: $table.numeroCirculacion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CompaniesTableFilterComposer get companyId {
+    final $$CompaniesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableFilterComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VehiclesTableOrderingComposer
+    extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get placa => $composableBuilder(
+    column: $table.placa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numeroCirculacion => $composableBuilder(
+    column: $table.numeroCirculacion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CompaniesTableOrderingComposer get companyId {
+    final $$CompaniesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableOrderingComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VehiclesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get placa =>
+      $composableBuilder(column: $table.placa, builder: (column) => column);
+
+  GeneratedColumn<String> get numeroCirculacion => $composableBuilder(
+    column: $table.numeroCirculacion,
+    builder: (column) => column,
+  );
+
+  $$CompaniesTableAnnotationComposer get companyId {
+    final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$VehiclesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VehiclesTable,
+          Vehicle,
+          $$VehiclesTableFilterComposer,
+          $$VehiclesTableOrderingComposer,
+          $$VehiclesTableAnnotationComposer,
+          $$VehiclesTableCreateCompanionBuilder,
+          $$VehiclesTableUpdateCompanionBuilder,
+          (Vehicle, $$VehiclesTableReferences),
+          Vehicle,
+          PrefetchHooks Function({bool companyId})
+        > {
+  $$VehiclesTableTableManager(_$AppDatabase db, $VehiclesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VehiclesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VehiclesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VehiclesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String> placa = const Value.absent(),
+                Value<String?> numeroCirculacion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VehiclesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                placa: placa,
+                numeroCirculacion: numeroCirculacion,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String companyId,
+                required String placa,
+                Value<String?> numeroCirculacion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VehiclesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                placa: placa,
+                numeroCirculacion: numeroCirculacion,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VehiclesTable, Vehicle>(table),
+                  $$VehiclesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({companyId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (companyId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.companyId,
+                        referencedTable: $$VehiclesTableReferences
+                            ._companyIdTable(db),
+                        referencedColumn: $$VehiclesTableReferences
+                            ._companyIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$VehiclesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VehiclesTable,
+      Vehicle,
+      $$VehiclesTableFilterComposer,
+      $$VehiclesTableOrderingComposer,
+      $$VehiclesTableAnnotationComposer,
+      $$VehiclesTableCreateCompanionBuilder,
+      $$VehiclesTableUpdateCompanionBuilder,
+      (Vehicle, $$VehiclesTableReferences),
+      Vehicle,
+      PrefetchHooks Function({bool companyId})
+    >;
+typedef $$DriversTableCreateCompanionBuilder = DriversCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  required String companyId,
+  required String tipoDocumentoIdentidad,
+  required String numeroDocumentoIdentidad,
+  required String nombres,
+  required String apellidos,
+  required String licencia,
+  Value<int> rowid,
+});
+typedef $$DriversTableUpdateCompanionBuilder = DriversCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> companyId,
+  Value<String> tipoDocumentoIdentidad,
+  Value<String> numeroDocumentoIdentidad,
+  Value<String> nombres,
+  Value<String> apellidos,
+  Value<String> licencia,
+  Value<int> rowid,
+});
+
+final class $$DriversTableReferences
+    extends BaseReferences<_$AppDatabase, $DriversTable, Driver> {
+  $$DriversTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CompaniesTable _companyIdTable(_$AppDatabase db) =>
+      db.companies.createAlias('drivers__company_id__companies__id');
+
+  $$CompaniesTableProcessedTableManager get companyId {
+    final $_column = $_itemColumn<String>('company_id')!;
+
+    final manager = $$CompaniesTableTableManager(
+      $_db,
+      $_db.companies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_companyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DriversTableFilterComposer
+    extends Composer<_$AppDatabase, $DriversTable> {
+  $$DriversTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipoDocumentoIdentidad => $composableBuilder(
+    column: $table.tipoDocumentoIdentidad,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numeroDocumentoIdentidad => $composableBuilder(
+    column: $table.numeroDocumentoIdentidad,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombres => $composableBuilder(
+    column: $table.nombres,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get apellidos => $composableBuilder(
+    column: $table.apellidos,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get licencia => $composableBuilder(
+    column: $table.licencia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CompaniesTableFilterComposer get companyId {
+    final $$CompaniesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableFilterComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DriversTableOrderingComposer
+    extends Composer<_$AppDatabase, $DriversTable> {
+  $$DriversTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipoDocumentoIdentidad => $composableBuilder(
+    column: $table.tipoDocumentoIdentidad,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numeroDocumentoIdentidad => $composableBuilder(
+    column: $table.numeroDocumentoIdentidad,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombres => $composableBuilder(
+    column: $table.nombres,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get apellidos => $composableBuilder(
+    column: $table.apellidos,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get licencia => $composableBuilder(
+    column: $table.licencia,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CompaniesTableOrderingComposer get companyId {
+    final $$CompaniesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableOrderingComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DriversTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DriversTable> {
+  $$DriversTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get tipoDocumentoIdentidad => $composableBuilder(
+    column: $table.tipoDocumentoIdentidad,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get numeroDocumentoIdentidad => $composableBuilder(
+    column: $table.numeroDocumentoIdentidad,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get nombres =>
+      $composableBuilder(column: $table.nombres, builder: (column) => column);
+
+  GeneratedColumn<String> get apellidos =>
+      $composableBuilder(column: $table.apellidos, builder: (column) => column);
+
+  GeneratedColumn<String> get licencia =>
+      $composableBuilder(column: $table.licencia, builder: (column) => column);
+
+  $$CompaniesTableAnnotationComposer get companyId {
+    final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DriversTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DriversTable,
+          Driver,
+          $$DriversTableFilterComposer,
+          $$DriversTableOrderingComposer,
+          $$DriversTableAnnotationComposer,
+          $$DriversTableCreateCompanionBuilder,
+          $$DriversTableUpdateCompanionBuilder,
+          (Driver, $$DriversTableReferences),
+          Driver,
+          PrefetchHooks Function({bool companyId})
+        > {
+  $$DriversTableTableManager(_$AppDatabase db, $DriversTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DriversTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DriversTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DriversTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String> tipoDocumentoIdentidad = const Value.absent(),
+                Value<String> numeroDocumentoIdentidad = const Value.absent(),
+                Value<String> nombres = const Value.absent(),
+                Value<String> apellidos = const Value.absent(),
+                Value<String> licencia = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DriversCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                tipoDocumentoIdentidad: tipoDocumentoIdentidad,
+                numeroDocumentoIdentidad: numeroDocumentoIdentidad,
+                nombres: nombres,
+                apellidos: apellidos,
+                licencia: licencia,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String companyId,
+                required String tipoDocumentoIdentidad,
+                required String numeroDocumentoIdentidad,
+                required String nombres,
+                required String apellidos,
+                required String licencia,
+                Value<int> rowid = const Value.absent(),
+              }) => DriversCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                tipoDocumentoIdentidad: tipoDocumentoIdentidad,
+                numeroDocumentoIdentidad: numeroDocumentoIdentidad,
+                nombres: nombres,
+                apellidos: apellidos,
+                licencia: licencia,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DriversTable, Driver>(table),
+                  $$DriversTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({companyId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (companyId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.companyId,
+                        referencedTable: $$DriversTableReferences
+                            ._companyIdTable(db),
+                        referencedColumn: $$DriversTableReferences
+                            ._companyIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DriversTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DriversTable,
+      Driver,
+      $$DriversTableFilterComposer,
+      $$DriversTableOrderingComposer,
+      $$DriversTableAnnotationComposer,
+      $$DriversTableCreateCompanionBuilder,
+      $$DriversTableUpdateCompanionBuilder,
+      (Driver, $$DriversTableReferences),
+      Driver,
+      PrefetchHooks Function({bool companyId})
+    >;
+typedef $$AddressesTableCreateCompanionBuilder = AddressesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  required String companyId,
+  Value<String?> nombre,
+  required String ubigeo,
+  required String direccion,
+  Value<String?> codigoLocal,
+  Value<int> rowid,
+});
+typedef $$AddressesTableUpdateCompanionBuilder = AddressesCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> companyId,
+  Value<String?> nombre,
+  Value<String> ubigeo,
+  Value<String> direccion,
+  Value<String?> codigoLocal,
+  Value<int> rowid,
+});
+
+final class $$AddressesTableReferences
+    extends BaseReferences<_$AppDatabase, $AddressesTable, Address> {
+  $$AddressesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CompaniesTable _companyIdTable(_$AppDatabase db) =>
+      db.companies.createAlias('addresses__company_id__companies__id');
+
+  $$CompaniesTableProcessedTableManager get companyId {
+    final $_column = $_itemColumn<String>('company_id')!;
+
+    final manager = $$CompaniesTableTableManager(
+      $_db,
+      $_db.companies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_companyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AddressesTableFilterComposer
+    extends Composer<_$AppDatabase, $AddressesTable> {
+  $$AddressesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ubigeo => $composableBuilder(
+    column: $table.ubigeo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get direccion => $composableBuilder(
+    column: $table.direccion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get codigoLocal => $composableBuilder(
+    column: $table.codigoLocal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CompaniesTableFilterComposer get companyId {
+    final $$CompaniesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableFilterComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AddressesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AddressesTable> {
+  $$AddressesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ubigeo => $composableBuilder(
+    column: $table.ubigeo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direccion => $composableBuilder(
+    column: $table.direccion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get codigoLocal => $composableBuilder(
+    column: $table.codigoLocal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CompaniesTableOrderingComposer get companyId {
+    final $$CompaniesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableOrderingComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AddressesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AddressesTable> {
+  $$AddressesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get nombre =>
+      $composableBuilder(column: $table.nombre, builder: (column) => column);
+
+  GeneratedColumn<String> get ubigeo =>
+      $composableBuilder(column: $table.ubigeo, builder: (column) => column);
+
+  GeneratedColumn<String> get direccion =>
+      $composableBuilder(column: $table.direccion, builder: (column) => column);
+
+  GeneratedColumn<String> get codigoLocal => $composableBuilder(
+    column: $table.codigoLocal,
+    builder: (column) => column,
+  );
+
+  $$CompaniesTableAnnotationComposer get companyId {
+    final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AddressesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AddressesTable,
+          Address,
+          $$AddressesTableFilterComposer,
+          $$AddressesTableOrderingComposer,
+          $$AddressesTableAnnotationComposer,
+          $$AddressesTableCreateCompanionBuilder,
+          $$AddressesTableUpdateCompanionBuilder,
+          (Address, $$AddressesTableReferences),
+          Address,
+          PrefetchHooks Function({bool companyId})
+        > {
+  $$AddressesTableTableManager(_$AppDatabase db, $AddressesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AddressesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AddressesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AddressesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String?> nombre = const Value.absent(),
+                Value<String> ubigeo = const Value.absent(),
+                Value<String> direccion = const Value.absent(),
+                Value<String?> codigoLocal = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AddressesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                nombre: nombre,
+                ubigeo: ubigeo,
+                direccion: direccion,
+                codigoLocal: codigoLocal,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String companyId,
+                Value<String?> nombre = const Value.absent(),
+                required String ubigeo,
+                required String direccion,
+                Value<String?> codigoLocal = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AddressesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                nombre: nombre,
+                ubigeo: ubigeo,
+                direccion: direccion,
+                codigoLocal: codigoLocal,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AddressesTable, Address>(table),
+                  $$AddressesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({companyId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (companyId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.companyId,
+                        referencedTable: $$AddressesTableReferences
+                            ._companyIdTable(db),
+                        referencedColumn: $$AddressesTableReferences
+                            ._companyIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AddressesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AddressesTable,
+      Address,
+      $$AddressesTableFilterComposer,
+      $$AddressesTableOrderingComposer,
+      $$AddressesTableAnnotationComposer,
+      $$AddressesTableCreateCompanionBuilder,
+      $$AddressesTableUpdateCompanionBuilder,
+      (Address, $$AddressesTableReferences),
+      Address,
+      PrefetchHooks Function({bool companyId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11333,4 +14450,10 @@ class $AppDatabaseManager {
       $$DocumentEventsTableTableManager(_db, _db.documentEvents);
   $$DeviceSettingsTableTableManager get deviceSettings =>
       $$DeviceSettingsTableTableManager(_db, _db.deviceSettings);
+  $$VehiclesTableTableManager get vehicles =>
+      $$VehiclesTableTableManager(_db, _db.vehicles);
+  $$DriversTableTableManager get drivers =>
+      $$DriversTableTableManager(_db, _db.drivers);
+  $$AddressesTableTableManager get addresses =>
+      $$AddressesTableTableManager(_db, _db.addresses);
 }

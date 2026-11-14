@@ -10,6 +10,7 @@ import '../fake_bridge.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/company/company_repository.dart';
+import 'package:xhandler_mobile/features/despatch/despatch_advice_draft.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
@@ -579,6 +580,77 @@ void main() {
         );
       }
       expect(await database.select(database.documents).get(), isEmpty);
+    });
+  });
+
+  group('guías de remisión', () {
+    const point = (
+      ubigeo: '150101',
+      direccion: 'AV. ABANCAY 123',
+      codigoLocal: null,
+    );
+    DespatchAdviceDraft guia({bool vehiculoM1L = true}) => DespatchAdviceDraft(
+      customer: _rucCustomer,
+      lines: _draft.lines,
+      motivo: '01',
+      fechaTraslado: peruToday(),
+      pesoTotal: '2',
+      modalidad: ModalidadTraslado.privado,
+      vehiculoM1L: vehiculoM1L,
+      partida: point,
+      llegada: point,
+    );
+
+    Future<Serie> t001() => (database.select(
+      database.series,
+    )..where((s) => s.serie.equals('T001'))).getSingle();
+
+    test('in test mode they are signed, not sent', () async {
+      final id = await service.emit(
+        company: company,
+        serie: await t001(),
+        draft: guia(),
+      );
+
+      expect(await service.send(id), DocumentStatus.accepted);
+      expect((await document(id)).sunatCode, LocalCodes.betaGuia);
+      expect((await document(id)).total, '0.00');
+      expect(bridge.calls, isEmpty);
+    });
+
+    test('production needs the GRE credentials', () async {
+      await SecureStore().writeCompanySecrets(company.id, {
+        CompanySecret.certificate: base64Encode([1]),
+        CompanySecret.solUsername: '20123456789USUARIO',
+        CompanySecret.solPassword: 'clave',
+      });
+      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
+      final id = await service.emit(
+        company: company,
+        serie: await t001(),
+        draft: guia(),
+      );
+
+      expect(await service.send(id), DocumentStatus.exception);
+      expect((await document(id)).sunatCode, LocalCodes.noGreCredentials);
+      expect(bridge.calls, isEmpty);
+    });
+
+    test('need the vehicle and driver, or a car', () async {
+      await expectLater(
+        service.emit(
+          company: company,
+          serie: await t001(),
+          draft: guia(vehiculoM1L: false),
+        ),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.missingTransport,
+          ),
+        ),
+      );
     });
   });
 

@@ -8,6 +8,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/catalogs.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/providers.dart';
+import 'package:xhandler_mobile/features/despatch/despatch_advice_form_page.dart';
 import 'package:xhandler_mobile/features/document/background_outbox.dart';
 import 'package:xhandler_mobile/features/document/document_detail_page.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
@@ -558,6 +559,79 @@ void main() {
     ))!;
     expect(retention.serie, 'R001');
     expect(retention.total, '15.02');
+    await data.unmount(tester);
+  });
+
+  testWidgets('a guía carries the goods of its factura', (tester) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      DocumentDetailPage(documentId: factura.id),
+    );
+    await pumpUntil(tester, () => shows(Strings.guia));
+    await tester.tap(find.text(Strings.guia));
+    await pumpUntil(tester, () => shows('T001-00000001'));
+    Finder inForm(String text) => find.descendant(
+      of: find.byType(DespatchAdviceFormPage),
+      matching: find.text(text),
+    );
+    expect(inForm('Café'), findsOneWidget); // from the factura
+    expect(inForm('SUPERMERCADOS PERUANOS'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, Strings.pesoTotal),
+      '3',
+    );
+    Future<void> tapVisible(String text) async {
+      await tester.ensureVisible(find.text(text).last);
+      await tester.pump();
+      await tester.tap(find.text(text).last);
+    }
+
+    for (final label in [Strings.partida, Strings.llegada]) {
+      await tapVisible(label);
+      await pumpUntil(tester, () => shows(Strings.newAddress));
+      // The sheet slides in before it takes taps
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text(Strings.newAddress));
+      await pumpUntil(tester, () => shows(Strings.ubigeo));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.enterText(
+        find.widgetWithText(TextFormField, Strings.direccion),
+        'Av. $label 1',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, Strings.ubigeo),
+        '150101',
+      );
+      await tester.tap(find.text(Strings.save));
+      await pumpUntil(tester, () => !shows(Strings.newAddress), label);
+    }
+    await tapVisible(Strings.vehiculoM1L);
+    await tester.pump();
+
+    await tapVisible(Strings.emit);
+    await pumpUntil(tester, () => shows(Strings.viewDocument), 'sheet');
+    final guia = (await tester.runAsync(
+      () => (data.database.select(
+        data.database.documents,
+      )..where((d) => d.tipoComprobante.equals('09'))).getSingle(),
+    ))!;
+    expect(guia.affectedDocumentId, factura.id);
+    expect(guia.sunatCode, LocalCodes.betaGuia);
+    expect(
+      (await tester.runAsync(
+        () => data.database.select(data.database.addresses).get(),
+      ))!,
+      hasLength(2), // saved for next time
+    );
     await data.unmount(tester);
   });
 

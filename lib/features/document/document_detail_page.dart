@@ -15,6 +15,7 @@ import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
+import '../despatch/despatch_advice_form_page.dart';
 import 'note_form_page.dart';
 import 'voiding.dart';
 
@@ -130,6 +131,16 @@ class DocumentDetailPage extends ConsumerWidget {
                       ),
                       child: Text(label),
                     ),
+                if (canHaveNotes)
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            DespatchAdviceFormPage(company, related: document),
+                      ),
+                    ),
+                    child: const Text(Strings.guia),
+                  ),
                 if (canVoid)
                   OutlinedButton(
                     onPressed: () => _void(context, ref, document),
@@ -144,9 +155,11 @@ class DocumentDetailPage extends ConsumerWidget {
           if (affectedId != null)
             _DocumentLink(
               affectedId,
-              label: voidingTipos.contains(document.tipoComprobante)
-                  ? Strings.voids
-                  : Strings.affectedDocument,
+              label: switch (document.tipoComprobante) {
+                final tipo when voidingTipos.contains(tipo) => Strings.voids,
+                '09' => Strings.guiaOf,
+                _ => Strings.affectedDocument,
+              },
             ),
           if (voidedById != null &&
               (document.status == DocumentStatus.voided ||
@@ -159,13 +172,15 @@ class DocumentDetailPage extends ConsumerWidget {
               ' ${document.clienteNumeroDocumento}',
             ),
           ),
-          ListTile(
-            title: const Text(Strings.total),
-            trailing: Text(
-              formatMoney(document.moneda, document.total),
-              style: Theme.of(context).textTheme.titleMedium,
+          // Guías have no amounts
+          if (document.tipoComprobante != '09')
+            ListTile(
+              title: const Text(Strings.total),
+              trailing: Text(
+                formatMoney(document.moneda, document.total),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-          ),
           if (related.any(
             (d) => !voidingTipos.contains(d.tipoComprobante),
           )) ...[

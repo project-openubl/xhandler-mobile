@@ -94,6 +94,16 @@ abstract final class Catalogs {
   /// Catalog 23, régimen de retención
   static const tiposRegimenRetencion = {'01': 'Tasa 3%'};
 
+  /// Catalog 20, why goods are moved: the reasons of a guía remitente that
+  /// need no third party
+  static const motivosTraslado = {
+    '01': 'Venta',
+    '02': 'Compra',
+    '04': 'Traslado entre establecimientos de la misma empresa',
+    '06': 'Devolución',
+    '13': 'Otros',
+  };
+
   /// Catalog 10, why a nota de débito is issued; the codes xbuilder supports
   static const tiposNotaDebito = {
     '01': 'Intereses por mora',

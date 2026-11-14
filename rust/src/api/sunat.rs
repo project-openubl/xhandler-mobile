@@ -286,6 +286,10 @@ mod tests {
         for (index, path) in paths.iter().enumerate() {
             let mut json: serde_json::Value =
                 serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+            // SUNAT has no beta for guías
+            if json["kind"] == "DespatchAdvice" {
+                continue;
+            }
             let spec = &mut json["spec"];
             spec["proveedor"]["ruc"] = "10467793549".into();
             spec["fecha_emision"] = today.clone().into();

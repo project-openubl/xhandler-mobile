@@ -38,6 +38,15 @@ enum DraftProblem {
   /// A percepción or retención is of some amount, up to the factura's total
   operacionOverTotal,
 
+  /// Guías need where the goods leave from and arrive at
+  missingAddresses,
+
+  /// Guías need the vehicle and driver (privado) or the carrier (público)
+  missingTransport,
+
+  /// Motivo "otros" needs a description
+  missingMotivo,
+
   /// Boletas over S/ 700 need an identified customer
   anonymousOver700,
 
@@ -77,6 +86,13 @@ abstract final class LocalCodes {
 
   /// Production without SOL credentials
   static const noCredentials = 'NO_CREDENTIALS';
+
+  /// Production guías without the GRE API credentials
+  static const noGreCredentials = 'NO_GRE_CREDENTIALS';
+
+  /// A guía in test mode: SUNAT has no beta for guías, so it's signed but
+  /// not sent
+  static const betaGuia = 'BETA_GUIA';
 
   /// A ticket from SUNAT beta, which can't check tickets: test mode takes
   /// the comunicación de baja or resumen as accepted
@@ -586,11 +602,11 @@ class DocumentService {
     SunatResponse response;
     try {
       response = await _ask(document);
-    } on _NoCredentials {
-      response = const SunatResponse(
+    } on _NoCredentials catch (missing) {
+      response = SunatResponse(
         status: SunatStatus.exception,
-        code: LocalCodes.noCredentials,
-        notes: [],
+        code: missing.code,
+        notes: const [],
       );
     } on BridgeError catch (error) {
       response = SunatResponse(
@@ -621,7 +637,19 @@ class DocumentService {
     final company = await (_db.select(
       _db.companies,
     )..where((c) => c.id.equals(document.companyId))).getSingle();
+    if (document.tipoComprobante == '09' &&
+        document.environment == SunatEnvironment.beta) {
+      return const SunatResponse(
+        status: SunatStatus.accepted,
+        code: LocalCodes.betaGuia,
+        notes: [],
+      );
+    }
     final credentials = await _credentials(company, document.environment);
+    if (document.tipoComprobante == '09' &&
+        (credentials.clientId == null || credentials.clientSecret == null)) {
+      throw const _NoCredentials(LocalCodes.noGreCredentials);
+    }
     final xml = await _signedXml(document);
     final ticket = document.ticket;
     if (document.status == DocumentStatus.inProgress && ticket != null) {
@@ -844,7 +872,9 @@ class DocumentService {
     final secrets = await _secureStore.readCompanySecrets(company.id);
     final username = secrets.solUsername;
     final password = secrets.solPassword;
-    if (username == null || password == null) throw const _NoCredentials();
+    if (username == null || password == null) {
+      throw const _NoCredentials(LocalCodes.noCredentials);
+    }
     return SunatCredentials(
       username: username,
       password: password,
@@ -855,7 +885,10 @@ class DocumentService {
 }
 
 class _NoCredentials implements Exception {
-  const _NoCredentials();
+  const _NoCredentials(this.code);
+
+  /// [LocalCodes.noCredentials] or [LocalCodes.noGreCredentials]
+  final String code;
 }
 
 /// The document status a SUNAT answer leads to (docs/DESIGN.md §5)

@@ -229,7 +229,7 @@ abstract final class Strings {
   static const tipoNota = 'Motivo';
   static const sustento = 'Sustento';
   static String affectedDocument(String serieNumero) => 'Modifica $serieNumero';
-  static const notes = 'Notas';
+  static const notes = 'Documentos relacionados';
   static String noNoteSerie(String tipo, String prefix) =>
       'No tienes una serie activa $prefix.. de $tipo. Créala en Empresa → Series.';
 
@@ -267,6 +267,49 @@ abstract final class Strings {
   static const retenido = 'Retenido';
   static const totalCobrado = 'Total cobrado';
   static const totalPagado = 'Total pagado';
+
+  // Guía de remisión
+  static const guia = 'Guía de remisión';
+  static const guiaHelp = 'Para trasladar bienes';
+  static String guiaOf(String serieNumero) => 'Bienes de $serieNumero';
+  static const motivoTraslado = 'Motivo del traslado';
+  static const motivoDescripcion = 'Descripción del motivo';
+  static const selectDestinatario = 'Elegir destinatario';
+  static const traslado = 'Traslado';
+  static const fechaTraslado = 'Fecha de inicio del traslado';
+  static const pesoTotal = 'Peso bruto total';
+  static const numeroBultos = 'Bultos';
+  static const partida = 'Punto de partida';
+  static const llegada = 'Punto de llegada';
+  static const selectAddress = 'Elegir dirección';
+  static const companyAddress = 'Dirección de la empresa';
+  static const customerAddress = 'Dirección del destinatario';
+  static const transportePrivado = 'Transporte propio';
+  static const transportePublico = 'Transportista';
+  static const vehiculoM1L = 'Auto o moto (M1 o L)';
+  static const vehiculoM1LHelp = 'No requiere placa ni conductor';
+  static const selectVehicle = 'Elegir vehículo';
+  static const selectDriver = 'Elegir conductor';
+  static const selectCarrier = 'Elegir transportista';
+  static const registroMtc = 'Registro MTC del transportista';
+  static const optional = 'Opcional';
+  static const bienes = 'Bienes';
+  static const bien = 'Bien';
+  static const addBien = 'Agregar bien';
+  static const newVehicle = 'Nuevo vehículo';
+  static const placa = 'Placa';
+  static const invalidPlaca = 'Escribe la placa: ABC123';
+  static const numeroCirculacion = 'Tarjeta de circulación (TUCE)';
+  static const newDriver = 'Nuevo conductor';
+  static const dni = 'DNI';
+  static const nombres = 'Nombres';
+  static const apellidos = 'Apellidos';
+  static const licencia = 'Licencia';
+  static const invalidLicencia = 'La licencia tiene de 9 a 10 letras o números';
+  static const newAddress = 'Nueva dirección';
+  static const addressName = 'Nombre (ej. Almacén Ate)';
+  static const codigoLocalHelp =
+      'Solo en traslados entre establecimientos de la empresa';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

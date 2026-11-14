@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
+import 'package:xhandler_mobile/features/despatch/despatch_advice_draft.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/perception_retention_draft.dart';
@@ -341,6 +342,96 @@ void main() {
     expectGoldenJson(
       'reversion_percepcion',
       voiding(percepcion, 'Cobro registrado por error'),
+    );
+  });
+
+  final vehicle = Vehicle(
+    id: 'v1',
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    companyId: '1',
+    placa: 'ABC123',
+    numeroCirculacion: '15M21028213E',
+  );
+  final driver = Driver(
+    id: 'd1',
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    companyId: '1',
+    tipoDocumentoIdentidad: '1',
+    numeroDocumentoIdentidad: '46027897',
+    nombres: 'JUAN',
+    apellidos: 'PEREZ ROJAS',
+    licencia: 'Q46027897',
+  );
+  const almacen = (
+    ubigeo: '150103',
+    direccion: 'AV. LOS FRUTALES 123, ATE',
+    codigoLocal: null,
+  );
+  const tienda = (
+    ubigeo: '150130',
+    direccion: 'CAL. MORELLI 181, SAN BORJA',
+    codigoLocal: null,
+  );
+
+  test('guía de remisión of a factura, in the company vehicle', () {
+    expectGolden(
+      'guia_transporte_privado',
+      DespatchAdviceDraft(
+        customer: supermercados,
+        lines: const [
+          DraftLine(
+            descripcion: 'Café',
+            cantidad: '2',
+            precio: '59',
+            codigo: 'CAF-01',
+          ),
+          DraftLine(descripcion: 'Taza', cantidad: '2', precio: '10'),
+        ],
+        motivo: '01',
+        fechaTraslado: '2026-11-13',
+        pesoTotal: '2.5',
+        numeroBultos: 1,
+        modalidad: ModalidadTraslado.privado,
+        vehicle: vehicle,
+        driver: driver,
+        partida: almacen,
+        llegada: tienda,
+        related: factura,
+      ),
+      'T001-1',
+    );
+  });
+
+  test('guía de remisión by a carrier', () {
+    expectGolden(
+      'guia_transporte_publico',
+      const DespatchAdviceDraft(
+        customer: supermercados,
+        lines: [
+          DraftLine(
+            descripcion: 'Sacos de café',
+            cantidad: '20',
+            precio: '0',
+            unidadMedida: 'KGM',
+          ),
+        ],
+        motivo: '13',
+        motivoDescripcion: 'Muestras para feria',
+        fechaTraslado: '2026-11-14',
+        pesoTotal: '20',
+        modalidad: ModalidadTraslado.publico,
+        transportista: DraftCustomer(
+          tipoDocumentoIdentidad: '6',
+          numeroDocumentoIdentidad: '20100066603',
+          nombre: 'TRANSPORTES RAPIDOS S.A.C.',
+        ),
+        transportistaMtc: '1523456CNG',
+        partida: almacen,
+        llegada: tienda,
+      ),
+      'T001-2',
     );
   });
 

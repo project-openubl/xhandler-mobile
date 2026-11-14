@@ -1,0 +1,69 @@
+{
+  "kind": "DespatchAdvice",
+  "spec": {
+    "serie_numero": "T001-1",
+    "fecha_emision": "2026-11-13",
+    "tipo_comprobante": "09",
+    "documentos_adicionales": [
+      {
+        "tipo_documento": "01",
+        "numero": "F001-1",
+        "ruc_emisor": "20123456789"
+      }
+    ],
+    "remitente": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C."
+    },
+    "destinatario": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "envio": {
+      "tipo_traslado": "01",
+      "peso_total": "2.5",
+      "peso_total_unidad_medida": "KGM",
+      "numero_bultos": 1,
+      "indicadores": [],
+      "tipo_modalidad_traslado": "02",
+      "fecha_traslado": "2026-11-13",
+      "choferes": [
+        {
+          "tipo": "Principal",
+          "tipo_documento_identidad": "1",
+          "numero_documento_identidad": "46027897",
+          "nombres": "JUAN",
+          "apellidos": "PEREZ ROJAS",
+          "licencia": "Q46027897"
+        }
+      ],
+      "vehiculo": {
+        "placa": "ABC123",
+        "numero_circulacion": "15M21028213E"
+      },
+      "partida": {
+        "ubigeo": "150103",
+        "direccion": "AV. LOS FRUTALES 123, ATE"
+      },
+      "destino": {
+        "ubigeo": "150130",
+        "direccion": "CAL. MORELLI 181, SAN BORJA"
+      }
+    },
+    "detalles": [
+      {
+        "unidad_medida": "NIU",
+        "cantidad": "2",
+        "descripcion": "Café",
+        "codigo": "CAF-01"
+      },
+      {
+        "unidad_medida": "NIU",
+        "cantidad": "2",
+        "descripcion": "Taza",
+        "codigo": "2"
+      }
+    ]
+  }
+}

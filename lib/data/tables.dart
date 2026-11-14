@@ -278,6 +278,44 @@ class DocumentEvents extends Table with SyncColumns {
   TextColumn get deviceId => text()();
 }
 
+/// Vehicles of guías de remisión moved by the company (transporte privado)
+class Vehicles extends Table with SyncColumns {
+  TextColumn get companyId => text().references(Companies, #id)();
+
+  /// Uppercase, without dashes or spaces, e.g. "ABC123"
+  TextColumn get placa => text()();
+
+  /// Tarjeta única de circulación or certificado de habilitación
+  TextColumn get numeroCirculacion => text().nullable()();
+}
+
+/// Drivers of guías de remisión moved by the company (transporte privado)
+class Drivers extends Table with SyncColumns {
+  TextColumn get companyId => text().references(Companies, #id)();
+
+  /// Catalog 6, usually "1" DNI
+  TextColumn get tipoDocumentoIdentidad => text()();
+  TextColumn get numeroDocumentoIdentidad => text()();
+  TextColumn get nombres => text()();
+  TextColumn get apellidos => text()();
+  TextColumn get licencia => text()();
+}
+
+/// Starting points and destinations of guías de remisión
+@DataClassName('Address')
+class Addresses extends Table with SyncColumns {
+  TextColumn get companyId => text().references(Companies, #id)();
+
+  /// What the user calls it, e.g. "Almacén Ate"
+  TextColumn get nombre => text().nullable()();
+  TextColumn get ubigeo => text()();
+  TextColumn get direccion => text()();
+
+  /// SUNAT's code of the establishment, for transfers between the
+  /// company's own (motivo 04)
+  TextColumn get codigoLocal => text().nullable()();
+}
+
 /// Settings of this device (not synced)
 class DeviceSettings extends Table {
   TextColumn get key => text()();

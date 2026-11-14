@@ -81,12 +81,17 @@ class DraftLine {
   final String? iscTasa;
   final bool esBolsa;
 
-  DraftLine copyWith({String? cantidad, String? precio}) => DraftLine(
-    descripcion: descripcion,
+  DraftLine copyWith({
+    String? descripcion,
+    String? cantidad,
+    String? precio,
+    String? unidadMedida,
+  }) => DraftLine(
+    descripcion: descripcion ?? this.descripcion,
     cantidad: cantidad ?? this.cantidad,
     precio: precio ?? this.precio,
     precioIncluyeIgv: precioIncluyeIgv,
-    unidadMedida: unidadMedida,
+    unidadMedida: unidadMedida ?? this.unidadMedida,
     igvTipo: igvTipo,
     codigo: codigo,
     codigoSunat: codigoSunat,

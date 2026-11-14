@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../../amount_text.dart';
+import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../peru_date.dart';
 import '../../strings.dart';
@@ -90,11 +91,12 @@ class _PickerSheetState extends State<_PickerSheet> {
 }
 
 /// Picks a customer: one of the company's (only RUC ones for facturas), a
-/// new one, or "Clientes varios" for boletas
+/// new one, or "Clientes varios" for boletas ([allowAnonymous])
 Future<DraftCustomer?> pickCustomer(
   BuildContext context, {
   required Company company,
   required bool forFactura,
+  bool? allowAnonymous,
 }) => showModalBottomSheet<DraftCustomer>(
   context: context,
   isScrollControlled: true,
@@ -107,7 +109,7 @@ Future<DraftCustomer?> pickCustomer(
       onTap: (customer) =>
           Navigator.pop(sheetContext, DraftCustomer.fromCustomer(customer)),
       leading: [
-        if (!forFactura)
+        if (allowAnonymous ?? !forFactura)
           ListTile(
             leading: const Icon(Icons.groups),
             title: const Text(Strings.anonymousCustomer),
@@ -401,12 +403,16 @@ class DraftLinesList extends StatelessWidget {
     super.key,
     required this.lines,
     required this.moneda,
+    this.showPrices = true,
     this.onEdit,
     this.onRemove,
   });
 
   final List<DraftLine> lines;
   final String moneda;
+
+  /// Guías show only quantities
+  final bool showPrices;
   final void Function(int index)? onEdit;
   final void Function(int index)? onRemove;
 
@@ -421,8 +427,11 @@ class DraftLinesList extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             title: Text(line.descripcion),
             subtitle: Text(
-              '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
-              '${line.precioIncluyeIgv ? '' : ' + IGV'}',
+              showPrices
+                  ? '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
+                        '${line.precioIncluyeIgv ? '' : ' + IGV'}'
+                  : '${line.cantidad} '
+                        '${Catalogs.unidadesMedida[line.unidadMedida] ?? line.unidadMedida}',
             ),
             onTap: onEdit == null ? null : () => onEdit(index),
             trailing: onRemove == null

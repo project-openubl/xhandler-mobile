@@ -22,13 +22,28 @@ part 'database.g.dart';
     DocumentFiles,
     DocumentEvents,
     DeviceSettings,
+    Vehicles,
+    Drivers,
+    Addresses,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      // 2: guías de remisión
+      if (from < 2) {
+        await m.createTable(vehicles);
+        await m.createTable(drivers);
+        await m.createTable(addresses);
+      }
+    },
+  );
 
   /// Updates a row that isn't deleted and stamps `updated_at`. `id` and
   /// `deleted_at` in [changes] are ignored.

@@ -1,0 +1,48 @@
+{
+  "kind": "DespatchAdvice",
+  "spec": {
+    "serie_numero": "T001-2",
+    "fecha_emision": "2026-11-13",
+    "tipo_comprobante": "09",
+    "remitente": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C."
+    },
+    "destinatario": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "envio": {
+      "tipo_traslado": "13",
+      "motivo_traslado": "Muestras para feria",
+      "peso_total": "20",
+      "peso_total_unidad_medida": "KGM",
+      "indicadores": [],
+      "tipo_modalidad_traslado": "01",
+      "fecha_traslado": "2026-11-14",
+      "transportista": {
+        "tipo_documento_identidad": "6",
+        "numero_documento_identidad": "20100066603",
+        "nombre": "TRANSPORTES RAPIDOS S.A.C.",
+        "numero_registro_mtc": "1523456CNG"
+      },
+      "partida": {
+        "ubigeo": "150103",
+        "direccion": "AV. LOS FRUTALES 123, ATE"
+      },
+      "destino": {
+        "ubigeo": "150130",
+        "direccion": "CAL. MORELLI 181, SAN BORJA"
+      }
+    },
+    "detalles": [
+      {
+        "unidad_medida": "KGM",
+        "cantidad": "20",
+        "descripcion": "Sacos de café",
+        "codigo": "1"
+      }
+    ]
+  }
+}

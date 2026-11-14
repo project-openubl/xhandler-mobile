@@ -8,6 +8,7 @@ import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../company/company_repository.dart';
+import '../despatch/despatch_advice_form_page.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
 import '../document/perception_retention_form_page.dart';
@@ -125,6 +126,19 @@ class _CompanyHome extends StatelessWidget {
                       _newDocument(context, tipo);
                     },
                   ),
+                ListTile(
+                  leading: const Icon(Icons.local_shipping),
+                  title: const Text(Strings.guia),
+                  subtitle: const Text(Strings.guiaHelp),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DespatchAdviceFormPage(company),
+                      ),
+                    );
+                  },
+                ),
                 for (final (tipo, title, help) in [
                   if (company.esAgentePercepcion)
                     ('40', Strings.percepcion, Strings.percepcionHelp),
