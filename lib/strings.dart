@@ -313,6 +313,10 @@ abstract final class Strings {
   static const codigoLocalHelp =
       'Solo en traslados entre establecimientos de la empresa';
 
+  // PDF and delivery
+  static const share = 'Compartir';
+  static const pdfFormat = 'Formato del PDF';
+
   // Quick sale
   static const quickSale = 'Venta rápida';
   static const quickSaleHelp = 'Boleta en segundos, para ventas de mostrador';

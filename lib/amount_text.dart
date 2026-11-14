@@ -77,3 +77,23 @@ String formatMoney(String moneda, String amount) {
   };
   return '$symbol ${roundAmount(amount)}';
 }
+
+/// The exact sum of two non-negative amounts, e.g. a line's taxable base and
+/// its taxes: "38.1355" + "15.6649" → "53.8004"
+String addAmounts(String a, String b) {
+  (String, String) parts(String amount) => amount.contains('.')
+      ? (amount.split('.')[0], amount.split('.')[1])
+      : (amount, '');
+  final (aInteger, aDecimals) = parts(a);
+  final (bInteger, bDecimals) = parts(b);
+  final scale = aDecimals.length > bDecimals.length
+      ? aDecimals.length
+      : bDecimals.length;
+  final sum =
+      BigInt.parse('$aInteger${aDecimals.padRight(scale, '0')}') +
+      BigInt.parse('$bInteger${bDecimals.padRight(scale, '0')}');
+  if (scale == 0) return '$sum';
+  final text = sum.toString().padLeft(scale + 1, '0');
+  final split = text.length - scale;
+  return '${text.substring(0, split)}.${text.substring(split)}';
+}

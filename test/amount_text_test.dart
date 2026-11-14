@@ -45,4 +45,17 @@ void main() {
     expect(toCents('700.004'), BigInt.from(70000));
     expect(toCents('590.5'), BigInt.from(59050));
   });
+
+  test('addAmounts is exact', () {
+    expect(
+      addAmounts(
+        '38.135593220338983050847457627',
+        '15.664928292046936114732724902',
+      ),
+      '53.800521512385919165580182529',
+    );
+    expect(addAmounts('0.5', '0.25'), '0.75');
+    expect(addAmounts('1', '2'), '3');
+    expect(addAmounts('0.05', '0'), '0.05');
+  });
 }

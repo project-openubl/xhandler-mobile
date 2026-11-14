@@ -1,0 +1,149 @@
+{
+    "kind": "Invoice",
+    "spec": {
+        "leyendas": {},
+        "serie_numero": "F001-1",
+        "moneda": "PEN",
+        "fecha_emision": "2026-11-13",
+        "hora_emision": null,
+        "fecha_vencimiento": null,
+        "proveedor": {
+            "ruc": "20123456789",
+            "razon_social": "Empresa S.A.C.",
+            "nombre_comercial": "Empresa",
+            "direccion": {
+                "ubigeo": "150122",
+                "codigo_local": "0000",
+                "urbanizacion": null,
+                "departamento": "LIMA",
+                "provincia": "LIMA",
+                "distrito": "MIRAFLORES",
+                "direccion": "AV. LARCO 123",
+                "codigo_pais": null
+            },
+            "contacto": null
+        },
+        "cliente": {
+            "tipo_documento_identidad": "6",
+            "numero_documento_identidad": "20100070970",
+            "nombre": "SUPERMERCADOS PERUANOS S.A.",
+            "direccion": {
+                "ubigeo": "150130",
+                "codigo_local": null,
+                "urbanizacion": null,
+                "departamento": "LIMA",
+                "provincia": "LIMA",
+                "distrito": "SAN BORJA",
+                "direccion": "CAL. MORELLI 181",
+                "codigo_pais": null
+            },
+            "contacto": {
+                "telefono": null,
+                "email": "compras@example.com"
+            }
+        },
+        "firmante": {
+            "ruc": "20123456789",
+            "razon_social": "Empresa S.A.C."
+        },
+        "icb_tasa": "0.50",
+        "igv_tasa": "0.18",
+        "ivap_tasa": "0.04",
+        "tipo_comprobante": "01",
+        "tipo_operacion": "0101",
+        "detraccion": null,
+        "percepcion": null,
+        "direccion_entrega": null,
+        "guia_embebida": null,
+        "forma_pago": {
+            "tipo": "Contado",
+            "cuotas": [],
+            "total": "0"
+        },
+        "anticipos": [],
+        "descuentos": [],
+        "cargos": [],
+        "detalles": [
+            {
+                "descripcion": "Cerveza",
+                "cantidad": "6",
+                "unidad_medida": "NIU",
+                "codigo": "CER-01",
+                "codigo_sunat": "50202201",
+                "codigo_gs1": null,
+                "precio": "4.8891786179921773142112125163",
+                "precio_con_impuestos": "7.50",
+                "precio_referencia": "7.50",
+                "precio_referencia_tipo": "01",
+                "igv_tasa": "0.18",
+                "icb_tasa": "0.50",
+                "isc_tasa": "0.30",
+                "igv_tipo": "10",
+                "isc_tipo": "01",
+                "icb_aplica": false,
+                "icb": "0",
+                "igv": "6.8644067796610169491525423729",
+                "igv_base_imponible": "38.135593220338983050847457627",
+                "isc": "8.800521512385919165580182529",
+                "isc_base_imponible": "29.335071707953063885267275098",
+                "total_impuestos": "15.664928292046936114732724902",
+                "atributos": []
+            },
+            {
+                "descripcion": "Bolsa pl\u00e1stica",
+                "cantidad": "1",
+                "unidad_medida": "NIU",
+                "codigo": null,
+                "codigo_sunat": null,
+                "codigo_gs1": null,
+                "precio": "0.0847457627118644067796610169",
+                "precio_con_impuestos": "0.10",
+                "precio_referencia": "0.10",
+                "precio_referencia_tipo": "01",
+                "igv_tasa": "0.18",
+                "icb_tasa": "0.50",
+                "isc_tasa": "0",
+                "igv_tipo": "10",
+                "isc_tipo": "01",
+                "icb_aplica": true,
+                "icb": "0.50",
+                "igv": "0.0152542372881355932203389830",
+                "igv_base_imponible": "0.0847457627118644067796610169",
+                "isc": "0",
+                "isc_base_imponible": "0.0847457627118644067796610169",
+                "total_impuestos": "0.5152542372881355932203389830",
+                "atributos": []
+            }
+        ],
+        "total_importe": {
+            "anticipos": "0",
+            "descuentos": "0",
+            "cargos": "0",
+            "importe": "45.600000000000000000000000000",
+            "importe_sin_impuestos": "29.419817470664928292046936115",
+            "importe_con_impuestos": "45.600000000000000000000000000"
+        },
+        "total_impuestos": {
+            "total": "16.180182529335071707953063885",
+            "ivap_importe": "0",
+            "ivap_base_imponible": "0",
+            "exportacion_importe": "0",
+            "exportacion_base_imponible": "0",
+            "gravado_importe": "6.8796610169491525423728813559",
+            "gravado_base_imponible": "29.419817470664928292046936115",
+            "inafecto_importe": "0",
+            "inafecto_base_imponible": "0",
+            "exonerado_importe": "0",
+            "exonerado_base_imponible": "0",
+            "gratuito_importe": "0",
+            "gratuito_base_imponible": "0",
+            "icb_importe": "0.50",
+            "isc_importe": "8.800521512385919165580182529",
+            "isc_base_imponible": "29.335071707953063885267275098"
+        },
+        "guias": [],
+        "documentos_relacionados": [],
+        "observaciones": null,
+        "orden_compra": null
+    }
+}

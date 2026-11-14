@@ -310,7 +310,11 @@ abstract class PdfTemplate {
 - `TemplateRegistry`: list of available templates; the company picks one per format.
 - Templates are Dart code shipped with the app: adding a template = adding a class and
   registering it. Users customise through `TemplateOptions`, they don't author templates.
-- v1 ships `default-a4`, `default-ticket-80`, `default-ticket-58`.
+- v1 ships `default-a4`, `default-ticket-80`, `default-ticket-58`; the user picks the
+  format when sharing. Per-company `TemplateOptions` (color, logo, footer) aren't built
+  yet. Text uses the bundled Open Sans (Apache-2.0): the PDF base fonts only cover
+  Latin-1. The amount in words is written by the app (xbuilder leaves `leyendas` to
+  the XML template).
 - User-authored templates (e.g. HTML rendered to PDF) are out of scope; the interface does
   not prevent adding them later.
 

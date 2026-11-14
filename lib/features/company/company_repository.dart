@@ -21,6 +21,9 @@ class CompanyRepository {
         ..where((c) => c.deletedAt.isNull())
         ..orderBy([(c) => OrderingTerm(expression: c.razonSocial)]);
 
+  Future<Company> find(String id) =>
+      (_db.select(_db.companies)..where((c) => c.id.equals(id))).getSingle();
+
   Future<Company?> findByRuc(String ruc) => (_db.select(
     _db.companies,
   )..where((c) => c.ruc.equals(ruc) & c.deletedAt.isNull())).getSingleOrNull();

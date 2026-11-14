@@ -16,6 +16,8 @@ import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
 import '../despatch/despatch_advice_form_page.dart';
+import '../pdf/document_view.dart';
+import '../pdf/share_document.dart';
 import 'note_form_page.dart';
 import 'voiding.dart';
 
@@ -73,7 +75,20 @@ class DocumentDetailPage extends ConsumerWidget {
     final voidedById = document.voidedByDocumentId;
 
     return Scaffold(
-      appBar: AppBar(title: Text(serieNumero(document.serie, document.numero))),
+      appBar: AppBar(
+        title: Text(serieNumero(document.serie, document.numero)),
+        actions: [
+          if (hasPrintedView(document.tipoComprobante))
+            Builder(
+              // Its own context anchors the share sheet on iPads
+              builder: (buttonContext) => IconButton(
+                tooltip: Strings.share,
+                icon: const Icon(Icons.share),
+                onPressed: () => shareDocument(buttonContext, ref, document),
+              ),
+            ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
