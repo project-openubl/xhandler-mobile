@@ -35,6 +35,9 @@ enum DraftProblem {
 
   /// Installments must add up to the total, after the issue date
   cuotasMismatch,
+
+  /// Notas of facturas use F series, notas of boletas B series
+  noteSerieMismatch,
 }
 
 class InvalidDraftError implements Exception {
@@ -101,7 +104,11 @@ class DocumentService {
     this._secureStore,
     this._bridge, {
     Future<Uint8List> Function() demoCertificate = loadDemoCertificate,
+    this.pauseBetweenSends = const Duration(seconds: 3),
   }) : _loadDemoCertificate = demoCertificate;
+
+  /// SUNAT answers HTTP 401 to requests sent right after another
+  final Duration pauseBetweenSends;
 
   final AppDatabase _db;
   final DocumentRepository _documents;
@@ -138,7 +145,7 @@ class DocumentService {
   Future<DocumentTotals> preview({
     required Company company,
     required Serie serie,
-    required InvoiceDraft draft,
+    required DocumentDraft draft,
   }) async {
     final fechaEmision = peruToday();
     final built = await _bridge.build(
@@ -164,7 +171,7 @@ class DocumentService {
   Future<String> emit({
     required Company company,
     required Serie serie,
-    required InvoiceDraft draft,
+    required DocumentDraft draft,
   }) async {
     if (draft.lines.isEmpty) {
       throw const InvalidDraftError(DraftProblem.noLines);
@@ -172,6 +179,9 @@ class DocumentService {
     if (draft.tipoComprobante == '01' &&
         draft.customer.tipoDocumentoIdentidad != '6') {
       throw const InvalidDraftError(DraftProblem.facturaWithoutRuc);
+    }
+    if (draft is NoteDraft && serie.serie[0] != draft.affected.serie[0]) {
+      throw const InvalidDraftError(DraftProblem.noteSerieMismatch);
     }
     final secrets = await _secureStore.readCompanySecrets(company.id);
     final (certificate, password) = await _certificate(company, secrets);
@@ -237,6 +247,7 @@ class DocumentService {
               digestValue: signed.digestValue,
               inputJson: inputJson,
               enrichedJson: built.enrichedJson,
+              affectedDocumentId: Value(draft.affectedDocumentId),
               deviceId: deviceId,
             ),
           );
@@ -264,12 +275,12 @@ class DocumentService {
     });
   }
 
-  void _checkTotals(InvoiceDraft draft, String total, String fechaEmision) {
+  void _checkTotals(DocumentDraft draft, String total, String fechaEmision) {
     if (exceedsAnonymousLimit(draft.customer, draft.moneda, total)) {
       throw const InvalidDraftError(DraftProblem.anonymousOver700);
     }
+    if (draft is! InvoiceDraft || draft.cuotas.isEmpty) return;
     final cuotas = draft.cuotas;
-    if (cuotas.isEmpty) return;
     final sum = cuotas.fold(BigInt.zero, (sum, c) => sum + toCents(c.importe));
     if (sum != toCents(total) ||
         cuotas.any((c) => c.fechaPago.compareTo(fechaEmision) <= 0)) {
@@ -295,8 +306,10 @@ class DocumentService {
   Future<void> sendDue({Duration? budget}) => _outbox ??= () async {
     final clock = Stopwatch()..start();
     try {
-      for (final document in await _documents.due(nowUtc())) {
+      final due = await _documents.due(nowUtc());
+      for (final (index, document) in due.indexed) {
         if (budget != null && clock.elapsed > budget) break;
+        if (index > 0) await Future<void>.delayed(pauseBetweenSends);
         await send(document.id);
       }
     } finally {
@@ -395,11 +408,24 @@ class DocumentService {
     return utf8.decode(xml!);
   }
 
+  /// HTTP 401 is either wrong credentials or SUNAT throttling quick
+  /// requests: the first ones are retried like a send without answer
+  static const _throttledRetries = 2;
+
   Future<DocumentStatus> _record(
     Document document,
-    SunatResponse response,
+    SunatResponse incoming,
     bool manual,
   ) async {
+    final response =
+        incoming.code == 'HTTP 401' && document.attempts < _throttledRetries
+        ? SunatResponse(
+            status: SunatStatus.notDelivered,
+            code: incoming.code,
+            description: incoming.description,
+            notes: const [],
+          )
+        : incoming;
     var status = statusOf(response);
     // A ticket check that got no answer is still a ticket check
     if (status == DocumentStatus.pendingSend &&

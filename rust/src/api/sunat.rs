@@ -236,6 +236,7 @@ mod tests {
     use crate::api::signer::sign_document;
     use crate::api::signer::tests::certificate;
 
+    /// SUNAT beta takes any RUC with the MODDATOS user
     fn beta_credentials() -> SunatCredentials {
         SunatCredentials {
             username: "10467793549MODDATOS".into(),
@@ -258,27 +259,47 @@ mod tests {
         assert!(response.cdr_zip.is_some());
     }
 
-    /// Quick sales issue boletas to anonymous customers ("0", "-"):
-    /// `cargo test -- --ignored`
+    /// Every document the app produces (tests/resources/drafts) is
+    /// accepted by SUNAT beta: `cargo test -- --ignored`
     #[tokio::test]
     #[ignore]
-    async fn send_anonymous_boleta_to_beta() {
-        let json = std::fs::read_to_string("tests/resources/drafts/boleta_exonerada.json")
+    async fn send_app_drafts_to_beta() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .replace("20123456789", "10467793549")
-            .replace("B001-26", &format!("B001-{}", std::process::id()));
-        let built = build_document(json, defaults()).unwrap();
-        let signed = sign_document(built.xml, certificate(), "password".into()).unwrap();
-        let response = send_document(signed.xml, SunatEnvironment::Beta, beta_credentials())
-            .await
-            .unwrap();
+            .as_secs()
+            % 99_999_999;
+        let mut failures = Vec::new();
+        for entry in std::fs::read_dir("tests/resources/drafts").unwrap() {
+            // SUNAT beta answers HTTP 401 to requests sent right after another
+            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+            let path = entry.unwrap().path();
+            let mut json: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+            let spec = &mut json["spec"];
+            spec["proveedor"]["ruc"] = "10467793549".into();
+            let serie = spec["serie_numero"]
+                .as_str()
+                .unwrap()
+                .split('-')
+                .next()
+                .unwrap()
+                .to_string();
+            spec["serie_numero"] = format!("{serie}-{unique}").into();
 
-        assert!(
-            matches!(response.status, SunatStatus::Accepted),
-            "{:?} {:?}",
-            response.code,
-            response.description
-        );
+            let built = build_document(json.to_string(), defaults()).unwrap();
+            let signed = sign_document(built.xml, certificate(), "password".into()).unwrap();
+            let response = send_document(signed.xml, SunatEnvironment::Beta, beta_credentials())
+                .await
+                .unwrap();
+            if !matches!(response.status, SunatStatus::Accepted) {
+                failures.push(format!(
+                    "{path:?}: {:?} {:?}",
+                    response.code, response.description
+                ));
+            }
+        }
+        assert!(failures.is_empty(), "{failures:#?}");
     }
 
     #[tokio::test]

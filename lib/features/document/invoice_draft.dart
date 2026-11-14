@@ -43,6 +43,27 @@ class DraftLine {
         esBolsa: product.esBolsa,
       );
 
+  /// A line of a stored document's input (xbuilder `detalles`), e.g. to
+  /// copy it into a nota de crédito
+  factory DraftLine.fromJson(Map<String, Object?> json) {
+    final precioConImpuestos = json['precio_con_impuestos'] as String?;
+    final tasa = json['isc_tasa'] as String?;
+    return DraftLine(
+      descripcion: json['descripcion']! as String,
+      cantidad: '${json['cantidad']}',
+      precio: precioConImpuestos ?? '${json['precio']}',
+      precioIncluyeIgv: precioConImpuestos != null,
+      unidadMedida: json['unidad_medida'] as String? ?? 'NIU',
+      igvTipo: json['igv_tipo'] as String? ?? '10',
+      codigo: json['codigo'] as String?,
+      codigoSunat: json['codigo_sunat'] as String?,
+      iscTipo: json['isc_tipo'] as String?,
+      // Stored as xbuilder's fraction: back to a percentage
+      iscTasa: tasa == null ? null : fractionToPercent(tasa),
+      esBolsa: json['icb_aplica'] as bool? ?? false,
+    );
+  }
+
   final String descripcion;
 
   /// Decimals as text, to keep them exact
@@ -113,6 +134,23 @@ class DraftCustomer {
     email: customer.email,
   );
 
+  /// A stored document's customer (xbuilder `cliente`), e.g. for its notas
+  factory DraftCustomer.fromJson(Map<String, Object?> json) {
+    final direccion = json['direccion'] as Map<String, Object?>? ?? const {};
+    final contacto = json['contacto'] as Map<String, Object?>? ?? const {};
+    return DraftCustomer(
+      tipoDocumentoIdentidad: json['tipo_documento_identidad']! as String,
+      numeroDocumentoIdentidad: json['numero_documento_identidad']! as String,
+      nombre: json['nombre']! as String,
+      direccion: direccion['direccion'] as String?,
+      distrito: direccion['distrito'] as String?,
+      provincia: direccion['provincia'] as String?,
+      departamento: direccion['departamento'] as String?,
+      ubigeo: direccion['ubigeo'] as String?,
+      email: contacto['email'] as String?,
+    );
+  }
+
   final String tipoDocumentoIdentidad;
   final String numeroDocumentoIdentidad;
   final String nombre;
@@ -155,8 +193,53 @@ class DraftCuota {
   final String fechaPago;
 }
 
+/// What [DocumentService.emit] issues: a document of the company with its
+/// customer and lines
+abstract interface class DocumentDraft {
+  /// Catalog 1
+  String get tipoComprobante;
+  DraftCustomer get customer;
+  List<DraftLine> get lines;
+  String get moneda;
+
+  /// The document a nota modifies, `null` for invoices
+  String? get affectedDocumentId;
+
+  /// The xbuilder document (`{"kind": ..., "spec": {...}}`)
+  String toDocumentJson({
+    required Company company,
+    required String serieNumero,
+    required String fechaEmision,
+  });
+}
+
+/// The company as xbuilder's `proveedor`
+Map<String, Object?> proveedorJson(Company company) {
+  String? text(String? value) => value == null || value.isEmpty ? null : value;
+  final direccion = {
+    'ubigeo': text(company.ubigeo),
+    'departamento': text(company.departamento),
+    'provincia': text(company.provincia),
+    'distrito': text(company.distrito),
+    'direccion': text(company.direccion),
+    'urbanizacion': text(company.urbanizacion),
+    'codigo_local': text(company.codigoLocal),
+  }..removeWhere((_, value) => value == null);
+  final contacto = {
+    'telefono': text(company.telefono),
+    'email': text(company.email),
+  }..removeWhere((_, value) => value == null);
+  return {
+    'ruc': company.ruc,
+    'razon_social': company.razonSocial,
+    'nombre_comercial': ?text(company.nombreComercial),
+    if (direccion.isNotEmpty) 'direccion': direccion,
+    if (contacto.isNotEmpty) 'contacto': contacto,
+  };
+}
+
 /// An invoice (factura or boleta) being written
-class InvoiceDraft {
+class InvoiceDraft implements DocumentDraft {
   const InvoiceDraft({
     required this.tipoComprobante,
     required this.customer,
@@ -166,61 +249,101 @@ class InvoiceDraft {
   });
 
   /// Catalog 1: "01" factura, "03" boleta
+  @override
   final String tipoComprobante;
+  @override
   final DraftCustomer customer;
+  @override
   final List<DraftLine> lines;
+  @override
   final String moneda;
 
   /// Empty for payment in full ("contado")
   final List<DraftCuota> cuotas;
 
-  /// The xbuilder document (`{"kind": "Invoice", "spec": {...}}`)
+  @override
+  String? get affectedDocumentId => null;
+
+  @override
   String toDocumentJson({
     required Company company,
     required String serieNumero,
     required String fechaEmision,
-  }) {
-    String? text(String? value) =>
-        value == null || value.isEmpty ? null : value;
-    final direccion = {
-      'ubigeo': text(company.ubigeo),
-      'departamento': text(company.departamento),
-      'provincia': text(company.provincia),
-      'distrito': text(company.distrito),
-      'direccion': text(company.direccion),
-      'urbanizacion': text(company.urbanizacion),
-      'codigo_local': text(company.codigoLocal),
-    }..removeWhere((_, value) => value == null);
-    final contacto = {
-      'telefono': text(company.telefono),
-      'email': text(company.email),
-    }..removeWhere((_, value) => value == null);
-    return jsonEncode({
-      'kind': 'Invoice',
-      'spec': {
-        'serie_numero': serieNumero,
-        'tipo_comprobante': tipoComprobante,
-        'fecha_emision': fechaEmision,
-        'moneda': moneda,
-        'proveedor': {
-          'ruc': company.ruc,
-          'razon_social': company.razonSocial,
-          'nombre_comercial': ?text(company.nombreComercial),
-          if (direccion.isNotEmpty) 'direccion': direccion,
-          if (contacto.isNotEmpty) 'contacto': contacto,
-        },
-        'cliente': customer.toJson(),
-        'detalles': [for (final line in lines) line.toJson()],
-        'forma_pago': cuotas.isEmpty
-            ? {'tipo': 'Contado'}
-            : {
-                'tipo': 'Credito',
-                'cuotas': [
-                  for (final cuota in cuotas)
-                    {'importe': cuota.importe, 'fecha_pago': cuota.fechaPago},
-                ],
-              },
-      },
-    });
-  }
+  }) => jsonEncode({
+    'kind': 'Invoice',
+    'spec': {
+      'serie_numero': serieNumero,
+      'tipo_comprobante': tipoComprobante,
+      'fecha_emision': fechaEmision,
+      'moneda': moneda,
+      'proveedor': proveedorJson(company),
+      'cliente': customer.toJson(),
+      'detalles': [for (final line in lines) line.toJson()],
+      'forma_pago': cuotas.isEmpty
+          ? {'tipo': 'Contado'}
+          : {
+              'tipo': 'Credito',
+              'cuotas': [
+                for (final cuota in cuotas)
+                  {'importe': cuota.importe, 'fecha_pago': cuota.fechaPago},
+              ],
+            },
+    },
+  });
+}
+
+/// A nota de crédito ("07") or débito ("08") of an issued invoice
+class NoteDraft implements DocumentDraft {
+  const NoteDraft({
+    required this.tipoComprobante,
+    required this.affected,
+    required this.tipoNota,
+    required this.sustento,
+    required this.customer,
+    required this.lines,
+  });
+
+  @override
+  final String tipoComprobante;
+
+  /// The invoice it modifies
+  final Document affected;
+
+  /// Catalog 9 (crédito) or 10 (débito)
+  final String tipoNota;
+
+  /// Why it's issued, as SUNAT asks
+  final String sustento;
+  @override
+  final DraftCustomer customer;
+  @override
+  final List<DraftLine> lines;
+
+  @override
+  String get moneda => affected.moneda;
+
+  @override
+  String? get affectedDocumentId => affected.id;
+
+  @override
+  String toDocumentJson({
+    required Company company,
+    required String serieNumero,
+    required String fechaEmision,
+  }) => jsonEncode({
+    'kind': tipoComprobante == '07' ? 'CreditNote' : 'DebitNote',
+    'spec': {
+      'serie_numero': serieNumero,
+      'fecha_emision': fechaEmision,
+      'moneda': moneda,
+      'proveedor': proveedorJson(company),
+      'cliente': customer.toJson(),
+      'tipo_nota': tipoNota,
+      'comprobante_afectado_tipo': affected.tipoComprobante,
+      'comprobante_afectado_serie_numero':
+          '${affected.serie}-${affected.numero}',
+      'descripcion_sustento': sustento,
+      'detalles': [for (final line in lines) line.toJson()],
+    },
+  });
 }

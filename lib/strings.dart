@@ -223,6 +223,13 @@ abstract final class Strings {
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';
 
+  // Notes
+  static const notaCredito = 'Nota de crédito';
+  static const notaDebito = 'Nota de débito';
+  static const tipoNota = 'Motivo';
+  static const sustento = 'Sustento';
+  static String affectedDocument(String serieNumero) => 'Modifica $serieNumero';
+
   // Quick sale
   static const quickSale = 'Venta rápida';
   static const quickSaleHelp = 'Boleta en segundos, para ventas de mostrador';

@@ -15,6 +15,7 @@ import 'package:xhandler_mobile/features/document/document_status.dart';
 import 'package:xhandler_mobile/features/document/documents_list.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/invoice_form_page.dart';
+import 'package:xhandler_mobile/features/document/note_form_page.dart';
 import 'package:xhandler_mobile/features/document/quick_sale_page.dart';
 import 'package:xhandler_mobile/features/product/product_repository.dart';
 import 'package:xhandler_mobile/features/document/sunat_bridge.dart';
@@ -46,6 +47,7 @@ void main() {
         data.secureStore,
         bridge,
         demoCertificate: () async => Uint8List(1),
+        pauseBetweenSends: Duration.zero,
       );
 
   /// Pumps [page] (pushed over an empty page) with [service] on a fake bridge
@@ -324,6 +326,63 @@ void main() {
       expect(charge.onPressed, isNull);
       await data.unmount(tester);
     });
+  });
+
+  testWidgets('a nota de crédito copies the factura and is issued with FC01', (
+    tester,
+  ) async {
+    final data = TestData();
+    final company = await tester.runAsync(data.createCompany);
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final f001 = await serie(tester, data, 'F001');
+    final factura = (await tester.runAsync(() async {
+      final id = await service.emit(
+        company: company!,
+        serie: f001,
+        draft: const InvoiceDraft(
+          tipoComprobante: '01',
+          moneda: 'PEN',
+          customer: DraftCustomer(
+            tipoDocumentoIdentidad: '6',
+            numeroDocumentoIdentidad: '20100070970',
+            nombre: 'SUPERMERCADOS PERUANOS',
+          ),
+          lines: [DraftLine(descripcion: 'Café', cantidad: '2', precio: '59')],
+        ),
+      );
+      bridge.responses.add(_accepted);
+      await service.send(id);
+      return DocumentRepository(data.database).find(id);
+    }))!;
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      DocumentDetailPage(documentId: factura.id),
+    );
+    await pumpUntil(tester, () => shows(Strings.notaCredito));
+    await tester.tap(find.text(Strings.notaCredito));
+    await pumpUntil(
+      tester,
+      () => find.byType(NoteFormPage).evaluate().isNotEmpty,
+    );
+    await pumpUntil(tester, () => shows('FC01-00000001'));
+    expect(find.text('Café'), findsOneWidget); // copied from the factura
+
+    bridge.responses.add(_accepted);
+    await tester.tap(find.text(Strings.emit));
+    await pumpUntil(tester, () => shows(Strings.viewDocument), 'sheet');
+
+    final note = (await tester.runAsync(
+      () => (data.database.select(
+        data.database.documents,
+      )..where((d) => d.serie.equals('FC01'))).getSingle(),
+    ))!;
+    expect(note.affectedDocumentId, factura.id);
+    await data.unmount(tester);
   });
 
   testWidgets('DocumentDetailPage sends again and shows the new status', (

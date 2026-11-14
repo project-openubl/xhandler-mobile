@@ -22,6 +22,15 @@ void main() {
     expect(percentToFraction('250'), '2.50');
   });
 
+  test('fractionToPercent is the inverse of percentToFraction', () {
+    expect(fractionToPercent('0.17'), '17');
+    expect(fractionToPercent('0.125'), '12.5');
+    expect(fractionToPercent('1.00'), '100');
+    for (final percent in ['17', '5', '12.5', '250']) {
+      expect(fractionToPercent(percentToFraction(percent)), percent);
+    }
+  });
+
   test('roundAmount rounds half up', () {
     expect(roundAmount('30.300000000000000000000000000'), '30.30');
     expect(roundAmount('118'), '118.00');

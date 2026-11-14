@@ -33,7 +33,7 @@ final _company = Company(
 );
 
 void main() {
-  void expectGolden(String name, InvoiceDraft draft, String serieNumero) {
+  void expectGolden(String name, DocumentDraft draft, String serieNumero) {
     final json = const JsonEncoder.withIndent('  ').convert(
       jsonDecode(
         draft.toDocumentJson(
@@ -140,5 +140,86 @@ void main() {
       ),
       'B001-26',
     );
+  });
+
+  final factura = Document(
+    id: 'f1',
+    createdAt: DateTime.utc(2026),
+    updatedAt: DateTime.utc(2026),
+    companyId: '1',
+    environment: SunatEnvironment.beta,
+    tipoComprobante: '01',
+    serie: 'F001',
+    numero: 1,
+    fechaEmision: '2026-11-13',
+    clienteTipoDocumento: '6',
+    clienteNumeroDocumento: '20100070970',
+    clienteNombre: 'SUPERMERCADOS PERUANOS S.A.',
+    moneda: 'PEN',
+    total: '118.00',
+    status: DocumentStatus.accepted,
+    digestValue: 'hash',
+    attempts: 0,
+    inputJson: '{}',
+    enrichedJson: '{}',
+    deviceId: 'd',
+  );
+  const supermercados = DraftCustomer(
+    tipoDocumentoIdentidad: '6',
+    numeroDocumentoIdentidad: '20100070970',
+    nombre: 'SUPERMERCADOS PERUANOS S.A.',
+  );
+
+  test('nota de crédito: annulment of a factura', () {
+    expectGolden(
+      'nota_credito_anulacion',
+      NoteDraft(
+        tipoComprobante: '07',
+        affected: factura,
+        tipoNota: '01',
+        sustento: 'Anulación de la operación',
+        customer: supermercados,
+        lines: const [
+          DraftLine(descripcion: 'Café', cantidad: '2', precio: '59.00'),
+        ],
+      ),
+      'FC01-1',
+    );
+  });
+
+  test('nota de débito: late payment interest', () {
+    expectGolden(
+      'nota_debito_mora',
+      NoteDraft(
+        tipoComprobante: '08',
+        affected: factura,
+        tipoNota: '01',
+        sustento: 'Intereses por mora',
+        customer: supermercados,
+        lines: const [
+          DraftLine(
+            descripcion: 'Intereses',
+            cantidad: '1',
+            precio: '10.00',
+            unidadMedida: 'ZZ',
+          ),
+        ],
+      ),
+      'FD01-1',
+    );
+  });
+
+  test('DraftLine.fromJson reads back what toJson wrote', () {
+    const line = DraftLine(
+      descripcion: 'Cerveza',
+      cantidad: '6',
+      precio: '7.50',
+      codigo: 'CER-01',
+      iscTipo: '01',
+      iscTasa: '30',
+      esBolsa: true,
+    );
+    final copy = DraftLine.fromJson(line.toJson());
+    expect(copy.toJson(), line.toJson());
   });
 }

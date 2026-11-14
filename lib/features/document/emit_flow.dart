@@ -20,7 +20,7 @@ Future<({String id, DocumentStatus status})?> issueDocument(
   WidgetRef ref, {
   required Company company,
   required Serie serie,
-  required InvoiceDraft draft,
+  required DocumentDraft draft,
 }) async {
   final service = ref.read(documentServiceProvider);
   final String id;

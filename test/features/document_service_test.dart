@@ -45,6 +45,7 @@ void main() {
       SecureStore(),
       bridge,
       demoCertificate: () async => Uint8List(1),
+      pauseBetweenSends: Duration.zero,
     );
     final companies = CompanyRepository(database, SecureStore());
     await companies.create(
@@ -465,6 +466,87 @@ void main() {
       )..where((e) => e.documentId.equals(id))).get();
       // Issued and its three retries are one "pending" event
       expect(events.single.message, 'timeout');
+    });
+  });
+
+  test(
+    'HTTP 401 is retried twice before it is taken as wrong credentials',
+    () async {
+      final id = await emit();
+      const unauthorized = SunatResponse(
+        status: SunatStatus.exception,
+        code: 'HTTP 401',
+        notes: [],
+      );
+      bridge.responses.addAll([unauthorized, unauthorized, unauthorized]);
+
+      expect(await service.send(id), DocumentStatus.pendingSend);
+      await due(id);
+      expect(await service.send(id), DocumentStatus.pendingSend);
+      await due(id);
+      expect(await service.send(id), DocumentStatus.exception);
+    },
+  );
+
+  group('notas', () {
+    Future<Document> acceptedFactura() async {
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+      await service.send(id);
+      return document(id);
+    }
+
+    Future<Serie> serieNamed(String serie) => (database.select(
+      database.series,
+    )..where((s) => s.serie.equals(serie))).getSingle();
+
+    test('a nota de crédito points to the invoice it modifies', () async {
+      final factura = await acceptedFactura();
+      final note = await service.emit(
+        company: company,
+        serie: await serieNamed('FC01'),
+        draft: NoteDraft(
+          tipoComprobante: '07',
+          affected: factura,
+          tipoNota: '01',
+          sustento: 'Anulación de la operación',
+          customer: _draft.customer,
+          lines: _draft.lines,
+        ),
+      );
+
+      final stored = await document(note);
+      expect(stored.serie, 'FC01');
+      expect(stored.affectedDocumentId, factura.id);
+      final spec = (jsonDecode(bridge.builtJson.last) as Map)['spec'] as Map;
+      expect(spec['comprobante_afectado_serie_numero'], 'F001-1');
+    });
+
+    test('notas of facturas use F series', () async {
+      final factura = await acceptedFactura();
+      await expectLater(
+        service.emit(
+          company: company,
+          serie: await serieNamed('BC01'),
+          draft: NoteDraft(
+            tipoComprobante: '07',
+            affected: factura,
+            tipoNota: '01',
+            sustento: 'x',
+            customer: _draft.customer,
+            lines: _draft.lines,
+          ),
+        ),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.noteSerieMismatch,
+          ),
+        ),
+      );
     });
   });
 

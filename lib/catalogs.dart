@@ -67,4 +67,25 @@ abstract final class Catalogs {
     '0': 15,
     'A': 15,
   };
+
+  /// Catalog 9, why a nota de crédito is issued
+  static const tiposNotaCredito = {
+    '01': 'Anulación de la operación',
+    '02': 'Anulación por error en el RUC',
+    '03': 'Corrección por error en la descripción',
+    '04': 'Descuento global',
+    '05': 'Descuento por ítem',
+    '06': 'Devolución total',
+    '07': 'Devolución por ítem',
+    '08': 'Bonificación',
+    '09': 'Disminución en el valor',
+    '10': 'Otros conceptos',
+  };
+
+  /// Catalog 10, why a nota de débito is issued
+  static const tiposNotaDebito = {
+    '01': 'Intereses por mora',
+    '02': 'Aumento en el valor',
+    '03': 'Penalidades / otros conceptos',
+  };
 }

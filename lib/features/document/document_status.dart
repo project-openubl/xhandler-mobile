@@ -108,6 +108,8 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
     'Las boletas de más de S/ 700 necesitan el DNI del cliente.',
   DraftProblem.cuotasMismatch =>
     'Las cuotas deben sumar el total y vencer después de hoy.',
+  DraftProblem.noteSerieMismatch =>
+    'Las notas de facturas usan series F y las de boletas, series B.',
 };
 
 /// Small status chip for lists

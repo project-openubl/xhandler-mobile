@@ -28,6 +28,20 @@ String percentToFraction(String percent) {
   return '$whole.${padded.substring(padded.length - 2)}$decimals';
 }
 
+/// A fraction as a percentage, exactly: "0.17" → "17", "0.125" → "12.5"
+String fractionToPercent(String fraction) {
+  final [integer, decimals] = fraction.contains('.')
+      ? fraction.split('.')
+      : [fraction, ''];
+  final padded = decimals.padRight(2, '0');
+  final whole = '$integer${padded.substring(0, 2)}'.replaceFirst(
+    RegExp(r'^0+(?=\d)'),
+    '',
+  );
+  final rest = padded.substring(2);
+  return rest.isEmpty ? whole : '$whole.$rest';
+}
+
 /// [amount] rounded half-up to [scale] decimals: "30.3000000000" → "30.30"
 String roundAmount(String amount, [int scale = 2]) {
   final negative = amount.startsWith('-');

@@ -1,0 +1,40 @@
+{
+  "kind": "DebitNote",
+  "spec": {
+    "serie_numero": "FD01-1",
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "tipo_nota": "01",
+    "comprobante_afectado_tipo": "01",
+    "comprobante_afectado_serie_numero": "F001-1",
+    "descripcion_sustento": "Intereses por mora",
+    "detalles": [
+      {
+        "descripcion": "Intereses",
+        "cantidad": "1",
+        "unidad_medida": "ZZ",
+        "precio_con_impuestos": "10.00",
+        "igv_tipo": "10",
+        "icb_aplica": false
+      }
+    ]
+  }
+}

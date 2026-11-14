@@ -10,6 +10,9 @@ import '../../widgets/form_widgets.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
+import 'note_form_page.dart';
+import '../company/company_repository.dart';
+import '../../data/database.dart';
 
 /// A document: its status, SUNAT's answer and history (docs/DESIGN.md §5)
 class DocumentDetailPage extends ConsumerWidget {
@@ -42,6 +45,15 @@ class DocumentDetailPage extends ConsumerWidget {
       ],
     ];
     final action = document.status.actionLabel;
+    final company = ref.watch(activeCompanyProvider).value;
+    // Notas modify accepted facturas and boletas
+    final canHaveNotes =
+        company?.id == document.companyId &&
+        const {'01', '03'}.contains(document.tipoComprobante) &&
+        const {
+          DocumentStatus.accepted,
+          DocumentStatus.acceptedWithObservations,
+        }.contains(document.status);
 
     return Scaffold(
       appBar: AppBar(title: Text(serieNumero(document.serie, document.numero))),
@@ -80,6 +92,28 @@ class DocumentDetailPage extends ConsumerWidget {
                   if (context.mounted) showMessage(context, status.label);
                 },
               ),
+            ),
+          if (canHaveNotes)
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final (tipo, label) in const [
+                  ('07', Strings.notaCredito),
+                  ('08', Strings.notaDebito),
+                ])
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => NoteFormPage(
+                          company!,
+                          affected: document,
+                          tipoComprobante: tipo,
+                        ),
+                      ),
+                    ),
+                    child: Text(label),
+                  ),
+              ],
             ),
           ListTile(
             title: Text(
