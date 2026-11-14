@@ -235,9 +235,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
               Strings.email,
               keyboardType: TextInputType.emailAddress,
               validator: (email) =>
-                  email.isEmpty || RegExp(r'^\S+@\S+\.\S+$').hasMatch(email)
-                  ? null
-                  : Strings.invalidEmail,
+                  email.isEmpty || isEmail(email) ? null : Strings.invalidEmail,
             ),
             FormTextField(
               _telefono,

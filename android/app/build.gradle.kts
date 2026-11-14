@@ -54,5 +54,5 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // FileProvider, to share documents with WhatsApp
-    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.core:core:1.18.0")
 }

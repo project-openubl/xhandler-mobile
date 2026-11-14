@@ -39,12 +39,14 @@ class MainActivity : FlutterActivity() {
         val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
             type = "*/*"
             putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-            if (text != null) putExtra(Intent.EXTRA_TEXT, text)
+            // SEND_MULTIPLE takes a list of captions
+            if (text != null) putCharSequenceArrayListExtra(Intent.EXTRA_TEXT, arrayListOf(text))
             // WhatsApp's way to preselect the chat
             putExtra("jid", "$phone@s.whatsapp.net")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        for (app in listOf("com.whatsapp", "com.whatsapp.w4b")) {
+        // Businesses send from WhatsApp Business when they have both
+        for (app in listOf("com.whatsapp.w4b", "com.whatsapp")) {
             try {
                 startActivity(intent.setPackage(app))
                 return true

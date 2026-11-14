@@ -8,6 +8,8 @@ import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/secure_store.dart';
+import '../../src/rust/api/sunat.dart';
+import '../../strings.dart';
 import '../customer/customer_repository.dart';
 import '../document/document_repository.dart';
 import '../document/document_service.dart';
@@ -61,6 +63,10 @@ class DeliveryService {
     );
   }
 
+  /// How the company signs its emails
+  static String _senderName(Company company) =>
+      company.nombreComercial ?? company.razonSocial;
+
   /// Whether the company can send emails
   Future<bool> canEmail(Company company) async =>
       smtpSettings(await _secureStore.readCompanySecrets(company.id)) != null;
@@ -81,8 +87,10 @@ class DeliveryService {
           ' por ${formatMoney(document.moneda, document.total)}, en PDF y XML.',
       if (!DocumentService.accepted.contains(document.status))
         'Aún está pendiente de confirmación de SUNAT.',
+      if (document.environment == SunatEnvironment.beta)
+        Strings.testDocumentNote,
       '',
-      company.nombreComercial ?? company.razonSocial,
+      _senderName(company),
       'RUC ${company.ruc}',
     ].join('\n');
   }
@@ -101,7 +109,7 @@ class DeliveryService {
     if (settings == null) throw const EmailNotConfiguredError();
     await _emailSender.send(
       settings: settings,
-      fromName: company.nombreComercial ?? company.razonSocial,
+      fromName: _senderName(company),
       to: to,
       subject: subject(company, document),
       body: body(company, document),
@@ -119,7 +127,7 @@ class DeliveryService {
   Future<void> testEmail(Company company, SmtpSettings settings) =>
       _emailSender.send(
         settings: settings,
-        fromName: company.nombreComercial ?? company.razonSocial,
+        fromName: _senderName(company),
         to: settings.username,
         subject: 'Prueba de XHandler',
         body: 'Tu correo está listo para enviar comprobantes a tus clientes.',

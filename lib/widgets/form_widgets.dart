@@ -233,6 +233,9 @@ void showMessage(BuildContext context, String message) =>
         .showSnackBar(SnackBar(content: Text(message)));
 
 /// Trimmed text, or `null` when empty
+/// A plausible email address, without spaces (so no header injection)
+bool isEmail(String text) => RegExp(r'^\S+@\S+\.\S+$').hasMatch(text);
+
 String? optionalText(TextEditingController controller) {
   final text = controller.text.trim();
   return text.isEmpty ? null : text;

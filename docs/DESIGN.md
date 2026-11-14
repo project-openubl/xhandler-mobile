@@ -338,10 +338,13 @@ Email subject/body templates per company (`{tipo} {serie}-{numero} de {razon_soc
 Every delivery is logged in `delivery`.
 
 Built so far: SMTP from the company's account (host, port, user and app password in
-secure storage; Gmail/Outlook presets; a test email), WhatsApp on Android (a
+secure storage; a Gmail preset, since Outlook/Microsoft 365 no longer take app passwords
+for SMTP; a test email), WhatsApp on Android (a
 `FileProvider` + `ACTION_SEND_MULTIPLE` to `com.whatsapp`/`com.whatsapp.w4b` with the
 `jid` extra, which preselects the chat; iOS has no equivalent), the share sheet, and the
-`deliveries` log shown on the document. The subject and body are fixed for now. Gmail
+`deliveries` log shown on the document (a WhatsApp entry means the chat was opened
+with the files; a dismissed share sheet isn't logged). Test-mode documents say "sin
+validez tributaria" in the PDF and the email. The subject and body are fixed for now. Gmail
 API and Graph wait for OAuth apps registered with Google and Microsoft (§14).
 
 ---

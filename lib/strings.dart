@@ -331,8 +331,11 @@ abstract final class Strings {
       'Configura el correo de la empresa para enviar comprobantes.';
   static const emailSettings = 'Correo de la empresa';
   static const emailSettingsHelp =
-      'Los comprobantes se envían desde tu correo. En Gmail y Outlook usa '
-      'una contraseña de aplicación (activa la verificación en dos pasos).';
+      'Los comprobantes se envían desde tu correo. En Gmail usa una '
+      'contraseña de aplicación (activa la verificación en dos pasos). '
+      'Outlook aún no está disponible.';
+  static const testDocumentNote =
+      'Es un comprobante de prueba (modo prueba), sin validez tributaria.';
   static const smtpHost = 'Servidor SMTP';
   static const smtpPort = 'Puerto';
   static const appPassword = 'Contraseña de aplicación';

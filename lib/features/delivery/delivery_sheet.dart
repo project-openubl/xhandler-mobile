@@ -38,6 +38,12 @@ Future<void> deliverDocument(
         .read(companyRepositoryProvider)
         .find(document.companyId);
     final contact = await service.contactOf(document);
+    Future<List<DeliveryFile>> files() => deliveryFiles(
+      company: company,
+      document: document,
+      documents: ref.read(documentRepositoryProvider),
+      template: template,
+    );
     if (!anchor.mounted) return;
     switch (channel) {
       case DeliveryChannel.email:
@@ -55,7 +61,7 @@ Future<void> deliverDocument(
           label: Strings.email,
           initial: contact.email,
           keyboardType: TextInputType.emailAddress,
-          valid: (text) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text),
+          valid: isEmail,
         );
         if (to == null || !anchor.mounted) return;
         showMessage(anchor, Strings.sending);
@@ -80,36 +86,26 @@ Future<void> deliverDocument(
               ),
             );
         if (phone == null || !anchor.mounted) return;
-        final files = await deliveryFiles(
-          company: company,
-          document: document,
-          documents: ref.read(documentRepositoryProvider),
-          template: template,
-        );
         final sent = await sendToWhatsApp(
           phone: phone,
-          files: files,
+          files: await files(),
           text: DeliveryService.subject(company, document),
         );
         if (!sent) {
           if (anchor.mounted) showMessage(anchor, Strings.whatsappMissing);
           return;
         }
+        // Opened in the chat; WhatsApp doesn't tell whether it was sent
         await service.record(document, DeliveryChannel.whatsapp, phone);
       case DeliveryChannel.share:
-        final files = await deliveryFiles(
-          company: company,
-          document: document,
-          documents: ref.read(documentRepositoryProvider),
-          template: template,
-        );
+        final ready = await files();
         if (!anchor.mounted) return;
-        await shareFiles(
-          files,
+        final shared = await shareFiles(
+          ready,
           subject: DeliveryService.subject(company, document),
           anchor: anchor,
         );
-        await service.record(document, DeliveryChannel.share, null);
+        if (shared) await service.record(document, DeliveryChannel.share, null);
     }
   } on EmailException catch (error) {
     if (anchor.mounted) showMessage(anchor, emailErrorMessage(error.error));

@@ -42,6 +42,8 @@ const pdfTemplates = <PdfTemplate>[
   TicketTemplate(widthMm: 58),
 ];
 
+const _testNote = 'MODO PRUEBA: comprobante sin validez tributaria.';
+
 const _pendingNote =
     'PENDIENTE DE CONFIRMACIÓN DE SUNAT: este documento aún no fue aceptado '
     'por SUNAT.';
@@ -154,6 +156,13 @@ class A4Template implements PdfTemplate {
         ),
         build: (_) => [
           pw.SizedBox(height: 16),
+          if (view.testMode)
+            pw.Container(
+              padding: const pw.EdgeInsets.all(6),
+              margin: const pw.EdgeInsets.only(bottom: 8),
+              color: PdfColors.red100,
+              child: pw.Text(_testNote, style: bold),
+            ),
           if (view.pending)
             pw.Container(
               padding: const pw.EdgeInsets.all(6),
@@ -292,6 +301,11 @@ class TicketTemplate implements PdfTemplate {
                 pw.Text(view.serieNumero, style: bold),
               ],
             ),
+            if (view.testMode)
+              pw.Padding(
+                padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                child: pw.Text(_testNote, style: bold),
+              ),
             if (view.pending)
               pw.Padding(
                 padding: const pw.EdgeInsets.symmetric(vertical: 4),

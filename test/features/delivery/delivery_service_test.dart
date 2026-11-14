@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mailer/mailer.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/company/company_repository.dart';
@@ -202,5 +205,40 @@ void main() {
     expect(whatsappNumber('+1 415 555 0100'), '14155550100');
     expect(whatsappNumber('01 4567890'), isNull); // a landline
     expect(whatsappNumber(null), isNull);
+  });
+
+  test('mail failures say what the user can do', () {
+    expect(
+      emailErrorOf(SmtpClientAuthenticationException('535 bad credentials')),
+      EmailError.authentication,
+    );
+    for (final error in [
+      SmtpNoGreetingException('no greeting'),
+      SmtpUnsecureException('no STARTTLS'),
+      const SocketException('unreachable'),
+      const HandshakeException('bad certificate'),
+      TimeoutException('slow'),
+    ]) {
+      expect(emailErrorOf(error), EmailError.connection, reason: '$error');
+    }
+    expect(
+      emailErrorOf(SmtpMessageValidationException('bad', [])),
+      EmailError.rejected,
+    );
+    expect(emailErrorOf(StateError('bug')), isNull);
+  });
+
+  test('test-mode documents say they are not valid', () {
+    expect(
+      DeliveryService.body(company, document),
+      contains('sin validez tributaria'),
+    );
+    expect(
+      DeliveryService.body(
+        company,
+        document.copyWith(environment: SunatEnvironment.production),
+      ),
+      isNot(contains('sin validez')),
+    );
   });
 }

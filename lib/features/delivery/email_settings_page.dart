@@ -12,7 +12,8 @@ import 'email_sender.dart';
 /// Servers of the common providers: host and port
 const _presets = {
   'Gmail': ('smtp.gmail.com', '465'),
-  'Outlook': ('smtp.office365.com', '587'),
+  // Outlook and Microsoft 365 dropped app passwords for SMTP: they wait
+  // for Microsoft Graph (docs/DESIGN.md §14)
 };
 
 /// The company's email account, to send documents to customers
@@ -35,6 +36,9 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
 
   /// Saving before the current values are loaded would delete them
   bool _loaded = false;
+
+  /// A test email is on its way
+  bool _testing = false;
 
   @override
   void initState() {
@@ -87,6 +91,8 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
 
   Future<void> _test() async {
     if (!_form.currentState!.validate()) return;
+    setState(() => _testing = true);
+    showMessage(context, Strings.sending);
     try {
       await ref
           .read(deliveryServiceProvider)
@@ -96,6 +102,11 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
       }
     } on EmailException catch (error) {
       if (mounted) showMessage(context, emailErrorMessage(error.error));
+    } on Object catch (error) {
+      debugPrint('Test email: $error');
+      if (mounted) showMessage(context, Strings.unexpectedError);
+    } finally {
+      if (mounted) setState(() => _testing = false);
     }
   }
 
@@ -124,10 +135,12 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
                     in _presets.entries)
                   ActionChip(
                     label: Text(name),
-                    onPressed: () => setState(() {
-                      _host.text = host;
-                      _port.text = port;
-                    }),
+                    onPressed: _loaded
+                        ? () => setState(() {
+                            _host.text = host;
+                            _port.text = port;
+                          })
+                        : null,
                   ),
               ],
             ),
@@ -152,8 +165,7 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
               Strings.email,
               enabled: _loaded,
               keyboardType: TextInputType.emailAddress,
-              validator: (text) =>
-                  text.contains('@') ? null : Strings.invalidEmail,
+              validator: (text) => isEmail(text) ? null : Strings.invalidEmail,
             ),
             FormTextField(
               _password,
@@ -166,7 +178,7 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
             const SizedBox(height: 8),
             SaveButton(
               label: Strings.sendTestEmail,
-              onPressed: _loaded ? _test : null,
+              onPressed: _loaded && !_testing ? _test : null,
             ),
           ],
         ),

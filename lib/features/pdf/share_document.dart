@@ -41,14 +41,14 @@ Future<List<DeliveryFile>> deliveryFiles({
 }
 
 /// Shares [files] with an app the user picks; [anchor] places the share
-/// sheet on iPads
-Future<void> shareFiles(
+/// sheet on iPads. `false` when the user closed the sheet.
+Future<bool> shareFiles(
   List<DeliveryFile> files, {
   required String subject,
   required BuildContext anchor,
 }) async {
   final box = anchor.findRenderObject() as RenderBox?;
-  await SharePlus.instance.share(
+  final result = await SharePlus.instance.share(
     ShareParams(
       files: [
         for (final file in files)
@@ -61,4 +61,5 @@ Future<void> shareFiles(
           : box.localToGlobal(Offset.zero) & box.size,
     ),
   );
+  return result.status != ShareResultStatus.dismissed;
 }

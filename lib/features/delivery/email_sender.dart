@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,17 +101,28 @@ class SmtpEmailSender implements EmailSender {
       ];
     try {
       await mailer.send(message, server, timeout: const Duration(seconds: 60));
-    } on SmtpClientAuthenticationException catch (error) {
-      throw EmailException(EmailError.authentication, error.message);
-    } on SocketException catch (error) {
-      throw EmailException(EmailError.connection, error.message);
-    } on SmtpClientCommunicationException catch (error) {
-      throw EmailException(EmailError.connection, error.message);
-    } on MailerException catch (error) {
-      throw EmailException(EmailError.rejected, error.message);
+    } on Object catch (error) {
+      final mapped = emailErrorOf(error);
+      if (mapped == null) rethrow;
+      throw EmailException(mapped, '$error');
     }
   }
 }
+
+/// What a failed send means for the user; `null` for errors that aren't
+/// the account's or the connection's
+EmailError? emailErrorOf(Object error) => switch (error) {
+  SmtpClientAuthenticationException() => EmailError.authentication,
+  // No greeting, no STARTTLS offered (or stripped), timeouts, TLS and
+  // socket errors: the server can't be reached safely
+  SmtpNoGreetingException() ||
+  SmtpUnsecureException() ||
+  SmtpClientCommunicationException() ||
+  IOException() ||
+  TimeoutException() => EmailError.connection,
+  MailerException() => EmailError.rejected,
+  _ => null,
+};
 
 final emailSenderProvider = Provider<EmailSender>(
   (ref) => const SmtpEmailSender(),

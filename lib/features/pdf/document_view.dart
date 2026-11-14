@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
+import '../../src/rust/api/sunat.dart';
 import '../document/document_service.dart';
 import '../document/document_status.dart';
 import 'amount_words.dart';
@@ -44,6 +45,7 @@ class DocumentView {
     this.amountInWords,
     this.qr,
     this.pending = false,
+    this.testMode = false,
   });
 
   /// "FACTURA ELECTRÓNICA"
@@ -72,6 +74,9 @@ class DocumentView {
 
   /// SUNAT hasn't received it yet
   final bool pending;
+
+  /// Issued in test mode (SUNAT beta): not a valid document
+  final bool testMode;
   final String footer;
 
   bool get showPrices => lines.any((line) => line.importe != null);
@@ -154,6 +159,7 @@ DocumentView documentView(Document document, Company company) {
         ? _qr(document, company, spec)
         : null,
     pending: !DocumentService.accepted.contains(document.status),
+    testMode: document.environment == SunatEnvironment.beta,
     footer:
         'Representación impresa $article ${title.toLowerCase()}. '
         'Consulte su validez en $consultaUrl',
