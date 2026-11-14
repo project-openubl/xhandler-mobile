@@ -56,11 +56,15 @@ jobs:
 
   android:
     runs-on: ubuntu-latest
-    # A runner that runs out of memory hangs instead of failing
+    # A runner out of memory or disk hangs instead of failing
     timeout-minutes: 45
     steps:
       - name: Free disk space
-        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/share/swift /opt/microsoft /opt/google/chrome
+          sudo docker image prune --all --force > /dev/null
+          df -h /
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-java@v4
         with:
@@ -91,6 +95,8 @@ jobs:
           arch: x86_64
           target: google_apis
           ram-size: 2048M
+          # The default 6 GB data partition didn't fit on the runner's disk
+          disk-size: 3000M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: flutter test integration_test --reporter expanded
