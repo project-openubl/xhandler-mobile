@@ -84,6 +84,32 @@ for density, scale in {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi
     + "</resources>\n"
 )
 
+# Notification small icon: Android draws only its shape, in white; an
+# adaptive icon there shows as a grey square or is refused (Android 8.0)
+shape = Image.new("L", (S, S), 0)
+ImageDraw.Draw(shape).polygon(
+    [(262, 170), (632, 170), (762, 300), (762, 854), (262, 854)], fill=255
+)
+cut = ImageDraw.Draw(shape)
+cut.ellipse((550, 640, 850, 940), fill=0)  # room for the check
+cut.ellipse((572, 662, 828, 918), fill=255)
+cut.line([(630, 795), (685, 850), (775, 735)], fill=0, width=40, joint="curve")
+shape = shape.crop(shape.getbbox())
+glyph = Image.new("RGBA", shape.size, (255, 255, 255, 0))
+glyph.putalpha(shape)
+side = max(glyph.size)
+square = Image.new("RGBA", (side, side), (255, 255, 255, 0))
+square.paste(glyph, ((side - glyph.width) // 2, (side - glyph.height) // 2))
+for density, scale in {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}.items():
+    folder = res / f"drawable-{density}"
+    folder.mkdir(exist_ok=True)
+    # 24 dp with a 2 dp margin
+    inner = round(20 * scale)
+    canvas = Image.new("RGBA", (round(24 * scale),) * 2, (255, 255, 255, 0))
+    offset = (canvas.width - inner) // 2
+    canvas.paste(square.resize((inner, inner), Image.Resampling.LANCZOS), (offset, offset))
+    canvas.save(folder / "ic_notification.png")
+
 ios = repo / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
 for image in json.loads((ios / "Contents.json").read_text())["images"]:
     points = float(image["size"].split("x")[0])
