@@ -5,6 +5,11 @@ String peruToday([DateTime? now]) {
   final peru = (now ?? DateTime.now()).toUtc().subtract(
     const Duration(hours: 5),
   );
+  return isoDate(peru);
+}
+
+/// "YYYY-MM-DD" of [date]'s calendar day, e.g. one picked in a date picker
+String isoDate(DateTime date) {
   String twoDigits(int value) => value.toString().padLeft(2, '0');
-  return '${peru.year}-${twoDigits(peru.month)}-${twoDigits(peru.day)}';
+  return '${date.year}-${twoDigits(date.month)}-${twoDigits(date.day)}';
 }

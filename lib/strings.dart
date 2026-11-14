@@ -21,7 +21,6 @@ abstract final class Strings {
   static const addCompany = 'Agregar empresa';
   static const testMode =
       'MODO PRUEBA: los comprobantes se envían a SUNAT beta';
-  static const documentsComingSoon = 'Aquí verás tus comprobantes.';
   static const databaseErrorTitle = 'No se puede abrir la base de datos';
   static const databaseErrorText =
       'La clave que protege los datos de este dispositivo ya no está '
@@ -178,6 +177,48 @@ abstract final class Strings {
   static const lookupUrl = 'URL de searchpe';
   static const lookupUser = 'Usuario de searchpe';
   static const lookupPassword = 'Contraseña de searchpe';
+
+  // Documents
+  static const documents = 'Comprobantes';
+  static const newDocument = 'Nuevo comprobante';
+  static const noDocuments = 'Aún no hay comprobantes';
+  static const filterAll = 'Todos';
+  static const filterProblems = 'Con problemas';
+  static const factura = 'Factura';
+  static const boleta = 'Boleta';
+  static const selectCustomer = 'Elegir cliente';
+  static const anonymousCustomer = 'Clientes varios (sin documento)';
+  static const moneda = 'Moneda';
+  static const lines = 'Productos';
+  static const addProduct = 'Agregar producto';
+  static const freeLine = 'Línea libre';
+  static const cantidad = 'Cantidad';
+  static const invalidCantidad = 'Una cantidad mayor que 0';
+  static const add = 'Agregar';
+  static const credito = 'Al crédito (en cuotas)';
+  static const cuotas = 'Cuotas';
+  static const addCuota = 'Agregar cuota';
+  static const importe = 'Importe';
+  static const fechaPago = 'Fecha de pago';
+  static const totals = 'Totales';
+  static const opGravada = 'Op. gravada';
+  static const opExonerada = 'Op. exonerada';
+  static const opInafecta = 'Op. inafecta';
+  static const igv = 'IGV';
+  static const isc = 'ISC';
+  static const icbper = 'ICBPER';
+  static const total = 'Total';
+  static const emit = 'Emitir';
+  static const missingCertificate =
+      'Registra el certificado digital de la empresa para emitir comprobantes reales.';
+  static String invalidDocument(String details) =>
+      'SUNAT no aceptaría este comprobante: $details';
+  static const viewDocument = 'Ver comprobante';
+  static const done = 'Listo';
+  static const sendNow = 'Enviar ahora';
+  static const timeline = 'Historial';
+  static const sunatAnswer = 'Respuesta de SUNAT';
+  static const fechaEmision = 'Fecha de emisión';
 
   // Diagnostics
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';

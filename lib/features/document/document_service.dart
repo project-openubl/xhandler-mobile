@@ -60,6 +60,26 @@ const anonymousCustomer = DraftCustomer(
   nombre: 'CLIENTES VARIOS',
 );
 
+/// Amounts of a document, as SUNAT shows them
+class DocumentTotals {
+  const DocumentTotals(this._spec);
+
+  /// The enriched document's `spec` (xbuilder JSON)
+  final Map<String, dynamic> _spec;
+
+  String _amount(String group, String field) =>
+      roundAmount('${(_spec[group] as Map?)?[field] ?? 0}');
+
+  String get gravado => _amount('total_impuestos', 'gravado_base_imponible');
+  String get exonerado =>
+      _amount('total_impuestos', 'exonerado_base_imponible');
+  String get inafecto => _amount('total_impuestos', 'inafecto_base_imponible');
+  String get igv => _amount('total_impuestos', 'gravado_importe');
+  String get isc => _amount('total_impuestos', 'isc_importe');
+  String get icb => _amount('total_impuestos', 'icb_importe');
+  String get total => _amount('total_importe', 'importe');
+}
+
 /// SUNAT's public demo certificate, used in test mode without a certificate
 Future<Uint8List> loadDemoCertificate() async =>
     (await rootBundle.load('assets/demo/certificado_demo.pfx')).buffer
@@ -81,8 +101,8 @@ class DocumentService {
   final SunatBridge _bridge;
   final Future<Uint8List> Function() _loadDemoCertificate;
 
-  /// Sends run one at a time (outbox, manual retries)
-  Future<void> _sending = Future.value();
+  /// The last send; sends run one at a time (outbox, manual retries)
+  Future<void>? _sending;
 
   /// Waits between sends that got no answer: 1, 5, 15 minutes, then hourly
   static const retryDelays = [
@@ -102,6 +122,30 @@ class DocumentService {
     DocumentStatus.exception,
     DocumentStatus.unknown,
   };
+
+  /// The amounts [draft] would have, without issuing it
+  Future<DocumentTotals> preview({
+    required Company company,
+    required Serie serie,
+    required InvoiceDraft draft,
+  }) async {
+    final fechaEmision = peruToday();
+    final built = await _bridge.build(
+      draft.toDocumentJson(
+        company: company,
+        serieNumero: '${serie.serie}-${serie.nextNumber}',
+        fechaEmision: fechaEmision,
+      ),
+      DocumentDefaults(
+        igvTasa: TaxRates.igv,
+        icbTasa: TaxRates.icb,
+        ivapTasa: TaxRates.ivap,
+        fechaEmision: fechaEmision,
+      ),
+    );
+    final json = jsonDecode(built.enrichedJson) as Map<String, dynamic>;
+    return DocumentTotals(json['spec'] as Map<String, dynamic>);
+  }
 
   /// Signs [draft] with the next number of [serie] and stores it, ready to
   /// send. Nothing is stored and no number is used when the draft is invalid
@@ -230,7 +274,10 @@ class DocumentService {
   /// Sends the document, or checks its ticket, and records SUNAT's answer.
   /// [manual] sends (the user's "send now") restart the retry back-off.
   Future<DocumentStatus> send(String documentId, {bool manual = false}) {
-    final sent = _sending.then((_) => _send(documentId, manual));
+    final previous = _sending;
+    final sent = previous == null
+        ? _send(documentId, manual)
+        : previous.then((_) => _send(documentId, manual));
     _sending = sent.then((_) {}, onError: (_) {});
     return sent;
   }

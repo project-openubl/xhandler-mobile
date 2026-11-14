@@ -7,6 +7,8 @@ import '../../router.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../company/company_repository.dart';
+import '../document/documents_list.dart';
+import '../document/invoice_form_page.dart';
 
 /// The active company's home, or a welcome page before the first company
 class HomePage extends ConsumerWidget {
@@ -62,6 +64,14 @@ class _CompanyHome extends StatelessWidget {
 
   final Company company;
 
+  void _newDocument(BuildContext context, String tipoComprobante) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              InvoiceFormPage(company, tipoComprobante: tipoComprobante),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,14 +79,31 @@ class _CompanyHome extends StatelessWidget {
         title: Text(company.nombreComercial ?? company.razonSocial),
       ),
       drawer: _CompanyDrawer(activeId: company.id),
+      floatingActionButton: MenuAnchor(
+        menuChildren: [
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.receipt_long),
+            onPressed: () => _newDocument(context, '03'),
+            child: const Text(Strings.boleta),
+          ),
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.request_quote),
+            onPressed: () => _newDocument(context, '01'),
+            child: const Text(Strings.factura),
+          ),
+        ],
+        builder: (context, menu, _) => FloatingActionButton.extended(
+          onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+          icon: const Icon(Icons.add),
+          label: const Text(Strings.newDocument),
+        ),
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (company.sunatEnvironment == SunatEnvironment.beta)
             const TestModeBanner(),
-          const Expanded(
-            child: Center(child: Text(Strings.documentsComingSoon)),
-          ),
+          Expanded(child: DocumentsList(company)),
         ],
       ),
     );

@@ -90,3 +90,39 @@ class DocumentRepository {
 final documentRepositoryProvider = Provider(
   (ref) => DocumentRepository(ref.watch(databaseProvider)),
 );
+
+/// Filters of the document list
+enum DocumentFilter {
+  all({}),
+  pending({DocumentStatus.pendingSend, DocumentStatus.inProgress}),
+  accepted({DocumentStatus.accepted, DocumentStatus.acceptedWithObservations}),
+  problems({
+    DocumentStatus.rejected,
+    DocumentStatus.exception,
+    DocumentStatus.unknown,
+  });
+
+  const DocumentFilter(this.statuses);
+
+  final Set<DocumentStatus> statuses;
+}
+
+final documentsProvider = StreamProvider.autoDispose
+    .family<List<Document>, ({Company company, DocumentFilter filter})>(
+      (ref, query) => ref
+          .watch(documentRepositoryProvider)
+          .watch(
+            query.company.id,
+            query.company.sunatEnvironment,
+            statuses: query.filter.statuses,
+          ),
+    );
+
+final documentProvider = StreamProvider.autoDispose.family<Document, String>(
+  (ref, id) => ref.watch(documentRepositoryProvider).watchOne(id),
+);
+
+final documentEventsProvider = StreamProvider.autoDispose
+    .family<List<DocumentEvent>, String>(
+      (ref, id) => ref.watch(documentRepositoryProvider).watchEvents(id),
+    );

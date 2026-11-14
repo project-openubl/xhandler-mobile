@@ -19,7 +19,8 @@ class TestData {
   }
 
   final database = AppDatabase(NativeDatabase.memory());
-  late final companies = CompanyRepository(database, SecureStore());
+  final secureStore = SecureStore();
+  late final companies = CompanyRepository(database, secureStore);
 
   Future<Company> createCompany({
     String ruc = '20123456789',

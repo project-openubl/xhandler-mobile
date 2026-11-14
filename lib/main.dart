@@ -9,6 +9,7 @@ import 'app.dart';
 import 'data/database.dart';
 import 'data/providers.dart';
 import 'data/secure_store.dart';
+import 'features/document/outbox_runner.dart';
 import 'src/rust/frb_generated.dart';
 import 'strings.dart';
 import 'widgets/form_widgets.dart';
@@ -34,7 +35,7 @@ Future<void> _start() async {
             AppDatabase(openEncryptedDatabase(file, key)),
           ),
         ],
-        child: const App(),
+        child: const OutboxRunner(child: App()),
       ),
     );
   } on Object catch (error) {
