@@ -173,6 +173,12 @@ enum DocumentStatus {
   /// Not processed by SUNAT; the user must fix something and resend
   exception,
   unknown,
+
+  /// Its comunicación de baja or resumen is waiting for SUNAT's answer
+  voiding,
+
+  /// SUNAT accepted its comunicación de baja or resumen
+  voided,
 }
 
 /// An issued document: signed with its number taken, whatever SUNAT says

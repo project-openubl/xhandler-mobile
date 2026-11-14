@@ -202,6 +202,12 @@ Rules:
 - `exception` is never retried automatically.
 - Code 1033 (registered previously, e.g. response lost on timeout) triggers
   `get_status_cdr` to recover the original CDR, where SUNAT supports it.
+- Facturas and their notas are voided with a comunicación de baja (RA), boletas and
+  their notas with a resumen diario (RC, estado 3), up to 7 days after issue. SUNAT
+  beta's `getStatus` doesn't work, so in test mode a ticket for a voiding document is
+  taken as accepted (local code `BETA_TICKET`, explained to the user).
+- HTTP 401 may be SUNAT throttling: every SUNAT request waits 3 s after the previous
+  one, and a 401 is asked again twice before it's taken as wrong credentials.
 - Sending and voiding deadlines per document type live in one table; documents close to
   the deadline show a countdown. *(Values to confirm against current SUNAT rules.)*
 - If a document that was already delivered becomes rejected, the app warns and lists the

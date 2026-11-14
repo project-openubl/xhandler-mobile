@@ -1,0 +1,52 @@
+{
+  "kind": "SummaryDocuments",
+  "spec": {
+    "numero": 1,
+    "fecha_emision": "2026-11-13",
+    "fecha_emision_comprobantes": "2026-11-13",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "moneda": "PEN",
+    "comprobantes": [
+      {
+        "tipo_operacion": "3",
+        "comprobante": {
+          "tipo_comprobante": "07",
+          "serie_numero": "BC01-1",
+          "cliente": {
+            "tipo_documento_identidad": "0",
+            "numero_documento_identidad": "-"
+          },
+          "comprobante_afectado": {
+            "tipo_comprobante": "03",
+            "serie_numero": "B001-26"
+          },
+          "valor_venta": {
+            "importe_total": "45.00",
+            "gravado": "0.00",
+            "exonerado": "45.00",
+            "inafecto": "0.00",
+            "gratuito": "0.00"
+          },
+          "impuestos": {
+            "igv": "0.00",
+            "icb": "0.00",
+            "isc": "0.00",
+            "ivap": "0.00"
+          }
+        }
+      }
+    ]
+  }
+}

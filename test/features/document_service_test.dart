@@ -14,6 +14,7 @@ import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/series/series_repository.dart';
+import 'package:xhandler_mobile/peru_date.dart';
 import 'package:xhandler_mobile/src/rust/api/error.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
@@ -469,24 +470,225 @@ void main() {
     });
   });
 
-  test(
-    'HTTP 401 is retried twice before it is taken as wrong credentials',
-    () async {
+  group('HTTP 401', () {
+    const unauthorized = SunatResponse(
+      status: SunatStatus.exception,
+      code: 'HTTP 401',
+      notes: [],
+    );
+
+    test('is asked twice more before it is wrong credentials', () async {
       final id = await emit();
-      const unauthorized = SunatResponse(
-        status: SunatStatus.exception,
-        code: 'HTTP 401',
-        notes: [],
-      );
       bridge.responses.addAll([unauthorized, unauthorized, unauthorized]);
 
-      expect(await service.send(id), DocumentStatus.pendingSend);
-      await due(id);
-      expect(await service.send(id), DocumentStatus.pendingSend);
-      await due(id);
       expect(await service.send(id), DocumentStatus.exception);
-    },
-  );
+      expect(
+        bridge.calls.where((call) => call.startsWith('send')),
+        hasLength(3),
+      );
+    });
+
+    test('a throttled request is accepted when asked again', () async {
+      final id = await emit();
+      bridge.responses.addAll([
+        unauthorized,
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      ]);
+
+      expect(await service.send(id), DocumentStatus.accepted);
+    });
+
+    test('is asked again after sends that got no answer', () async {
+      final id = await emit();
+      const noAnswer = SunatResponse(
+        status: SunatStatus.notDelivered,
+        notes: [],
+      );
+      bridge.responses.addAll([noAnswer, noAnswer]);
+      await service.send(id);
+      await due(id);
+      await service.send(id);
+      await due(id);
+      bridge.responses.addAll([
+        unauthorized,
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      ]);
+
+      expect(await service.send(id), DocumentStatus.accepted);
+    });
+  });
+
+  group('voiding', () {
+    const acceptedAnswer = SunatResponse(
+      status: SunatStatus.accepted,
+      code: '0',
+      notes: [],
+    );
+    const ticket = SunatResponse(
+      status: SunatStatus.inProgress,
+      ticket: '1794627043358',
+      notes: [],
+    );
+
+    Future<String> acceptedDocument({InvoiceDraft draft = _draft}) async {
+      final serie =
+          await (database.select(database.series)..where(
+                (s) => s.serie.equals(
+                  draft.tipoComprobante == '01' ? 'F001' : 'B001',
+                ),
+              ))
+              .getSingle();
+      final id = await service.emit(
+        company: company,
+        serie: serie,
+        draft: draft,
+      );
+      bridge.responses.add(acceptedAnswer);
+      await service.send(id);
+      return id;
+    }
+
+    test('a factura is voided with a comunicación de baja', () async {
+      final factura = await acceptedDocument();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+
+      final voiding = await document(voidingId);
+      expect(voiding.tipoComprobante, 'RA');
+      expect(voiding.serie, 'RA-${peruToday().replaceAll('-', '')}');
+      expect(voiding.numero, 1);
+      expect(voiding.affectedDocumentId, factura);
+      final spec = (jsonDecode(voiding.inputJson) as Map)['spec'] as Map;
+      expect((spec['comprobantes'] as List).single, {
+        'tipo_comprobante': '01',
+        'serie': 'F001',
+        'numero': 1,
+        'descripcion_sustento': 'Error',
+      });
+      final voided = await document(factura);
+      expect(voided.status, DocumentStatus.voiding);
+      expect(voided.voidedByDocumentId, voidingId);
+
+      // Numbered per day
+      final other = await service.voidDocument(
+        await acceptedDocument(),
+        motivo: 'Error',
+      );
+      expect((await document(other)).numero, 2);
+    });
+
+    test('a boleta is voided with a resumen diario', () async {
+      final boleta = await acceptedDocument(
+        draft: const InvoiceDraft(
+          tipoComprobante: '03',
+          moneda: 'PEN',
+          customer: anonymousCustomer,
+          lines: [DraftLine(descripcion: 'Café', cantidad: '1', precio: '5')],
+        ),
+      );
+      final voiding = await document(
+        await service.voidDocument(boleta, motivo: 'Venta cancelada'),
+      );
+
+      expect(voiding.tipoComprobante, 'RC');
+      final spec = (jsonDecode(voiding.inputJson) as Map)['spec'] as Map;
+      final item = (spec['comprobantes'] as List).single as Map;
+      expect(item['tipo_operacion'], '3');
+      expect((item['comprobante'] as Map)['serie_numero'], 'B001-1');
+    });
+
+    test('in test mode, the ticket voids the document', () async {
+      final factura = await acceptedDocument();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.add(ticket);
+
+      expect(await service.send(voidingId), DocumentStatus.accepted);
+      expect((await document(voidingId)).sunatCode, LocalCodes.betaTicket);
+      final voided = await document(factura);
+      expect(voided.status, DocumentStatus.voided);
+      expect(voided.voidedByDocumentId, voidingId);
+    });
+
+    test('a rejected voiding leaves the document accepted', () async {
+      await SecureStore().writeCompanySecrets(company.id, {
+        CompanySecret.certificate: base64Encode([1]),
+        CompanySecret.solUsername: '20123456789USUARIO',
+        CompanySecret.solPassword: 'clave',
+      });
+      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
+      final factura = await acceptedDocument();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.add(ticket);
+      expect(await service.send(voidingId), DocumentStatus.inProgress);
+      expect((await document(factura)).status, DocumentStatus.voiding);
+
+      bridge.responses.add(
+        const SunatResponse(
+          status: SunatStatus.rejected,
+          code: '2324',
+          notes: [],
+        ),
+      );
+      await due(voidingId);
+      expect(await service.send(voidingId), DocumentStatus.rejected);
+      expect(bridge.calls.last, 'verify 1794627043358');
+      final document_ = await document(factura);
+      expect(document_.status, DocumentStatus.accepted);
+      expect(document_.voidedByDocumentId, isNull);
+    });
+
+    test('only accepted documents, within 7 days', () async {
+      final pending = await emit();
+      await expectLater(
+        service.voidDocument(pending, motivo: 'Error'),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.notVoidable,
+          ),
+        ),
+      );
+
+      final old = await acceptedDocument();
+      await (database.update(database.documents)
+            ..where((d) => d.id.equals(old)))
+          .write(const DocumentsCompanion(fechaEmision: Value('2020-01-01')));
+      await expectLater(
+        service.voidDocument(old, motivo: 'Error'),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.voidingTooLate,
+          ),
+        ),
+      );
+    });
+
+    test('an accepted nota does not void the document it modifies', () async {
+      final factura = await acceptedDocument();
+      final fc01 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('FC01'))).getSingle();
+      final note = await service.emit(
+        company: company,
+        serie: fc01,
+        draft: NoteDraft(
+          tipoComprobante: '07',
+          affected: await document(factura),
+          tipoNota: '01',
+          sustento: 'Anulación',
+          customer: _draft.customer,
+          lines: _draft.lines,
+        ),
+      );
+      await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.add(acceptedAnswer);
+      await service.send(note);
+
+      expect((await document(factura)).status, DocumentStatus.voiding);
+    });
+  });
 
   group('notas', () {
     Future<Document> acceptedFactura() async {

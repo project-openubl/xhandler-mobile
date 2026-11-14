@@ -229,6 +229,19 @@ abstract final class Strings {
   static const tipoNota = 'Motivo';
   static const sustento = 'Sustento';
   static String affectedDocument(String serieNumero) => 'Modifica $serieNumero';
+  static const notes = 'Notas';
+
+  // Voiding
+  static const voidDocument = 'Anular';
+  static const voidTitle = 'Anular comprobante';
+  static const voidHelp =
+      'Solo anula comprobantes que el cliente aún no recibió. Si ya lo '
+      'recibió, emite una nota de crédito.';
+  static const motivo = 'Motivo';
+  static const comunicacionBaja = 'Comunicación de baja';
+  static const resumenDiario = 'Resumen diario';
+  static String voids(String serieNumero) => 'Anula $serieNumero';
+  static String voidedBy(String serieNumero) => 'Anulado por $serieNumero';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

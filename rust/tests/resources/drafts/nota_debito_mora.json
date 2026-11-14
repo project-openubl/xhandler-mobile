@@ -32,7 +32,7 @@
         "cantidad": "1",
         "unidad_medida": "ZZ",
         "precio_con_impuestos": "10.00",
-        "igv_tipo": "10",
+        "igv_tipo": "30",
         "icb_aplica": false
       }
     ]

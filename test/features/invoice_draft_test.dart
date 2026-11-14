@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
+import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
+import 'package:xhandler_mobile/features/document/voiding.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
 /// The JSON the app sends to xbuilder. The same files are built by the Rust
@@ -33,22 +35,25 @@ final _company = Company(
 );
 
 void main() {
-  void expectGolden(String name, DocumentDraft draft, String serieNumero) {
-    final json = const JsonEncoder.withIndent('  ').convert(
-      jsonDecode(
-        draft.toDocumentJson(
-          company: _company,
-          serieNumero: serieNumero,
-          fechaEmision: '2026-11-13',
-        ),
-      ),
-    );
+  void expectGoldenJson(String name, String document) {
+    final json = const JsonEncoder.withIndent('  ')
+        .convert(jsonDecode(document));
     final file = File('$_drafts/$name.json');
     if (Platform.environment['UPDATE_GOLDEN'] == 'true') {
       file.writeAsStringSync('$json\n');
     }
     expect(json, file.readAsStringSync().trim());
   }
+
+  void expectGolden(String name, DocumentDraft draft, String serieNumero) =>
+      expectGoldenJson(
+        name,
+        draft.toDocumentJson(
+          company: _company,
+          serieNumero: serieNumero,
+          fechaEmision: '2026-11-13',
+        ),
+      );
 
   test('factura, payment in full, with a bag and ISC', () {
     expectGolden(
@@ -187,7 +192,7 @@ void main() {
     );
   });
 
-  test('nota de débito: late payment interest', () {
+  test('nota de débito: late payment interest, without IGV', () {
     expectGolden(
       'nota_debito_mora',
       NoteDraft(
@@ -202,10 +207,93 @@ void main() {
             cantidad: '1',
             precio: '10.00',
             unidadMedida: 'ZZ',
+            // Compensation, not a sale: inafecto
+            igvTipo: '30',
           ),
         ],
       ),
       'FD01-1',
+    );
+  });
+
+  final boleta = factura.copyWith(
+    id: 'b1',
+    tipoComprobante: '03',
+    serie: 'B001',
+    numero: 26,
+    clienteTipoDocumento: '0',
+    clienteNumeroDocumento: '-',
+    clienteNombre: 'CLIENTES VARIOS',
+    total: '90.00',
+    inputJson: File('$_drafts/boleta_exonerada.json').readAsStringSync(),
+    enrichedJson: jsonEncode({
+      'spec': {
+        'total_impuestos': {
+          'exonerado_base_imponible': '90.00',
+          'exonerado_importe': '0.00',
+        },
+      },
+    }),
+  );
+
+  test('nota de crédito of a boleta to an anonymous customer', () {
+    expectGolden(
+      'nota_credito_boleta',
+      NoteDraft(
+        tipoComprobante: '07',
+        affected: boleta,
+        tipoNota: '07',
+        sustento: 'Devolución de un libro',
+        customer: anonymousCustomer,
+        lines: const [
+          DraftLine(
+            descripcion: 'Libro',
+            cantidad: '1',
+            precio: '45',
+            igvTipo: '20',
+          ),
+        ],
+      ),
+      'BC01-1',
+    );
+  });
+
+  String voiding(Document document, String motivo) => voidingJson(
+    company: _company,
+    document: document,
+    motivo: motivo,
+    numero: 1,
+    fechaEmision: '2026-11-13',
+  );
+
+  test('comunicación de baja of a factura', () {
+    expectGoldenJson('baja_factura', voiding(factura, 'Error en el precio'));
+  });
+
+  test('resumen diario voiding a boleta', () {
+    expectGoldenJson(
+      'resumen_anula_boleta',
+      voiding(boleta, 'Venta cancelada'),
+    );
+  });
+
+  test('resumen diario voiding a nota of a boleta', () {
+    final note = boleta.copyWith(
+      id: 'n1',
+      tipoComprobante: '07',
+      serie: 'BC01',
+      numero: 1,
+      total: '45.00',
+      inputJson: File('$_drafts/nota_credito_boleta.json').readAsStringSync(),
+      enrichedJson: jsonEncode({
+        'spec': {
+          'total_impuestos': {'exonerado_base_imponible': '45.00'},
+        },
+      }),
+    );
+    expectGoldenJson(
+      'resumen_anula_nota_boleta',
+      voiding(note, 'Nota emitida por error'),
     );
   });
 

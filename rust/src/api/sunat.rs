@@ -260,7 +260,9 @@ mod tests {
     }
 
     /// Every document the app produces (tests/resources/drafts) is
-    /// accepted by SUNAT beta: `cargo test -- --ignored`
+    /// accepted by SUNAT beta: `cargo test -- --ignored`. Comunicaciones de
+    /// baja and resúmenes only get a ticket: beta's getStatus doesn't work
+    /// (like in xsender's send_voided_documents test).
     #[tokio::test]
     #[ignore]
     async fn send_app_drafts_to_beta() {
@@ -268,31 +270,50 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs()
-            % 99_999_999;
+            % 9_999_999
+            * 10;
+        // Peru's date: SUNAT checks the dates of resúmenes against it
+        let today = (chrono::Utc::now() - chrono::Duration::hours(5))
+            .format("%Y-%m-%d")
+            .to_string();
+        let mut paths: Vec<_> = std::fs::read_dir("tests/resources/drafts")
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect();
+        paths.sort();
+
         let mut failures = Vec::new();
-        for entry in std::fs::read_dir("tests/resources/drafts").unwrap() {
-            // SUNAT beta answers HTTP 401 to requests sent right after another
-            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-            let path = entry.unwrap().path();
+        for (index, path) in paths.iter().enumerate() {
             let mut json: serde_json::Value =
-                serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+                serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
             let spec = &mut json["spec"];
             spec["proveedor"]["ruc"] = "10467793549".into();
-            let serie = spec["serie_numero"]
-                .as_str()
-                .unwrap()
-                .split('-')
-                .next()
-                .unwrap()
-                .to_string();
-            spec["serie_numero"] = format!("{serie}-{unique}").into();
+            spec["fecha_emision"] = today.clone().into();
+            let numero = unique + index as u64;
+            match spec["serie_numero"].as_str() {
+                Some(serie_numero) => {
+                    let serie = serie_numero.split('-').next().unwrap().to_string();
+                    spec["serie_numero"] = format!("{serie}-{numero}").into();
+                }
+                None => {
+                    spec["numero"] = (numero % 100_000).into();
+                    spec["fecha_emision_comprobantes"] = today.clone().into();
+                }
+            }
 
             let built = build_document(json.to_string(), defaults()).unwrap();
             let signed = sign_document(built.xml, certificate(), "password".into()).unwrap();
+            // SUNAT beta answers HTTP 401 to requests sent right after another
+            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             let response = send_document(signed.xml, SunatEnvironment::Beta, beta_credentials())
                 .await
                 .unwrap();
-            if !matches!(response.status, SunatStatus::Accepted) {
+            let accepted = match response.status {
+                SunatStatus::Accepted => true,
+                SunatStatus::InProgress => response.ticket.is_some(),
+                _ => false,
+            };
+            if !accepted {
                 failures.push(format!(
                     "{path:?}: {:?} {:?}",
                     response.code, response.description

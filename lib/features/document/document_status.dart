@@ -1,7 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../catalogs.dart';
 import '../../data/database.dart';
+import '../../strings.dart';
 import 'document_service.dart';
+import 'voiding.dart';
 
 /// How each document status looks (docs/DESIGN.md §5)
 extension DocumentStatusView on DocumentStatus {
@@ -13,6 +16,8 @@ extension DocumentStatusView on DocumentStatus {
     DocumentStatus.rejected => 'Rechazado',
     DocumentStatus.exception => 'Excepción',
     DocumentStatus.unknown => 'Desconocido',
+    DocumentStatus.voiding => 'Anulación en proceso',
+    DocumentStatus.voided => 'Anulado',
   };
 
   /// What it means for the user
@@ -29,6 +34,9 @@ extension DocumentStatusView on DocumentStatus {
     DocumentStatus.exception =>
       'SUNAT no lo procesó. Corrige el problema y vuelve a enviarlo.',
     DocumentStatus.unknown => 'No se sabe si SUNAT lo tiene. Consúltalo.',
+    DocumentStatus.voiding =>
+      'Se pidió a SUNAT anularlo. Se consultará automáticamente.',
+    DocumentStatus.voided => 'SUNAT lo anuló; ya no tiene validez.',
   };
 
   IconData get icon => switch (this) {
@@ -39,15 +47,18 @@ extension DocumentStatusView on DocumentStatus {
     DocumentStatus.rejected => Icons.cancel,
     DocumentStatus.exception => Icons.error,
     DocumentStatus.unknown => Icons.help,
+    DocumentStatus.voiding => Icons.hourglass_top,
+    DocumentStatus.voided => Icons.block,
   };
 
   Color color(ColorScheme colors) => switch (this) {
     DocumentStatus.pendingSend => colors.primary,
-    DocumentStatus.inProgress => Colors.amber.shade800,
+    DocumentStatus.inProgress ||
+    DocumentStatus.voiding => Colors.amber.shade800,
     DocumentStatus.accepted ||
     DocumentStatus.acceptedWithObservations => Colors.green.shade700,
     DocumentStatus.rejected || DocumentStatus.exception => colors.error,
-    DocumentStatus.unknown => colors.outline,
+    DocumentStatus.unknown || DocumentStatus.voided => colors.outline,
   };
 }
 
@@ -63,9 +74,17 @@ extension DocumentStatusAction on DocumentStatus {
   };
 }
 
-/// "F001-00000042"
-String serieNumero(String serie, int numero) =>
-    '$serie-${numero.toString().padLeft(8, '0')}';
+/// "F001-00000042"; voiding documents "RA-20261113-1"
+String serieNumero(String serie, int numero) => serie.contains('-')
+    ? '$serie-$numero'
+    : '$serie-${numero.toString().padLeft(8, '0')}';
+
+/// Name of a document type: Catalog 1, or a voiding document
+String tipoComprobanteLabel(String tipo) => switch (tipo) {
+  comunicacionBaja => Strings.comunicacionBaja,
+  resumenDiario => Strings.resumenDiario,
+  _ => Catalogs.tiposComprobante[tipo] ?? tipo,
+};
 
 /// An xbuilder error in Spanish, e.g. "detalles[0].igv_tipo: 99 is not a
 /// valid Catalog7" → "Un código no es válido: tipo de IGV (línea 1)"
@@ -98,6 +117,11 @@ String? localCodeMessage(String? code) => switch (code) {
   LocalCodes.noCredentials =>
     'Faltan las credenciales SOL de la empresa (Empresa → Credenciales).',
   LocalCodes.error => 'Error de la aplicación al enviar.',
+  LocalCodes.betaTicket =>
+    'SUNAT recibió la anulación. En modo prueba se da por aceptada: '
+        'SUNAT beta no permite consultar su respuesta.',
+  'HTTP 401' =>
+    'SUNAT no aceptó el usuario o la clave SOL (Empresa → Credenciales).',
   _ => null,
 };
 
@@ -110,6 +134,11 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
     'Las cuotas deben sumar el total y vencer después de hoy.',
   DraftProblem.noteSerieMismatch =>
     'Las notas de facturas usan series F y las de boletas, series B.',
+  DraftProblem.notVoidable =>
+    'Solo se anulan facturas, boletas y notas aceptadas por SUNAT.',
+  DraftProblem.voidingTooLate =>
+    'El plazo para anularlo venció ($voidingDays días); '
+        'emite una nota de crédito.',
 };
 
 /// Small status chip for lists

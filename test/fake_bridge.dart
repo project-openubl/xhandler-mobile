@@ -55,6 +55,10 @@ class FakeBridge implements SunatBridge {
         'spec': {
           ...spec,
           'total_importe': {'importe': total},
+          'total_impuestos': {
+            'gravado_base_imponible': '100.00',
+            'gravado_importe': '18.00',
+          },
         },
       }),
     );

@@ -14,8 +14,10 @@ import '../../src/rust/api/document.dart';
 import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import 'document_repository.dart';
+import 'document_status.dart';
 import 'invoice_draft.dart';
 import 'sunat_bridge.dart';
+import 'voiding.dart';
 
 /// The company has no certificate and isn't in test mode
 class MissingCertificateError implements Exception {
@@ -38,6 +40,12 @@ enum DraftProblem {
 
   /// Notas of facturas use F series, notas of boletas B series
   noteSerieMismatch,
+
+  /// Only accepted facturas, boletas and notas can be voided
+  notVoidable,
+
+  /// Voiding is allowed up to [voidingDays] after the issue date
+  voidingTooLate,
 }
 
 class InvalidDraftError implements Exception {
@@ -53,6 +61,10 @@ abstract final class LocalCodes {
 
   /// Production without SOL credentials
   static const noCredentials = 'NO_CREDENTIALS';
+
+  /// A ticket from SUNAT beta, which can't check tickets: test mode takes
+  /// the comunicación de baja or resumen as accepted
+  static const betaTicket = 'BETA_TICKET';
 }
 
 /// Customer of boletas to people who don't identify themselves (accepted by
@@ -110,6 +122,9 @@ class DocumentService {
   /// SUNAT answers HTTP 401 to requests sent right after another
   final Duration pauseBetweenSends;
 
+  /// When SUNAT was last called, to keep [pauseBetweenSends]
+  DateTime? _lastRequestAt;
+
   final AppDatabase _db;
   final DocumentRepository _documents;
   final SecureStore _secureStore;
@@ -132,6 +147,12 @@ class DocumentService {
 
   /// How often a ticket is checked
   static const ticketCheckDelay = Duration(minutes: 2);
+
+  /// Statuses of documents SUNAT accepted
+  static const accepted = {
+    DocumentStatus.accepted,
+    DocumentStatus.acceptedWithObservations,
+  };
 
   /// Statuses a send can change: waiting ones, and those the user fixes
   static const sendable = {
@@ -228,41 +249,28 @@ class DocumentService {
       _checkTotals(draft, total, fechaEmision);
       final signed = await _bridge.sign(built.xml, certificate, password);
 
-      final document = await _db
-          .into(_db.documents)
-          .insertReturning(
-            DocumentsCompanion.insert(
-              companyId: company.id,
-              environment: company.sunatEnvironment,
-              tipoComprobante: current.tipoComprobante,
-              serie: current.serie,
-              numero: numero,
-              fechaEmision: fechaEmision,
-              clienteTipoDocumento: draft.customer.tipoDocumentoIdentidad,
-              clienteNumeroDocumento: draft.customer.numeroDocumentoIdentidad,
-              clienteNombre: draft.customer.nombre,
-              moneda: draft.moneda,
-              total: total,
-              status: DocumentStatus.pendingSend,
-              digestValue: signed.digestValue,
-              inputJson: inputJson,
-              enrichedJson: built.enrichedJson,
-              affectedDocumentId: Value(draft.affectedDocumentId),
-              deviceId: deviceId,
-            ),
-          );
-      final xml = utf8.encode(signed.xml);
-      await _db
-          .into(_db.documentFiles)
-          .insert(
-            DocumentFilesCompanion.insert(
-              documentId: document.id,
-              kind: DocumentFileKind.signedXml,
-              bytes: xml,
-              sha256: crypto.sha256.convert(xml).toString(),
-            ),
-          );
-      await _addEvent(document.id, DocumentStatus.pendingSend, deviceId);
+      final document = await _store(
+        DocumentsCompanion.insert(
+          companyId: company.id,
+          environment: company.sunatEnvironment,
+          tipoComprobante: current.tipoComprobante,
+          serie: current.serie,
+          numero: numero,
+          fechaEmision: fechaEmision,
+          clienteTipoDocumento: draft.customer.tipoDocumentoIdentidad,
+          clienteNumeroDocumento: draft.customer.numeroDocumentoIdentidad,
+          clienteNombre: draft.customer.nombre,
+          moneda: draft.moneda,
+          total: total,
+          status: DocumentStatus.pendingSend,
+          digestValue: signed.digestValue,
+          inputJson: inputJson,
+          enrichedJson: built.enrichedJson,
+          affectedDocumentId: Value(draft.affectedDocumentId),
+          deviceId: deviceId,
+        ),
+        signed.xml,
+      );
       await (_db.update(
         _db.series,
       )..where((s) => s.id.equals(current.id))).write(
@@ -273,6 +281,169 @@ class DocumentService {
       );
       return document.id;
     });
+  }
+
+  /// Stores a signed document, ready to send
+  Future<Document> _store(DocumentsCompanion document, String signedXml) async {
+    final stored = await _db.into(_db.documents).insertReturning(document);
+    final xml = utf8.encode(signedXml);
+    await _db
+        .into(_db.documentFiles)
+        .insert(
+          DocumentFilesCompanion.insert(
+            documentId: stored.id,
+            kind: DocumentFileKind.signedXml,
+            bytes: xml,
+            sha256: crypto.sha256.convert(xml).toString(),
+          ),
+        );
+    await _addEvent(stored.id, stored.status, stored.deviceId);
+    return stored;
+  }
+
+  /// Issues the comunicación de baja or resumen diario that voids an
+  /// accepted document, ready to send; the document is [DocumentStatus.voiding]
+  /// until SUNAT answers it. Returns the voiding document's id.
+  Future<String> voidDocument(
+    String documentId, {
+    required String motivo,
+  }) async {
+    final fechaEmision = peruToday();
+    final document = await _documents.find(documentId);
+    _checkVoidable(document, fechaEmision);
+    final company = await (_db.select(
+      _db.companies,
+    )..where((c) => c.id.equals(document.companyId))).getSingle();
+    final secrets = await _secureStore.readCompanySecrets(company.id);
+    final (certificate, password) = await _certificate(company, secrets);
+    final deviceId = await _db.deviceId();
+    final tipo = voidingTipo(document);
+    final serie = voidingSerie(tipo, fechaEmision);
+
+    return _db.transaction(() async {
+      // Read again: it may have been voided meanwhile
+      final current = await _documents.find(documentId);
+      _checkVoidable(current, fechaEmision);
+      final numero =
+          await _documents.lastNumero(
+            company.id,
+            current.environment,
+            tipo,
+            serie,
+          ) +
+          1;
+      final inputJson = voidingJson(
+        company: company,
+        document: current,
+        motivo: motivo,
+        numero: numero,
+        fechaEmision: fechaEmision,
+      );
+      final built = await _bridge.build(
+        inputJson,
+        DocumentDefaults(
+          igvTasa: TaxRates.igv,
+          icbTasa: TaxRates.icb,
+          ivapTasa: TaxRates.ivap,
+          fechaEmision: fechaEmision,
+        ),
+      );
+      final signed = await _bridge.sign(built.xml, certificate, password);
+      final voiding = await _store(
+        DocumentsCompanion.insert(
+          companyId: company.id,
+          environment: current.environment,
+          tipoComprobante: tipo,
+          serie: serie,
+          numero: numero,
+          fechaEmision: fechaEmision,
+          clienteTipoDocumento: current.clienteTipoDocumento,
+          clienteNumeroDocumento: current.clienteNumeroDocumento,
+          clienteNombre: current.clienteNombre,
+          moneda: current.moneda,
+          total: current.total,
+          status: DocumentStatus.pendingSend,
+          digestValue: signed.digestValue,
+          inputJson: inputJson,
+          enrichedJson: built.enrichedJson,
+          affectedDocumentId: Value(current.id),
+          deviceId: deviceId,
+        ),
+        signed.xml,
+      );
+      await (_db.update(
+        _db.documents,
+      )..where((d) => d.id.equals(current.id))).write(
+        DocumentsCompanion(
+          status: const Value(DocumentStatus.voiding),
+          voidedByDocumentId: Value(voiding.id),
+          updatedAt: Value(nowUtc()),
+        ),
+      );
+      await _addEvent(
+        current.id,
+        DocumentStatus.voiding,
+        deviceId,
+        null,
+        serieNumero(voiding.serie, voiding.numero),
+      );
+      return voiding.id;
+    });
+  }
+
+  /// Facturas, boletas and notas accepted by SUNAT up to [voidingDays] ago
+  /// can be voided; later, a nota de crédito is issued instead
+  static void _checkVoidable(Document document, String today) {
+    if (!voidableTipos.contains(document.tipoComprobante) ||
+        !accepted.contains(document.status)) {
+      throw const InvalidDraftError(DraftProblem.notVoidable);
+    }
+    if (!inVoidingTime(document, today)) {
+      throw const InvalidDraftError(DraftProblem.voidingTooLate);
+    }
+  }
+
+  /// When SUNAT answers a comunicación de baja or resumen, the document it
+  /// voids is voided, or accepted again if SUNAT rejected the voiding
+  Future<void> _settleVoiding(
+    Document voiding,
+    DocumentStatus status,
+    String deviceId,
+  ) async {
+    final voidedId = voiding.affectedDocumentId;
+    final isVoided = accepted.contains(status);
+    if (!voidingTipos.contains(voiding.tipoComprobante) ||
+        voidedId == null ||
+        (!isVoided && status != DocumentStatus.rejected)) {
+      return;
+    }
+    final voided = await _documents.find(voidedId);
+    if (voided.status != DocumentStatus.voiding) return;
+    final hasObservations =
+        voided.sunatNotes != null ||
+        (int.tryParse(voided.sunatCode ?? '') ?? 0) >= 4000;
+    final newStatus = isVoided
+        ? DocumentStatus.voided
+        : hasObservations
+        ? DocumentStatus.acceptedWithObservations
+        : DocumentStatus.accepted;
+    await (_db.update(
+      _db.documents,
+    )..where((d) => d.id.equals(voidedId))).write(
+      DocumentsCompanion(
+        status: Value(newStatus),
+        // A rejected voiding can be tried again
+        voidedByDocumentId: Value(isVoided ? voiding.id : null),
+        updatedAt: Value(nowUtc()),
+      ),
+    );
+    await _addEvent(
+      voidedId,
+      newStatus,
+      deviceId,
+      null,
+      serieNumero(voiding.serie, voiding.numero),
+    );
   }
 
   void _checkTotals(DocumentDraft draft, String total, String fechaEmision) {
@@ -307,9 +478,8 @@ class DocumentService {
     final clock = Stopwatch()..start();
     try {
       final due = await _documents.due(nowUtc());
-      for (final (index, document) in due.indexed) {
+      for (final document in due) {
         if (budget != null && clock.elapsed > budget) break;
-        if (index > 0) await Future<void>.delayed(pauseBetweenSends);
         await send(document.id);
       }
     } finally {
@@ -387,12 +557,30 @@ class DocumentService {
     final xml = await _signedXml(document);
     final ticket = document.ticket;
     if (document.status == DocumentStatus.inProgress && ticket != null) {
-      return _bridge.verify(xml, ticket, document.environment, credentials);
+      return _request(
+        () => _bridge.verify(xml, ticket, document.environment, credentials),
+      );
     }
-    final response = await _bridge.send(xml, document.environment, credentials);
+    final response = await _request(
+      () => _bridge.send(xml, document.environment, credentials),
+    );
+    if (document.environment == SunatEnvironment.beta &&
+        voidingTipos.contains(document.tipoComprobante) &&
+        response.ticket != null) {
+      // Beta can't check tickets: test mode takes the voiding as accepted
+      return const SunatResponse(
+        status: SunatStatus.accepted,
+        code: LocalCodes.betaTicket,
+        notes: [],
+      );
+    }
     if (response.code != '1033') return response;
-    if (document.environment == SunatEnvironment.production) {
-      return _bridge.recover(document, company.ruc, credentials);
+    // Comunicaciones de baja and resúmenes have no CDR to consult
+    if (document.environment == SunatEnvironment.production &&
+        voidableTipos.contains(document.tipoComprobante)) {
+      return _request(
+        () => _bridge.recover(document, company.ruc, credentials),
+      );
     }
     // Beta has no consult service to recover the CDR
     return SunatResponse(
@@ -409,23 +597,36 @@ class DocumentService {
   }
 
   /// HTTP 401 is either wrong credentials or SUNAT throttling quick
-  /// requests: the first ones are retried like a send without answer
+  /// requests: it's asked again this many times before it's taken as wrong
+  /// credentials. SUNAT didn't process the document, so asking is safe.
   static const _throttledRetries = 2;
+
+  /// Calls SUNAT at least [pauseBetweenSends] after the previous call,
+  /// whether it's the outbox, a manual send or a ticket check
+  Future<SunatResponse> _request(Future<SunatResponse> Function() call) async {
+    for (var retry = 0; ; retry++) {
+      final last = _lastRequestAt;
+      if (last != null) {
+        final wait = pauseBetweenSends - DateTime.now().difference(last);
+        if (wait > Duration.zero) await Future<void>.delayed(wait);
+      }
+      final SunatResponse response;
+      try {
+        response = await call();
+      } finally {
+        _lastRequestAt = DateTime.now();
+      }
+      if (response.code != 'HTTP 401' || retry == _throttledRetries) {
+        return response;
+      }
+    }
+  }
 
   Future<DocumentStatus> _record(
     Document document,
-    SunatResponse incoming,
+    SunatResponse response,
     bool manual,
   ) async {
-    final response =
-        incoming.code == 'HTTP 401' && document.attempts < _throttledRetries
-        ? SunatResponse(
-            status: SunatStatus.notDelivered,
-            code: incoming.code,
-            description: incoming.description,
-            notes: const [],
-          )
-        : incoming;
     var status = statusOf(response);
     // A ticket check that got no answer is still a ticket check
     if (status == DocumentStatus.pendingSend &&
@@ -502,6 +703,7 @@ class DocumentService {
         response.code,
         response.description,
       );
+      await _settleVoiding(document, status, deviceId);
       return status;
     });
   }

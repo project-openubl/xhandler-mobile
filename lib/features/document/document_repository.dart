@@ -33,6 +33,16 @@ class DocumentRepository {
   Stream<Document> watchOne(String id) =>
       (_db.select(_db.documents)..where((d) => d.id.equals(id))).watchSingle();
 
+  /// Notas, comunicaciones de baja and resúmenes of a document
+  Stream<List<Document>> watchRelated(String documentId) {
+    final query = _db.select(_db.documents)
+      ..where(
+        (d) => d.affectedDocumentId.equals(documentId) & d.deletedAt.isNull(),
+      )
+      ..orderBy([(d) => OrderingTerm(expression: d.createdAt)]);
+    return query.watch();
+  }
+
   Future<Document> find(String id) =>
       (_db.select(_db.documents)..where((d) => d.id.equals(id))).getSingle();
 
@@ -94,7 +104,11 @@ final documentRepositoryProvider = Provider(
 /// Filters of the document list
 enum DocumentFilter {
   all({}),
-  pending({DocumentStatus.pendingSend, DocumentStatus.inProgress}),
+  pending({
+    DocumentStatus.pendingSend,
+    DocumentStatus.inProgress,
+    DocumentStatus.voiding,
+  }),
   accepted({DocumentStatus.accepted, DocumentStatus.acceptedWithObservations}),
   problems({
     DocumentStatus.rejected,
@@ -128,4 +142,9 @@ final documentProvider = StreamProvider.autoDispose.family<Document, String>(
 final documentEventsProvider = StreamProvider.autoDispose
     .family<List<DocumentEvent>, String>(
       (ref, id) => ref.watch(documentRepositoryProvider).watchEvents(id),
+    );
+
+final relatedDocumentsProvider = StreamProvider.autoDispose
+    .family<List<Document>, String>(
+      (ref, id) => ref.watch(documentRepositoryProvider).watchRelated(id),
     );
