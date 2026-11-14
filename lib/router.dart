@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'data/database.dart';
 
+import 'features/backup/backup_page.dart';
 import 'features/company/active_company_page.dart';
 import 'features/company/certificate_page.dart';
 import 'features/company/company_form_page.dart';
@@ -30,6 +31,7 @@ abstract final class Routes {
   static const customers = '/company/customers';
   static const products = '/company/products';
   static const emailSettings = '/company/email';
+  static const backup = '/backup';
 }
 
 GoRoute _companyRoute(String path, Widget Function(Company) page) => GoRoute(
@@ -56,6 +58,7 @@ GoRouter buildRouter() => GoRouter(
     _companyRoute(Routes.customers, CustomersPage.new),
     _companyRoute(Routes.products, ProductsPage.new),
     _companyRoute(Routes.emailSettings, EmailSettingsPage.new),
+    GoRoute(path: Routes.backup, builder: (_, _) => const BackupPage()),
     GoRoute(
       path: Routes.diagnostics,
       builder: (_, _) => const SunatBetaCheckPage(),

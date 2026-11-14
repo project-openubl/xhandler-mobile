@@ -364,6 +364,15 @@ API and Graph wait for OAuth apps registered with Google and Microsoft (§14).
 - Per-company export/import: encrypted file with one company (data + secrets), shareable
   through the share sheet.
 
+Built so far: "Copia de seguridad" saves an encrypted file of everything (database +
+every company's secrets) through the share sheet (Drive, email, Files…), and "Restaurar
+copia de seguridad" (welcome page and backup page) replaces everything from such a file.
+File: `XHB1`, salt, nonce, secrets (JSON, AES-256-GCM), then the `VACUUM INTO` snapshot
+re-keyed to the backup key, so the database is never on disk in clear. Argon2id with
+OWASP's minimum (19 MiB, 2 iterations), password of at least 8 characters. A backup from
+a newer schema is refused; an older one migrates when the app opens it. The restored
+phone gets a new `device_id`.
+
 ---
 
 ## 10. Reports
@@ -447,5 +456,8 @@ One PR per phase, each followed by a senior-engineer review.
 - Email through the Gmail API / Microsoft Graph instead of SMTP app passwords: needs
   OAuth clients registered (and, for Gmail's `gmail.send`, Google's verification) by
   the project owner.
+- Automatic backups to Google Drive `appDataFolder` / iCloud Drive and their schedule:
+  need a Google Cloud OAuth client and the iCloud entitlement for the app's Apple team.
+  Per-company export/import is also pending.
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).

@@ -349,6 +349,35 @@ abstract final class Strings {
       'No se pudo conectar con el servidor de correo.';
   static const emailRejectedError = 'El servidor de correo rechazó el mensaje.';
 
+  // Backup
+  static const backupTitle = 'Copia de seguridad';
+  static const backupHelp =
+      'Guarda todo (empresas, comprobantes, certificados y credenciales) en '
+      'un archivo protegido con una contraseña. Guárdalo en un lugar seguro, '
+      'como Google Drive o tu correo, para restaurarlo en otro teléfono.';
+  static const noBackupYet = 'Aún no has hecho una copia de seguridad.';
+  static String lastBackup(String date) => 'Última copia: $date';
+  static const backupPassword = 'Contraseña de la copia';
+  static const backupPasswordHelp =
+      'Si la olvidas, no podrás restaurar la copia. Nadie puede recuperarla.';
+  static const backupPasswordTooShort = 'Al menos 8 caracteres';
+  static const backupPasswordConfirmation = 'Repite la contraseña';
+  static const passwordsDiffer = 'Las contraseñas no coinciden';
+  static const createBackup = 'Crear copia de seguridad';
+  static const backupCreated = 'Copia de seguridad guardada';
+  static const restoreBackup = 'Restaurar copia de seguridad';
+  static const restoreWarning =
+      'Se reemplazará todo lo que hay en este teléfono por el contenido de '
+      'la copia.';
+  static const restore = 'Restaurar';
+  static const restoring = 'Restaurando…';
+  static const wrongBackupPassword =
+      'La contraseña no es correcta o el archivo está dañado.';
+  static const notABackup =
+      'El archivo no es una copia de seguridad de XHandler.';
+  static const backupNeedsUpdate =
+      'La copia es de una versión más nueva de XHandler. Actualiza la app.';
+
   // Quick sale
   static const quickSale = 'Venta rápida';
   static const quickSaleHelp = 'Boleta en segundos, para ventas de mostrador';

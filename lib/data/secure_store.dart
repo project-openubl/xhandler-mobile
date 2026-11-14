@@ -120,6 +120,27 @@ class SecureStore {
     }
   }
 
+  static const _companyPrefix = 'company/';
+
+  /// Every company's secrets, as stored: what a backup carries
+  Future<Map<String, String>> readAllCompanySecrets() async => {
+    for (final MapEntry(:key, :value) in (await _storage.readAll()).entries)
+      if (key.startsWith(_companyPrefix)) key: value,
+  };
+
+  /// Replaces every company's secrets with [secrets] (from a backup); the
+  /// database key stays
+  Future<void> replaceAllCompanySecrets(Map<String, String> secrets) async {
+    for (final key in (await readAllCompanySecrets()).keys) {
+      await _storage.delete(key: key);
+    }
+    for (final MapEntry(:key, :value) in secrets.entries) {
+      if (key.startsWith(_companyPrefix)) {
+        await _storage.write(key: key, value: value);
+      }
+    }
+  }
+
   static String _key(String companyId, CompanySecret secret) =>
       'company/$companyId/${secret.name}';
 }

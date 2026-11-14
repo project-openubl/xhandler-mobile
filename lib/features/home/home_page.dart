@@ -9,6 +9,7 @@ import '../../strings.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../company/company_repository.dart';
 import '../despatch/despatch_advice_form_page.dart';
+import '../backup/backup_page.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
 import '../document/perception_retention_form_page.dart';
@@ -54,6 +55,13 @@ class _WelcomePage extends StatelessWidget {
               FilledButton(
                 onPressed: () => context.push(Routes.newCompany),
                 child: const Text(Strings.createCompany),
+              ),
+              const SizedBox(height: 12),
+              Consumer(
+                builder: (context, ref, _) => OutlinedButton(
+                  onPressed: () => restoreBackup(context, ref),
+                  child: const Text(Strings.restoreBackup),
+                ),
               ),
             ],
           ),
@@ -233,6 +241,11 @@ class _CompanyDrawer extends ConsumerWidget {
           leading: const Icon(Icons.settings),
           title: const Text(Strings.companySettings),
           onTap: () => open(Routes.companySettings),
+        ),
+        ListTile(
+          leading: const Icon(Icons.backup),
+          title: const Text(Strings.backupTitle),
+          onTap: () => open(Routes.backup),
         ),
       ],
     );
