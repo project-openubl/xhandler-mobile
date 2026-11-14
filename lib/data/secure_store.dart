@@ -13,6 +13,12 @@ enum CompanySecret {
   greClientId,
   greClientSecret,
   lookupToken,
+
+  /// The company's email account (SMTP) to send documents to customers
+  smtpHost,
+  smtpPort,
+  smtpUsername,
+  smtpPassword,
 }
 
 /// Secrets of a company, kept in the Android Keystore / iOS Keychain
@@ -32,6 +38,10 @@ class CompanySecrets {
   String? get greClientId => _values[CompanySecret.greClientId];
   String? get greClientSecret => _values[CompanySecret.greClientSecret];
   String? get lookupToken => _values[CompanySecret.lookupToken];
+  String? get smtpHost => _values[CompanySecret.smtpHost];
+  int? get smtpPort => int.tryParse(_values[CompanySecret.smtpPort] ?? '');
+  String? get smtpUsername => _values[CompanySecret.smtpUsername];
+  String? get smtpPassword => _values[CompanySecret.smtpPassword];
 }
 
 /// The database exists but its key is gone (e.g. the secure storage was

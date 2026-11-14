@@ -17,7 +17,8 @@ import 'document_status.dart';
 import 'emit_flow.dart';
 import '../despatch/despatch_advice_form_page.dart';
 import '../pdf/document_view.dart';
-import '../pdf/share_document.dart';
+import '../delivery/delivery_service.dart';
+import '../delivery/delivery_sheet.dart';
 import 'note_form_page.dart';
 import 'voiding.dart';
 
@@ -37,6 +38,8 @@ class DocumentDetailPage extends ConsumerWidget {
         ref.watch(documentEventsProvider(documentId)).value ?? const [];
     final related =
         ref.watch(relatedDocumentsProvider(documentId)).value ?? const [];
+    final deliveries =
+        ref.watch(deliveriesProvider(documentId)).value ?? const [];
     final colors = Theme.of(context).colorScheme;
     final notes = document.sunatNotes == null
         ? const <String>[]
@@ -82,9 +85,9 @@ class DocumentDetailPage extends ConsumerWidget {
             Builder(
               // Its own context anchors the share sheet on iPads
               builder: (buttonContext) => IconButton(
-                tooltip: Strings.share,
-                icon: const Icon(Icons.share),
-                onPressed: () => shareDocument(buttonContext, ref, document),
+                tooltip: Strings.deliver,
+                icon: const Icon(Icons.send),
+                onPressed: () => deliverDocument(buttonContext, ref, document),
               ),
             ),
         ],
@@ -203,6 +206,23 @@ class DocumentDetailPage extends ConsumerWidget {
             for (final note in related)
               if (!voidingTipos.contains(note.tipoComprobante))
                 _DocumentTile(note),
+          ],
+          if (deliveries.isNotEmpty) ...[
+            const FormSection(Strings.deliveries),
+            for (final delivery in deliveries)
+              ListTile(
+                dense: true,
+                leading: Icon(switch (delivery.channel) {
+                  DeliveryChannel.email => Icons.email,
+                  DeliveryChannel.whatsapp => Icons.chat,
+                  DeliveryChannel.share => Icons.share,
+                }),
+                title: Text(delivery.recipient ?? Strings.otherApps),
+                subtitle: Text(
+                  MaterialLocalizations.of(context)
+                      .formatShortDate(delivery.createdAt.toLocal()),
+                ),
+              ),
           ],
           const FormSection(Strings.timeline),
           // Merged repeats (e.g. hourly retries) show their last time

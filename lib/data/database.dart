@@ -25,13 +25,14 @@ part 'database.g.dart';
     Vehicles,
     Drivers,
     Addresses,
+    Deliveries,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +43,8 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(drivers);
         await m.createTable(addresses);
       }
+      // 3: deliveries to customers
+      if (from < 3) await m.createTable(deliveries);
     },
   );
 

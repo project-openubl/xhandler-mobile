@@ -1,13 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/database.dart';
-import '../../strings.dart';
-import '../../widgets/form_widgets.dart';
-import '../company/company_repository.dart';
 import '../document/document_repository.dart';
 import 'document_view.dart';
 import 'pdf_templates.dart';
@@ -44,68 +40,25 @@ Future<List<DeliveryFile>> deliveryFiles({
   ];
 }
 
-/// A share in progress; a second tap meanwhile does nothing
-bool _sharing = false;
-
-/// Asks the format and shares the document's files with any app
-Future<void> shareDocument(
-  BuildContext context,
-  WidgetRef ref,
-  Document document,
-) async {
-  final template = await showModalBottomSheet<PdfTemplate>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const ListTile(title: Text(Strings.pdfFormat)),
-          for (final template in pdfTemplates)
-            ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: Text(template.name),
-              onTap: () => Navigator.pop(sheetContext, template),
-            ),
-        ],
-      ),
+/// Shares [files] with an app the user picks; [anchor] places the share
+/// sheet on iPads
+Future<void> shareFiles(
+  List<DeliveryFile> files, {
+  required String subject,
+  required BuildContext anchor,
+}) async {
+  final box = anchor.findRenderObject() as RenderBox?;
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [
+        for (final file in files)
+          XFile.fromData(file.bytes, name: file.name, mimeType: file.mimeType),
+      ],
+      fileNameOverrides: [for (final file in files) file.name],
+      subject: subject,
+      sharePositionOrigin: box == null
+          ? null
+          : box.localToGlobal(Offset.zero) & box.size,
     ),
   );
-  if (template == null || !context.mounted || _sharing) return;
-  final box = context.findRenderObject() as RenderBox?;
-  _sharing = true;
-  showMessage(context, Strings.preparingFiles);
-  try {
-    final company = await ref
-        .read(companyRepositoryProvider)
-        .find(document.companyId);
-    final files = await deliveryFiles(
-      company: company,
-      document: document,
-      documents: ref.read(documentRepositoryProvider),
-      template: template,
-    );
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [
-          for (final file in files)
-            XFile.fromData(
-              file.bytes,
-              name: file.name,
-              mimeType: file.mimeType,
-            ),
-        ],
-        fileNameOverrides: [for (final file in files) file.name],
-        subject: '${company.razonSocial}: ${sunatFileName(company, document)}',
-        // iPads anchor the share sheet to the button
-        sharePositionOrigin: box == null
-            ? null
-            : box.localToGlobal(Offset.zero) & box.size,
-      ),
-    );
-  } on Object catch (error) {
-    debugPrint('Share: $error');
-    if (context.mounted) showMessage(context, Strings.unexpectedError);
-  } finally {
-    _sharing = false;
-  }
 }

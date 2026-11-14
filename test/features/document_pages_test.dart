@@ -8,6 +8,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/catalogs.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/providers.dart';
+import 'package:xhandler_mobile/data/secure_store.dart';
+import 'package:xhandler_mobile/features/delivery/email_sender.dart';
 import 'package:xhandler_mobile/features/despatch/despatch_advice_form_page.dart';
 import 'package:xhandler_mobile/features/document/background_outbox.dart';
 import 'package:xhandler_mobile/features/document/document_detail_page.dart';
@@ -27,6 +29,7 @@ import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 import 'package:xhandler_mobile/strings.dart';
 
 import '../fake_bridge.dart';
+import '../fake_email_sender.dart';
 import '../helpers.dart';
 
 const _accepted = SunatResponse(
@@ -43,6 +46,9 @@ const _boleta = InvoiceDraft(
 );
 
 void main() {
+  late FakeEmailSender emailSender;
+  setUp(() => emailSender = FakeEmailSender());
+
   DocumentService serviceFor(TestData data, FakeBridge bridge) =>
       DocumentService(
         data.database,
@@ -71,6 +77,7 @@ void main() {
           databaseProvider.overrideWithValue(data.database),
           sunatBridgeProvider.overrideWithValue(bridge),
           documentServiceProvider.overrideWithValue(service),
+          emailSenderProvider.overrideWithValue(emailSender),
         ],
         child: MaterialApp(navigatorKey: navigator, home: const Scaffold()),
       ),
@@ -632,6 +639,56 @@ void main() {
       ))!,
       hasLength(2), // saved for next time
     );
+    await data.unmount(tester);
+  });
+
+  testWidgets('a factura is emailed to the customer', (tester) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    await tester.runAsync(
+      () => data.secureStore.writeCompanySecrets(factura.companyId, {
+        CompanySecret.smtpHost: 'smtp.gmail.com',
+        CompanySecret.smtpPort: '465',
+        CompanySecret.smtpUsername: 'ventas@empresa.pe',
+        CompanySecret.smtpPassword: 'app password',
+      }),
+    );
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      DocumentDetailPage(documentId: factura.id),
+    );
+    await pumpUntil(
+      tester,
+      () => find.byTooltip(Strings.deliver).evaluate().isNotEmpty,
+    );
+    await tester.pump(const Duration(seconds: 1)); // the page slides in
+    await tester.tap(find.byTooltip(Strings.deliver));
+    await pumpUntil(tester, () => shows(Strings.otherApps));
+    await tester.pump(const Duration(seconds: 1)); // the sheet slides in
+    await tester.tap(find.text(Strings.sendByEmail));
+    await pumpUntil(
+      tester,
+      () => find
+          .widgetWithText(TextFormField, Strings.email)
+          .evaluate()
+          .isNotEmpty,
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, Strings.email),
+      'compras@example.com',
+    );
+    await tester.tap(find.text(Strings.send));
+    await pumpUntil(tester, () => shows(Strings.deliveries), 'delivery');
+
+    expect(emailSender.sent.single.to, 'compras@example.com');
+    expect(find.text('compras@example.com'), findsWidgets);
     await data.unmount(tester);
   });
 

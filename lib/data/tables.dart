@@ -316,6 +316,18 @@ class Addresses extends Table with SyncColumns {
   TextColumn get codigoLocal => text().nullable()();
 }
 
+enum DeliveryChannel { email, whatsapp, share }
+
+/// A document sent to a customer (docs/DESIGN.md §8)
+class Deliveries extends Table with SyncColumns {
+  TextColumn get documentId => text().references(Documents, #id)();
+  TextColumn get channel => textEnum<DeliveryChannel>()();
+
+  /// Email address or phone; `null` when shared with another app
+  TextColumn get recipient => text().nullable()();
+  TextColumn get deviceId => text()();
+}
+
 /// Settings of this device (not synced)
 class DeviceSettings extends Table {
   TextColumn get key => text()();

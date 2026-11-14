@@ -337,6 +337,13 @@ Attachments: PDF + XML (+ CDR optional).
 Email subject/body templates per company (`{tipo} {serie}-{numero} de {razon_social}`).
 Every delivery is logged in `delivery`.
 
+Built so far: SMTP from the company's account (host, port, user and app password in
+secure storage; Gmail/Outlook presets; a test email), WhatsApp on Android (a
+`FileProvider` + `ACTION_SEND_MULTIPLE` to `com.whatsapp`/`com.whatsapp.w4b` with the
+`jid` extra, which preselects the chat; iOS has no equivalent), the share sheet, and the
+`deliveries` log shown on the document. The subject and body are fixed for now. Gmail
+API and Graph wait for OAuth apps registered with Google and Microsoft (§14).
+
 ---
 
 ## 9. Backup and restore
@@ -434,5 +441,8 @@ One PR per phase, each followed by a senior-engineer review.
 - Printed guías: SUNAT returns the guía's QR link in its CDR (`cbc:DocumentDescription`,
   `…/gre/comprobantes/descargaqr?hashqr=…`); xsender's `CdrMetadata` doesn't read it yet.
   Until it does, guías can't be shared as PDF (the view model already lays them out).
+- Email through the Gmail API / Microsoft Graph instead of SMTP app passwords: needs
+  OAuth clients registered (and, for Gmail's `gmail.send`, Google's verification) by
+  the project owner.
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).

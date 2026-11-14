@@ -10,6 +10,7 @@ import 'features/company/company_settings_page.dart';
 import 'features/company/credentials_page.dart';
 import 'features/customer/customers_page.dart';
 import 'features/customer/lookup_settings_page.dart';
+import 'features/delivery/email_settings_page.dart';
 import 'features/diagnostics/sunat_beta_check_page.dart';
 import 'features/home/home_page.dart';
 import 'features/product/products_page.dart';
@@ -28,6 +29,7 @@ abstract final class Routes {
   static const lookupSettings = '/company/lookup';
   static const customers = '/company/customers';
   static const products = '/company/products';
+  static const emailSettings = '/company/email';
 }
 
 GoRoute _companyRoute(String path, Widget Function(Company) page) => GoRoute(
@@ -53,6 +55,7 @@ GoRouter buildRouter() => GoRouter(
     _companyRoute(Routes.lookupSettings, LookupSettingsPage.new),
     _companyRoute(Routes.customers, CustomersPage.new),
     _companyRoute(Routes.products, ProductsPage.new),
+    _companyRoute(Routes.emailSettings, EmailSettingsPage.new),
     GoRoute(
       path: Routes.diagnostics,
       builder: (_, _) => const SunatBetaCheckPage(),

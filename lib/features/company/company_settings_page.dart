@@ -42,6 +42,11 @@ class CompanySettingsPage extends ConsumerWidget {
             onTap: () => context.push(Routes.credentials),
           ),
           ListTile(
+            leading: const Icon(Icons.email),
+            title: const Text(Strings.emailSettings),
+            onTap: () => context.push(Routes.emailSettings),
+          ),
+          ListTile(
             leading: const Icon(Icons.numbers),
             title: const Text(Strings.series),
             onTap: () => context.push(Routes.series),

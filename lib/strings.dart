@@ -315,9 +315,36 @@ abstract final class Strings {
       'Solo en traslados entre establecimientos de la empresa';
 
   // PDF and delivery
-  static const share = 'Compartir';
   static const pdfFormat = 'Formato del PDF';
   static const preparingFiles = 'Preparando los archivos…';
+  static const deliver = 'Enviar al cliente';
+  static const deliveries = 'Envíos al cliente';
+  static const sendByEmail = 'Correo';
+  static const sendByWhatsapp = 'WhatsApp';
+  static const otherApps = 'Otras aplicaciones';
+  static const send = 'Enviar';
+  static const sending = 'Enviando…';
+  static String emailSent(String to) => 'Enviado a $to';
+  static const whatsappMissing = 'WhatsApp no está instalado.';
+  static const invalidValue = 'Revisa este dato';
+  static const emailNotConfigured =
+      'Configura el correo de la empresa para enviar comprobantes.';
+  static const emailSettings = 'Correo de la empresa';
+  static const emailSettingsHelp =
+      'Los comprobantes se envían desde tu correo. En Gmail y Outlook usa '
+      'una contraseña de aplicación (activa la verificación en dos pasos).';
+  static const smtpHost = 'Servidor SMTP';
+  static const smtpPort = 'Puerto';
+  static const appPassword = 'Contraseña de aplicación';
+  static const appPasswordHelp =
+      'No es la contraseña con la que entras al correo';
+  static const sendTestEmail = 'Enviarme una prueba';
+  static String testEmailSent(String to) => 'Prueba enviada a $to';
+  static const emailAuthenticationError =
+      'El correo no aceptó el usuario o la contraseña de aplicación.';
+  static const emailConnectionError =
+      'No se pudo conectar con el servidor de correo.';
+  static const emailRejectedError = 'El servidor de correo rechazó el mensaje.';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

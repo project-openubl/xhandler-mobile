@@ -11,11 +11,11 @@ void main() {
 
   setUpAll(() => verifier = SchemaVerifier(GeneratedHelper()));
 
-  for (var from = 1; from < 2; from++) {
+  for (var from = 1; from < 3; from++) {
     test('upgrades from schema $from', () async {
       final connection = await verifier.startAt(from);
       final database = AppDatabase(connection);
-      await verifier.migrateAndValidate(database, 2);
+      await verifier.migrateAndValidate(database, 3);
       await database.close();
     });
   }
