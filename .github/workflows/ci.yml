@@ -56,6 +56,8 @@ jobs:
 
   android:
     runs-on: ubuntu-latest
+    # A runner that runs out of memory hangs instead of failing
+    timeout-minutes: 45
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
@@ -69,6 +71,12 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      # The project lets Gradle take 8 GB; next to the emulator that runs the
+      # runner out of memory. User properties take precedence.
+      - name: Limit Gradle memory
+        run: |
+          mkdir -p ~/.gradle
+          printf 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g\norg.gradle.daemon=false\n' > ~/.gradle/gradle.properties
       # The emulator below is x86_64
       - run: flutter build apk --debug --target-platform android-x64
       # Runs the integration tests (Rust bridge included) on an emulator
@@ -82,7 +90,10 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
-          script: flutter test integration_test
+          ram-size: 2048M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: flutter test integration_test --reporter expanded
 
   ios:
     runs-on: macos-latest
