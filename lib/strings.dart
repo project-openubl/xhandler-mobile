@@ -179,16 +179,16 @@ abstract final class Strings {
   static const lookupPassword = 'Contraseña de searchpe';
 
   // Documents
-  static const documents = 'Comprobantes';
   static const newDocument = 'Nuevo comprobante';
   static const noDocuments = 'Aún no hay comprobantes';
   static const filterAll = 'Todos';
   static const filterProblems = 'Con problemas';
   static const factura = 'Factura';
+  static const facturaHelp = 'Para clientes con RUC';
+  static const boletaHelp = 'Para personas, con o sin DNI';
   static const boleta = 'Boleta';
   static const selectCustomer = 'Elegir cliente';
   static const anonymousCustomer = 'Clientes varios (sin documento)';
-  static const moneda = 'Moneda';
   static const lines = 'Productos';
   static const addProduct = 'Agregar producto';
   static const freeLine = 'Línea libre';
@@ -209,13 +209,16 @@ abstract final class Strings {
   static const icbper = 'ICBPER';
   static const total = 'Total';
   static const emit = 'Emitir';
+  static const creditoWithoutCuotas =
+      'Agrega las cuotas de la venta al crédito.';
+  static String noSerie(String tipo) =>
+      'No tienes una serie activa de $tipo. Créala en Empresa → Series.';
+  static const pendingDocuments = 'Por enviar';
+  static const acceptedDocuments = 'Aceptados';
   static const missingCertificate =
       'Registra el certificado digital de la empresa para emitir comprobantes reales.';
-  static String invalidDocument(String details) =>
-      'SUNAT no aceptaría este comprobante: $details';
   static const viewDocument = 'Ver comprobante';
   static const done = 'Listo';
-  static const sendNow = 'Enviar ahora';
   static const timeline = 'Historial';
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';

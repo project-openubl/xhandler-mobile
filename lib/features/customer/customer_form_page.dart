@@ -11,7 +11,8 @@ import '../company/company_repository.dart';
 import 'customer_lookup.dart';
 import 'customer_repository.dart';
 
-/// Creates a customer of [company], or edits [customer]
+/// Creates a customer of [company], or edits [customer]; pops the saved
+/// customer
 class CustomerFormPage extends ConsumerStatefulWidget {
   const CustomerFormPage(this.company, {super.key, this.customer});
 
@@ -136,12 +137,15 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
       telefono: Value(optionalText(_telefono)),
     );
     final existing = widget.customer;
+    final Customer saved;
     if (existing == null) {
-      await repository.create(customer);
+      saved = await repository.create(customer);
     } else {
       await repository.update(existing.id, customer);
+      saved = await repository.find(existing.id);
     }
-    if (mounted) Navigator.of(context).pop();
+    // The invoice form's picker selects the customer it just created
+    if (mounted) Navigator.of(context).pop(saved);
   }
 
   @override

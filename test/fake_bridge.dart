@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter_test/flutter_test.dart';
+
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/features/document/sunat_bridge.dart';
 import 'package:xhandler_mobile/src/rust/api/document.dart';
@@ -10,6 +12,28 @@ import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
 /// Answers like the bridge without the native library
 class FakeBridge implements SunatBridge {
+  /// A call without a queued response fails the test (the service would
+  /// otherwise record it quietly as an exception)
+  FakeBridge() {
+    addTearDown(
+      () => expect(
+        missingResponses,
+        0,
+        reason: 'SUNAT calls without a queued response',
+      ),
+    );
+  }
+
+  var missingResponses = 0;
+
+  SunatResponse _next() {
+    if (responses.isEmpty) {
+      missingResponses++;
+      throw StateError('No SUNAT response queued');
+    }
+    return responses.removeAt(0);
+  }
+
   final builtJson = <String>[];
   String total = '118.000000000000';
   final responses = <SunatResponse>[];
@@ -50,7 +74,7 @@ class FakeBridge implements SunatBridge {
     SunatCredentials credentials,
   ) async {
     calls.add('send ${credentials.username}');
-    return responses.removeAt(0);
+    return _next();
   }
 
   @override
@@ -60,7 +84,7 @@ class FakeBridge implements SunatBridge {
     SunatCredentials credentials,
   ) async {
     calls.add('recover ${document.serie}-${document.numero}');
-    return responses.removeAt(0);
+    return _next();
   }
 
   @override
@@ -71,6 +95,6 @@ class FakeBridge implements SunatBridge {
     SunatCredentials credentials,
   ) async {
     calls.add('verify $ticket');
-    return responses.removeAt(0);
+    return _next();
   }
 }

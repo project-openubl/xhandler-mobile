@@ -46,3 +46,20 @@ String roundAmount(String amount, [int scale = 2]) {
 /// [amount] in cents, to compare and add amounts exactly
 BigInt toCents(String amount) =>
     BigInt.parse(roundAmount(amount).replaceAll('.', ''));
+
+/// [cents] as an amount: 59050 → "590.50"
+String fromCents(BigInt cents) {
+  final text = cents.abs().toString().padLeft(3, '0');
+  final split = text.length - 2;
+  return '${cents.isNegative ? '-' : ''}${text.substring(0, split)}.${text.substring(split)}';
+}
+
+/// An amount as people read it: "S/ 59.00", "US$ 12.50"
+String formatMoney(String moneda, String amount) {
+  final symbol = switch (moneda) {
+    'PEN' => 'S/',
+    'USD' => r'US$',
+    _ => moneda,
+  };
+  return '$symbol ${roundAmount(amount)}';
+}

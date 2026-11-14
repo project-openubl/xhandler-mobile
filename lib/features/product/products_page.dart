@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
@@ -26,17 +27,29 @@ class ProductsPage extends StatelessWidget {
       title: Strings.products,
       addTooltip: Strings.newProduct,
       onAdd: open,
-      list: (search) => _ProductList(company, search, onTap: open),
+      list: (search) => ProductList(company, search: search, onTap: open),
     );
   }
 }
 
-class _ProductList extends ConsumerWidget {
-  const _ProductList(this.company, this.search, {required this.onTap});
+/// The company's products matching [search], favorites first
+class ProductList extends ConsumerWidget {
+  const ProductList(
+    this.company, {
+    super.key,
+    required this.search,
+    required this.onTap,
+    this.showFavorite = true,
+    this.controller,
+  });
 
   final Company company;
   final String search;
   final ValueChanged<Product> onTap;
+
+  /// Star to mark favorites (the catalog page, not the pickers)
+  final bool showFavorite;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,24 +59,31 @@ class _ProductList extends ConsumerWidget {
     return switch (products) {
       AsyncData(value: []) => const Center(child: Text(Strings.noResults)),
       AsyncData(:final value) => ListView(
+        controller: controller,
         children: [
           for (final product in value)
             ListTile(
               title: Text(product.descripcion),
               subtitle: Text(
-                '${company.moneda} ${product.precio} · '
+                '${formatMoney(company.moneda, product.precio)} · '
                 '${Catalogs.unidadesMedida[product.unidadMedida] ?? product.unidadMedida}',
               ),
-              trailing: IconButton(
-                tooltip: Strings.favorito,
-                icon: Icon(product.favorito ? Icons.star : Icons.star_border),
-                onPressed: () => ref
-                    .read(productRepositoryProvider)
-                    .update(
-                      product.id,
-                      ProductsCompanion(favorito: Value(!product.favorito)),
-                    ),
-              ),
+              trailing: showFavorite
+                  ? IconButton(
+                      tooltip: Strings.favorito,
+                      icon: Icon(
+                        product.favorito ? Icons.star : Icons.star_border,
+                      ),
+                      onPressed: () => ref
+                          .read(productRepositoryProvider)
+                          .update(
+                            product.id,
+                            ProductsCompanion(
+                              favorito: Value(!product.favorito),
+                            ),
+                          ),
+                    )
+                  : null,
               onTap: () => onTap(product),
             ),
         ],

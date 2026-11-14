@@ -6,6 +6,7 @@ import '../../data/database.dart';
 import '../../router.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import '../../widgets/test_mode_banner.dart';
 import '../company/company_repository.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
@@ -79,24 +80,42 @@ class _CompanyHome extends StatelessWidget {
         title: Text(company.nombreComercial ?? company.razonSocial),
       ),
       drawer: _CompanyDrawer(activeId: company.id),
-      floatingActionButton: MenuAnchor(
-        menuChildren: [
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.receipt_long),
-            onPressed: () => _newDocument(context, '03'),
-            child: const Text(Strings.boleta),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          builder: (sheetContext) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (tipo, icon, title, help) in const [
+                  (
+                    '03',
+                    Icons.receipt_long,
+                    Strings.boleta,
+                    Strings.boletaHelp,
+                  ),
+                  (
+                    '01',
+                    Icons.request_quote,
+                    Strings.factura,
+                    Strings.facturaHelp,
+                  ),
+                ])
+                  ListTile(
+                    leading: Icon(icon),
+                    title: Text(title),
+                    subtitle: Text(help),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _newDocument(context, tipo);
+                    },
+                  ),
+              ],
+            ),
           ),
-          MenuItemButton(
-            leadingIcon: const Icon(Icons.request_quote),
-            onPressed: () => _newDocument(context, '01'),
-            child: const Text(Strings.factura),
-          ),
-        ],
-        builder: (context, menu, _) => FloatingActionButton.extended(
-          onPressed: () => menu.isOpen ? menu.close() : menu.open(),
-          icon: const Icon(Icons.add),
-          label: const Text(Strings.newDocument),
         ),
+        icon: const Icon(Icons.add),
+        label: const Text(Strings.newDocument),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,26 +124,6 @@ class _CompanyHome extends StatelessWidget {
             const TestModeBanner(),
           Expanded(child: DocumentsList(company)),
         ],
-      ),
-    );
-  }
-}
-
-/// Reminds that documents go to SUNAT beta
-class TestModeBanner extends StatelessWidget {
-  const TestModeBanner({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colors.tertiaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Text(
-          Strings.testMode,
-          style: TextStyle(color: colors.onTertiaryContainer),
-        ),
       ),
     );
   }

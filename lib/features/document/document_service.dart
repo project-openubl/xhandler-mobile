@@ -104,6 +104,9 @@ class DocumentService {
   /// The last send; sends run one at a time (outbox, manual retries)
   Future<void>? _sending;
 
+  /// The outbox round in progress, if any
+  Future<void>? _outbox;
+
   /// Waits between sends that got no answer: 1, 5, 15 minutes, then hourly
   static const retryDelays = [
     Duration(minutes: 1),
@@ -282,16 +285,26 @@ class DocumentService {
     return sent;
   }
 
-  /// Sends every document whose next attempt is due (the outbox)
-  Future<void> sendDue() async {
-    for (final document in await _documents.due(nowUtc())) {
-      await send(document.id);
+  /// Sends every document whose next attempt is due (the outbox). Calls
+  /// while a round is running join it.
+  Future<void> sendDue() => _outbox ??= () async {
+    try {
+      for (final document in await _documents.due(nowUtc())) {
+        await send(document.id);
+      }
+    } finally {
+      _outbox = null;
     }
-  }
+  }();
 
   Future<DocumentStatus> _send(String documentId, bool manual) async {
     final document = await _documents.find(documentId);
     if (!sendable.contains(document.status)) return document.status;
+    // Automatic sends respect the retry back-off
+    final nextAttemptAt = document.nextAttemptAt;
+    if (!manual && nextAttemptAt != null && nextAttemptAt.isAfter(nowUtc())) {
+      return document.status;
+    }
 
     SunatResponse response;
     try {

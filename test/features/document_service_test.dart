@@ -61,6 +61,11 @@ void main() {
     database.documents,
   )..where((d) => d.id.equals(id))).getSingle();
 
+  /// Makes the document's next attempt due, as if the wait had passed
+  Future<void> due(String id) =>
+      (database.update(database.documents)..where((d) => d.id.equals(id)))
+          .write(const DocumentsCompanion(nextAttemptAt: Value(null)));
+
   Future<String> emit() =>
       service.emit(company: company, serie: f001, draft: _draft);
 
@@ -167,6 +172,7 @@ void main() {
           greaterThanOrEqualTo(const Duration(minutes: 1)),
         );
 
+        await due(id);
         await service.send(id);
         pending = await document(id);
         expect(pending.attempts, 2);
@@ -195,6 +201,7 @@ void main() {
 
       expect(await service.send(id), DocumentStatus.inProgress);
       expect((await document(id)).ticket, '1700000000000');
+      await due(id);
       expect(await service.send(id), DocumentStatus.accepted);
       expect(bridge.calls.last, 'verify 1700000000000');
     });
@@ -361,6 +368,7 @@ void main() {
       ]);
 
       await service.send(id); // ticket
+      await due(id);
       await service.send(id); // the ticket ends in an exception
       expect((await document(id)).ticket, isNull);
       await service.send(id, manual: true);

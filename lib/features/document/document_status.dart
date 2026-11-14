@@ -51,6 +51,48 @@ extension DocumentStatusView on DocumentStatus {
   };
 }
 
+/// What the user can do about each status: the detail page's button
+extension DocumentStatusAction on DocumentStatus {
+  /// `null` when there is nothing to do
+  String? get actionLabel => switch (this) {
+    DocumentStatus.pendingSend => 'Enviar ahora',
+    DocumentStatus.inProgress => 'Consultar ticket',
+    DocumentStatus.exception => 'Reintentar envío',
+    DocumentStatus.unknown => 'Consultar en SUNAT',
+    _ => null,
+  };
+}
+
+/// "F001-00000042"
+String serieNumero(String serie, int numero) =>
+    '$serie-${numero.toString().padLeft(8, '0')}';
+
+/// An xbuilder error in Spanish, e.g. "detalles[0].igv_tipo: 99 is not a
+/// valid Catalog7" → "Un código no es válido: tipo de IGV (línea 1)"
+String documentErrorMessage(String error) {
+  const fields = {
+    'igv_tipo': 'tipo de IGV',
+    'isc_tipo': 'tipo de ISC',
+    'tipo_documento_identidad': 'documento del cliente',
+    'unidad_medida': 'unidad de medida',
+    'moneda': 'moneda',
+  };
+  if (!error.contains('is not a valid')) {
+    return 'Revisa los datos del comprobante.';
+  }
+  final field = fields.entries
+      .where((field) => error.contains(field.key))
+      .map((field) => field.value)
+      .firstOrNull;
+  final line = RegExp(r'detalles\[(\d+)\]').firstMatch(error)?.group(1);
+  return [
+    'Un código no es válido',
+    if (field != null) ': $field',
+    if (line != null) ' (línea ${int.parse(line) + 1})',
+    '.',
+  ].join();
+}
+
 /// Message of a SUNAT answer code that the app itself records
 String? localCodeMessage(String? code) => switch (code) {
   LocalCodes.noCredentials =>

@@ -39,11 +39,14 @@ class CustomerRepository {
     return query.getSingleOrNull();
   }
 
-  Future<void> create(CustomersCompanion customer) =>
-      _db.into(_db.customers).insert(customer);
+  Future<Customer> create(CustomersCompanion customer) =>
+      _db.into(_db.customers).insertReturning(customer);
 
   Future<void> update(String id, CustomersCompanion changes) =>
       _db.updateRow(_db.customers, id, changes);
+
+  Future<Customer> find(String id) =>
+      (_db.select(_db.customers)..where((c) => c.id.equals(id))).getSingle();
 
   Future<void> delete(String id) => _db.softDelete(_db.customers, id);
 }

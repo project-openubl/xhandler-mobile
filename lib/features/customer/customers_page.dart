@@ -25,27 +25,51 @@ class CustomersPage extends StatelessWidget {
       title: Strings.customers,
       addTooltip: Strings.newCustomer,
       onAdd: open,
-      list: (search) => _CustomerList(company, search, onTap: open),
+      list: (search) => CustomerList(company, search: search, onTap: open),
     );
   }
 }
 
-class _CustomerList extends ConsumerWidget {
-  const _CustomerList(this.company, this.search, {required this.onTap});
+/// The company's customers matching [search]
+class CustomerList extends ConsumerWidget {
+  const CustomerList(
+    this.company, {
+    super.key,
+    required this.search,
+    required this.onTap,
+    this.onlyRuc = false,
+    this.leading = const [],
+    this.controller,
+  });
 
   final Company company;
   final String search;
   final ValueChanged<Customer> onTap;
+
+  /// Only customers with a RUC (facturas)
+  final bool onlyRuc;
+
+  /// Entries shown above the customers
+  final List<Widget> leading;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final customers = ref.watch(
       customersProvider((companyId: company.id, search: search)),
     );
-    return switch (customers) {
-      AsyncData(value: []) => const Center(child: Text(Strings.noResults)),
-      AsyncData(:final value) => ListView(
-        children: [
+    final value = customers.value
+        ?.where((c) => !onlyRuc || c.tipoDocumentoIdentidad == '6')
+        .toList();
+    return ListView(
+      controller: controller,
+      children: [
+        ...leading,
+        if (value == null)
+          const Center(child: CircularProgressIndicator())
+        else if (value.isEmpty)
+          const ListTile(title: Text(Strings.noResults))
+        else
           for (final customer in value)
             ListTile(
               title: Text(customer.nombre),
@@ -55,10 +79,7 @@ class _CustomerList extends ConsumerWidget {
               ),
               onTap: () => onTap(customer),
             ),
-        ],
-      ),
-      AsyncError() => const Center(child: Text(Strings.unexpectedError)),
-      _ => const Center(child: CircularProgressIndicator()),
-    };
+      ],
+    );
   }
 }

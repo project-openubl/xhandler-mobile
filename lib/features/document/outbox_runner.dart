@@ -35,7 +35,11 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     super.dispose();
   }
 
-  void _run() => ref.read(documentServiceProvider).sendDue();
+  /// Errors are logged: the next round tries again
+  void _run() => ref
+      .read(documentServiceProvider)
+      .sendDue()
+      .catchError((Object error) => debugPrint('Outbox: $error'));
 
   @override
   Widget build(BuildContext context) => widget.child;

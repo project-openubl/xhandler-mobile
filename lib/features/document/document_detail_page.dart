@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
@@ -28,20 +29,22 @@ class DocumentDetailPage extends ConsumerWidget {
     final notes = document.sunatNotes == null
         ? const <String>[]
         : (jsonDecode(document.sunatNotes!) as List).cast<String>();
+    final localMessage = localCodeMessage(document.sunatCode);
     final answer = [
-      ?localCodeMessage(document.sunatCode),
-      if (document.sunatCode != null)
-        '${Strings.sunatAnswer}: ${document.sunatCode}',
-      ?document.sunatDescription,
-      ...notes,
+      // Problems of the app aren't SUNAT's answers
+      if (localMessage != null)
+        localMessage
+      else ...[
+        if (document.sunatCode != null)
+          '${Strings.sunatAnswer}: ${document.sunatCode}',
+        ?document.sunatDescription,
+        ...notes,
+      ],
     ];
+    final action = document.status.actionLabel;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${document.serie}-${document.numero.toString().padLeft(8, '0')}',
-        ),
-      ),
+      appBar: AppBar(title: Text(serieNumero(document.serie, document.numero))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -64,15 +67,18 @@ class DocumentDetailPage extends ConsumerWidget {
                 child: Text(answer.join('\n')),
               ),
             ),
-          if (DocumentService.sendable.contains(document.status))
+          if (action != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: SaveButton(
-                label: Strings.sendNow,
+                label: action,
                 filled: true,
-                onPressed: () => ref
-                    .read(documentServiceProvider)
-                    .send(document.id, manual: true),
+                onPressed: () async {
+                  final status = await ref
+                      .read(documentServiceProvider)
+                      .send(document.id, manual: true);
+                  if (context.mounted) showMessage(context, status.label);
+                },
               ),
             ),
           ListTile(
@@ -92,11 +98,12 @@ class DocumentDetailPage extends ConsumerWidget {
           ListTile(
             title: const Text(Strings.total),
             trailing: Text(
-              '${document.moneda} ${document.total}',
+              formatMoney(document.moneda, document.total),
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           const FormSection(Strings.timeline),
+          // Merged repeats (e.g. hourly retries) show their last time
           for (final event in events.reversed)
             ListTile(
               dense: true,

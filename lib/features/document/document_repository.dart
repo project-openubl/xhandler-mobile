@@ -108,12 +108,15 @@ enum DocumentFilter {
 }
 
 final documentsProvider = StreamProvider.autoDispose
-    .family<List<Document>, ({Company company, DocumentFilter filter})>(
+    .family<
+      List<Document>,
+      ({String companyId, SunatEnvironment environment, DocumentFilter filter})
+    >(
       (ref, query) => ref
           .watch(documentRepositoryProvider)
           .watch(
-            query.company.id,
-            query.company.sunatEnvironment,
+            query.companyId,
+            query.environment,
             statuses: query.filter.statuses,
           ),
     );

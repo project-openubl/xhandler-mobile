@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../amount_text.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
 import 'document_detail_page.dart';
@@ -23,15 +24,19 @@ class _DocumentsListState extends ConsumerState<DocumentsList> {
 
   static const _filterLabels = {
     DocumentFilter.all: Strings.filterAll,
-    DocumentFilter.pending: 'Por enviar',
-    DocumentFilter.accepted: 'Aceptados',
+    DocumentFilter.pending: Strings.pendingDocuments,
+    DocumentFilter.accepted: Strings.acceptedDocuments,
     DocumentFilter.problems: Strings.filterProblems,
   };
 
   @override
   Widget build(BuildContext context) {
     final documents = ref.watch(
-      documentsProvider((company: widget.company, filter: _filter)),
+      documentsProvider((
+        companyId: widget.company.id,
+        environment: widget.company.sunatEnvironment,
+        filter: _filter,
+      )),
     );
     return Column(
       children: [
@@ -80,13 +85,18 @@ class _DocumentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(
-        '${document.serie}-${document.numero.toString().padLeft(8, '0')}'
+        '${serieNumero(document.serie, document.numero)}'
         ' · ${document.clienteNombre}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: DocumentStatusChip(document.status),
-      trailing: Text('${document.moneda} ${document.total}'),
+      subtitle: Row(
+        children: [
+          Text('${document.fechaEmision} · '),
+          DocumentStatusChip(document.status),
+        ],
+      ),
+      trailing: Text(formatMoney(document.moneda, document.total)),
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => DocumentDetailPage(documentId: document.id),
