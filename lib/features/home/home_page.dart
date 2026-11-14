@@ -10,6 +10,7 @@ import '../../widgets/test_mode_banner.dart';
 import '../company/company_repository.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
+import '../document/quick_sale_page.dart';
 
 /// The active company's home, or a welcome page before the first company
 class HomePage extends ConsumerWidget {
@@ -87,6 +88,19 @@ class _CompanyHome extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ListTile(
+                  leading: const Icon(Icons.point_of_sale),
+                  title: const Text(Strings.quickSale),
+                  subtitle: const Text(Strings.quickSaleHelp),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => QuickSalePage(company),
+                      ),
+                    );
+                  },
+                ),
                 for (final (tipo, icon, title, help) in const [
                   (
                     '03',

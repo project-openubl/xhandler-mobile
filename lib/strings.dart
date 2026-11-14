@@ -223,6 +223,18 @@ abstract final class Strings {
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';
 
+  // Quick sale
+  static const quickSale = 'Venta rápida';
+  static const quickSaleHelp = 'Boleta en segundos, para ventas de mostrador';
+  static const cartEmpty = 'Toca un producto para agregarlo';
+  static const charge = 'Cobrar';
+  static const received = 'Recibido';
+  static const change = 'Vuelto';
+  static const newSale = 'Nueva venta';
+  static const identifyCustomer = 'Identificar cliente (DNI)';
+  static const noFavorites =
+      'Marca productos como favoritos para verlos aquí, o búscalos.';
+
   // Diagnostics
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';
   static const sunatBetaCheckHelp =

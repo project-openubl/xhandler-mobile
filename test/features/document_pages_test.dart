@@ -14,6 +14,8 @@ import 'package:xhandler_mobile/features/document/document_status.dart';
 import 'package:xhandler_mobile/features/document/documents_list.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/invoice_form_page.dart';
+import 'package:xhandler_mobile/features/document/quick_sale_page.dart';
+import 'package:xhandler_mobile/features/product/product_repository.dart';
 import 'package:xhandler_mobile/features/document/sunat_bridge.dart';
 import 'package:xhandler_mobile/src/rust/api/error.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
@@ -205,6 +207,87 @@ void main() {
         () => data.database.select(data.database.documents).get(),
       ))!;
       expect(documents, isEmpty);
+      await data.unmount(tester);
+    });
+  });
+
+  group('QuickSalePage', () {
+    Future<Company> withCoffee(WidgetTester tester, TestData data) async =>
+        (await tester.runAsync(() async {
+          final company = await data.createCompany();
+          await ProductRepository(data.database).create(
+            ProductsCompanion.insert(
+              companyId: company.id,
+              descripcion: 'Café',
+              precio: '4.00',
+              favorito: const Value(true),
+            ),
+          );
+          return company;
+        }))!;
+
+    testWidgets('sells favorites and starts a new sale', (tester) async {
+      final data = TestData();
+      final company = await withCoffee(tester, data);
+      final bridge = FakeBridge()
+        ..total = '8.00'
+        ..responses.add(_accepted);
+      await pumpPage(
+        tester,
+        data,
+        serviceFor(data, bridge),
+        bridge,
+        QuickSalePage(company),
+      );
+      await pumpUntil(tester, () => shows('Café'));
+
+      await tester.tap(find.text('Café'));
+      await tester.pump();
+      await tester.tap(find.text('Café').first);
+      await pumpUntil(tester, () => shows('${Strings.charge} S/ 8.00'));
+      expect(find.text('2'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, Strings.received),
+        '10',
+      );
+      await tester.pump();
+      expect(find.text('${Strings.change}: S/ 2.00'), findsOneWidget);
+
+      await tester.tap(find.text('${Strings.charge} S/ 8.00'));
+      await pumpUntil(tester, () => shows(Strings.newSale), 'sheet');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.text(Strings.newSale));
+      await pumpUntil(tester, () => shows(Strings.cartEmpty), 'cleared');
+
+      final documents = (await tester.runAsync(
+        () => data.database.select(data.database.documents).get(),
+      ))!;
+      expect(documents.single.clienteNombre, 'CLIENTES VARIOS');
+      expect(documents.single.status, DocumentStatus.accepted);
+      await data.unmount(tester);
+    });
+
+    testWidgets('over S/ 700 the customer must be identified', (tester) async {
+      final data = TestData();
+      final company = await withCoffee(tester, data);
+      final bridge = FakeBridge()..total = '704.00';
+      await pumpPage(
+        tester,
+        data,
+        serviceFor(data, bridge),
+        bridge,
+        QuickSalePage(company),
+      );
+      await pumpUntil(tester, () => shows('Café'));
+      await tester.tap(find.text('Café'));
+      await pumpUntil(
+        tester,
+        () => shows(draftProblemMessage(DraftProblem.anonymousOver700)),
+      );
+
+      final charge = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(charge.onPressed, isNull);
       await data.unmount(tester);
     });
   });
