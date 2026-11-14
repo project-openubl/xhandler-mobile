@@ -7,6 +7,8 @@ on:
 
 env:
   FLUTTER_VERSION: "3.50.0"
+  # Debug info makes the Rust libraries of every ABI huge
+  CARGO_PROFILE_DEV_DEBUG: "0"
 
 jobs:
   rust:
@@ -41,6 +43,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-java@v4
         with:
@@ -54,7 +58,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2.9.3
         with:
           workspaces: rust
-      - run: flutter build apk --debug
+      # The emulator below is x86_64
+      - run: flutter build apk --debug --target-platform android-x64
       # Runs the integration tests (Rust bridge included) on an emulator
       - name: Enable KVM
         run: |

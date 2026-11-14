@@ -77,7 +77,10 @@ pub(crate) mod tests {
         assert!(built.xml.contains("2026-11-13"));
         let enriched: serde_json::Value = serde_json::from_str(&built.enriched_json).unwrap();
         assert_eq!(enriched["kind"], "Invoice");
-        assert_eq!(enriched["spec"]["total_impuestos"]["gravado_importe"], "36.00");
+        assert_eq!(
+            enriched["spec"]["total_impuestos"]["gravado_importe"],
+            "36.00"
+        );
     }
 
     #[test]
