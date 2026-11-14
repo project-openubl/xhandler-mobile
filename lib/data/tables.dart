@@ -149,6 +149,93 @@ class Products extends Table with SyncColumns {
   BoolColumn get favorito => boolean().withDefault(const Constant(false))();
 }
 
+/// Where a document is in its life (docs/DESIGN.md §5)
+enum DocumentStatus {
+  /// Signed and stored; SUNAT hasn't answered yet (no connection, server
+  /// error...). Retried automatically.
+  pendingSend,
+
+  /// SUNAT gave a ticket; it's checked automatically
+  inProgress,
+  accepted,
+  acceptedWithObservations,
+  rejected,
+
+  /// Not processed by SUNAT; the user must fix something and resend
+  exception,
+  unknown,
+}
+
+/// An issued document: signed with its number taken, whatever SUNAT says
+@TableIndex.sql(
+  'CREATE UNIQUE INDEX documents_number ON documents '
+  '(company_id, environment, tipo_comprobante, serie, numero)',
+)
+class Documents extends Table with SyncColumns {
+  TextColumn get companyId => text().references(Companies, #id)();
+
+  /// Beta documents are kept apart from production ones
+  TextColumn get environment => textEnum<SunatEnvironment>()();
+
+  /// Catalog 1
+  TextColumn get tipoComprobante => text()();
+  TextColumn get serie => text()();
+  IntColumn get numero => integer()();
+
+  /// "YYYY-MM-DD", Peru's date
+  TextColumn get fechaEmision => text()();
+  TextColumn get clienteTipoDocumento => text()();
+  TextColumn get clienteNumeroDocumento => text()();
+  TextColumn get clienteNombre => text()();
+  TextColumn get moneda => text()();
+
+  /// Decimal as text
+  TextColumn get total => text()();
+  TextColumn get status => textEnum<DocumentStatus>()();
+
+  /// SUNAT's answer: CDR ResponseCode, fault code, "HTTP 401"...
+  TextColumn get sunatCode => text().nullable()();
+  TextColumn get sunatDescription => text().nullable()();
+
+  /// CDR observations, JSON list
+  TextColumn get sunatNotes => text().nullable()();
+  TextColumn get ticket => text().nullable()();
+
+  /// Signature hash, printed in the QR code
+  TextColumn get digestValue => text()();
+
+  /// Sends that got no answer, for the retry back-off
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get nextAttemptAt => dateTime().nullable()();
+
+  /// The document as built (xbuilder JSON, enriched), for the PDF
+  TextColumn get enrichedJson => text()();
+
+  /// Device that issued it (DESIGN §3.1)
+  TextColumn get deviceId => text()();
+}
+
+enum DocumentFileKind { signedXml, cdrZip }
+
+class DocumentFiles extends Table with SyncColumns {
+  TextColumn get documentId => text().references(Documents, #id)();
+  TextColumn get kind => textEnum<DocumentFileKind>()();
+  BlobColumn get bytes => blob()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {documentId, kind},
+  ];
+}
+
+/// Timeline of a document: every status change and SUNAT answer
+class DocumentEvents extends Table with SyncColumns {
+  TextColumn get documentId => text().references(Documents, #id)();
+  TextColumn get status => textEnum<DocumentStatus>()();
+  TextColumn get code => text().nullable()();
+  TextColumn get message => text().nullable()();
+}
+
 /// Settings of this device (not synced)
 class DeviceSettings extends Table {
   TextColumn get key => text()();

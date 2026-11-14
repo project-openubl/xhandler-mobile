@@ -11,7 +11,18 @@ export 'tables.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Companies, Series, Customers, Products, DeviceSettings])
+@DriftDatabase(
+  tables: [
+    Companies,
+    Series,
+    Customers,
+    Products,
+    Documents,
+    DocumentFiles,
+    DocumentEvents,
+    DeviceSettings,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
@@ -33,6 +44,19 @@ class AppDatabase extends _$AppDatabase {
       ..where((row) => row.id.equals(id) & row.deletedAt.isNull());
     return query.write(RawValuesInsertable(columns));
   }
+
+  /// Id of this installation, generated once (DESIGN §3.1)
+  Future<String> deviceId() => transaction(() async {
+    const key = 'device_id';
+    final existing = await (select(
+      deviceSettings,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
+    if (existing != null) return existing.value;
+    final id = newId();
+    await into(deviceSettings)
+        .insert(DeviceSettingsCompanion.insert(key: key, value: id));
+    return id;
+  });
 
   /// Hides the row (DESIGN §3.1: deletions must be replicable)
   Future<void> softDelete<T extends SyncColumns, D>(

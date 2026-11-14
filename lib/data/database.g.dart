@@ -3599,6 +3599,2410 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   }
 }
 
+class $DocumentsTable extends Documents
+    with TableInfo<$DocumentsTable, Document> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES companies (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<SunatEnvironment, String>
+  environment = GeneratedColumn<String>(
+    'environment',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<SunatEnvironment>($DocumentsTable.$converterenvironment);
+  static const VerificationMeta _tipoComprobanteMeta = const VerificationMeta(
+    'tipoComprobante',
+  );
+  @override
+  late final GeneratedColumn<String> tipoComprobante = GeneratedColumn<String>(
+    'tipo_comprobante',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serieMeta = const VerificationMeta('serie');
+  @override
+  late final GeneratedColumn<String> serie = GeneratedColumn<String>(
+    'serie',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numeroMeta = const VerificationMeta('numero');
+  @override
+  late final GeneratedColumn<int> numero = GeneratedColumn<int>(
+    'numero',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fechaEmisionMeta = const VerificationMeta(
+    'fechaEmision',
+  );
+  @override
+  late final GeneratedColumn<String> fechaEmision = GeneratedColumn<String>(
+    'fecha_emision',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clienteTipoDocumentoMeta =
+      const VerificationMeta('clienteTipoDocumento');
+  @override
+  late final GeneratedColumn<String> clienteTipoDocumento =
+      GeneratedColumn<String>(
+        'cliente_tipo_documento',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _clienteNumeroDocumentoMeta =
+      const VerificationMeta('clienteNumeroDocumento');
+  @override
+  late final GeneratedColumn<String> clienteNumeroDocumento =
+      GeneratedColumn<String>(
+        'cliente_numero_documento',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _clienteNombreMeta = const VerificationMeta(
+    'clienteNombre',
+  );
+  @override
+  late final GeneratedColumn<String> clienteNombre = GeneratedColumn<String>(
+    'cliente_nombre',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _monedaMeta = const VerificationMeta('moneda');
+  @override
+  late final GeneratedColumn<String> moneda = GeneratedColumn<String>(
+    'moneda',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalMeta = const VerificationMeta('total');
+  @override
+  late final GeneratedColumn<String> total = GeneratedColumn<String>(
+    'total',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DocumentStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DocumentStatus>($DocumentsTable.$converterstatus);
+  static const VerificationMeta _sunatCodeMeta = const VerificationMeta(
+    'sunatCode',
+  );
+  @override
+  late final GeneratedColumn<String> sunatCode = GeneratedColumn<String>(
+    'sunat_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sunatDescriptionMeta = const VerificationMeta(
+    'sunatDescription',
+  );
+  @override
+  late final GeneratedColumn<String> sunatDescription = GeneratedColumn<String>(
+    'sunat_description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sunatNotesMeta = const VerificationMeta(
+    'sunatNotes',
+  );
+  @override
+  late final GeneratedColumn<String> sunatNotes = GeneratedColumn<String>(
+    'sunat_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ticketMeta = const VerificationMeta('ticket');
+  @override
+  late final GeneratedColumn<String> ticket = GeneratedColumn<String>(
+    'ticket',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _digestValueMeta = const VerificationMeta(
+    'digestValue',
+  );
+  @override
+  late final GeneratedColumn<String> digestValue = GeneratedColumn<String>(
+    'digest_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _nextAttemptAtMeta = const VerificationMeta(
+    'nextAttemptAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> nextAttemptAt =
+      GeneratedColumn<DateTime>(
+        'next_attempt_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _enrichedJsonMeta = const VerificationMeta(
+    'enrichedJson',
+  );
+  @override
+  late final GeneratedColumn<String> enrichedJson = GeneratedColumn<String>(
+    'enriched_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    environment,
+    tipoComprobante,
+    serie,
+    numero,
+    fechaEmision,
+    clienteTipoDocumento,
+    clienteNumeroDocumento,
+    clienteNombre,
+    moneda,
+    total,
+    status,
+    sunatCode,
+    sunatDescription,
+    sunatNotes,
+    ticket,
+    digestValue,
+    attempts,
+    nextAttemptAt,
+    enrichedJson,
+    deviceId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'documents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Document> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('tipo_comprobante')) {
+      context.handle(
+        _tipoComprobanteMeta,
+        tipoComprobante.isAcceptableOrUnknown(
+          data['tipo_comprobante']!,
+          _tipoComprobanteMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_tipoComprobanteMeta);
+    }
+    if (data.containsKey('serie')) {
+      context.handle(
+        _serieMeta,
+        serie.isAcceptableOrUnknown(data['serie']!, _serieMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serieMeta);
+    }
+    if (data.containsKey('numero')) {
+      context.handle(
+        _numeroMeta,
+        numero.isAcceptableOrUnknown(data['numero']!, _numeroMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numeroMeta);
+    }
+    if (data.containsKey('fecha_emision')) {
+      context.handle(
+        _fechaEmisionMeta,
+        fechaEmision.isAcceptableOrUnknown(
+          data['fecha_emision']!,
+          _fechaEmisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fechaEmisionMeta);
+    }
+    if (data.containsKey('cliente_tipo_documento')) {
+      context.handle(
+        _clienteTipoDocumentoMeta,
+        clienteTipoDocumento.isAcceptableOrUnknown(
+          data['cliente_tipo_documento']!,
+          _clienteTipoDocumentoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_clienteTipoDocumentoMeta);
+    }
+    if (data.containsKey('cliente_numero_documento')) {
+      context.handle(
+        _clienteNumeroDocumentoMeta,
+        clienteNumeroDocumento.isAcceptableOrUnknown(
+          data['cliente_numero_documento']!,
+          _clienteNumeroDocumentoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_clienteNumeroDocumentoMeta);
+    }
+    if (data.containsKey('cliente_nombre')) {
+      context.handle(
+        _clienteNombreMeta,
+        clienteNombre.isAcceptableOrUnknown(
+          data['cliente_nombre']!,
+          _clienteNombreMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_clienteNombreMeta);
+    }
+    if (data.containsKey('moneda')) {
+      context.handle(
+        _monedaMeta,
+        moneda.isAcceptableOrUnknown(data['moneda']!, _monedaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_monedaMeta);
+    }
+    if (data.containsKey('total')) {
+      context.handle(
+        _totalMeta,
+        total.isAcceptableOrUnknown(data['total']!, _totalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalMeta);
+    }
+    if (data.containsKey('sunat_code')) {
+      context.handle(
+        _sunatCodeMeta,
+        sunatCode.isAcceptableOrUnknown(data['sunat_code']!, _sunatCodeMeta),
+      );
+    }
+    if (data.containsKey('sunat_description')) {
+      context.handle(
+        _sunatDescriptionMeta,
+        sunatDescription.isAcceptableOrUnknown(
+          data['sunat_description']!,
+          _sunatDescriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sunat_notes')) {
+      context.handle(
+        _sunatNotesMeta,
+        sunatNotes.isAcceptableOrUnknown(data['sunat_notes']!, _sunatNotesMeta),
+      );
+    }
+    if (data.containsKey('ticket')) {
+      context.handle(
+        _ticketMeta,
+        ticket.isAcceptableOrUnknown(data['ticket']!, _ticketMeta),
+      );
+    }
+    if (data.containsKey('digest_value')) {
+      context.handle(
+        _digestValueMeta,
+        digestValue.isAcceptableOrUnknown(
+          data['digest_value']!,
+          _digestValueMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_digestValueMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('next_attempt_at')) {
+      context.handle(
+        _nextAttemptAtMeta,
+        nextAttemptAt.isAcceptableOrUnknown(
+          data['next_attempt_at']!,
+          _nextAttemptAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('enriched_json')) {
+      context.handle(
+        _enrichedJsonMeta,
+        enrichedJson.isAcceptableOrUnknown(
+          data['enriched_json']!,
+          _enrichedJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_enrichedJsonMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Document map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Document(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      environment: $DocumentsTable.$converterenvironment.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}environment'],
+        )!,
+      ),
+      tipoComprobante: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_comprobante'],
+      )!,
+      serie: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serie'],
+      )!,
+      numero: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}numero'],
+      )!,
+      fechaEmision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fecha_emision'],
+      )!,
+      clienteTipoDocumento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cliente_tipo_documento'],
+      )!,
+      clienteNumeroDocumento: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cliente_numero_documento'],
+      )!,
+      clienteNombre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cliente_nombre'],
+      )!,
+      moneda: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}moneda'],
+      )!,
+      total: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}total'],
+      )!,
+      status: $DocumentsTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      sunatCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sunat_code'],
+      ),
+      sunatDescription: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sunat_description'],
+      ),
+      sunatNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sunat_notes'],
+      ),
+      ticket: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ticket'],
+      ),
+      digestValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digest_value'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      nextAttemptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}next_attempt_at'],
+      ),
+      enrichedJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}enriched_json'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+    );
+  }
+
+  @override
+  $DocumentsTable createAlias(String alias) {
+    return $DocumentsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<SunatEnvironment, String, String>
+  $converterenvironment = const EnumNameConverter<SunatEnvironment>(
+    SunatEnvironment.values,
+  );
+  static JsonTypeConverter2<DocumentStatus, String, String> $converterstatus =
+      const EnumNameConverter<DocumentStatus>(DocumentStatus.values);
+}
+
+class Document extends DataClass implements Insertable<Document> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String companyId;
+
+  /// Beta documents are kept apart from production ones
+  final SunatEnvironment environment;
+
+  /// Catalog 1
+  final String tipoComprobante;
+  final String serie;
+  final int numero;
+
+  /// "YYYY-MM-DD", Peru's date
+  final String fechaEmision;
+  final String clienteTipoDocumento;
+  final String clienteNumeroDocumento;
+  final String clienteNombre;
+  final String moneda;
+
+  /// Decimal as text
+  final String total;
+  final DocumentStatus status;
+
+  /// SUNAT's answer: CDR ResponseCode, fault code, "HTTP 401"...
+  final String? sunatCode;
+  final String? sunatDescription;
+
+  /// CDR observations, JSON list
+  final String? sunatNotes;
+  final String? ticket;
+
+  /// Signature hash, printed in the QR code
+  final String digestValue;
+
+  /// Sends that got no answer, for the retry back-off
+  final int attempts;
+  final DateTime? nextAttemptAt;
+
+  /// The document as built (xbuilder JSON, enriched), for the PDF
+  final String enrichedJson;
+
+  /// Device that issued it (DESIGN §3.1)
+  final String deviceId;
+  const Document({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.companyId,
+    required this.environment,
+    required this.tipoComprobante,
+    required this.serie,
+    required this.numero,
+    required this.fechaEmision,
+    required this.clienteTipoDocumento,
+    required this.clienteNumeroDocumento,
+    required this.clienteNombre,
+    required this.moneda,
+    required this.total,
+    required this.status,
+    this.sunatCode,
+    this.sunatDescription,
+    this.sunatNotes,
+    this.ticket,
+    required this.digestValue,
+    required this.attempts,
+    this.nextAttemptAt,
+    required this.enrichedJson,
+    required this.deviceId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['company_id'] = Variable<String>(companyId);
+    {
+      map['environment'] = Variable<String>(
+        $DocumentsTable.$converterenvironment.toSql(environment),
+      );
+    }
+    map['tipo_comprobante'] = Variable<String>(tipoComprobante);
+    map['serie'] = Variable<String>(serie);
+    map['numero'] = Variable<int>(numero);
+    map['fecha_emision'] = Variable<String>(fechaEmision);
+    map['cliente_tipo_documento'] = Variable<String>(clienteTipoDocumento);
+    map['cliente_numero_documento'] = Variable<String>(clienteNumeroDocumento);
+    map['cliente_nombre'] = Variable<String>(clienteNombre);
+    map['moneda'] = Variable<String>(moneda);
+    map['total'] = Variable<String>(total);
+    {
+      map['status'] = Variable<String>(
+        $DocumentsTable.$converterstatus.toSql(status),
+      );
+    }
+    if (!nullToAbsent || sunatCode != null) {
+      map['sunat_code'] = Variable<String>(sunatCode);
+    }
+    if (!nullToAbsent || sunatDescription != null) {
+      map['sunat_description'] = Variable<String>(sunatDescription);
+    }
+    if (!nullToAbsent || sunatNotes != null) {
+      map['sunat_notes'] = Variable<String>(sunatNotes);
+    }
+    if (!nullToAbsent || ticket != null) {
+      map['ticket'] = Variable<String>(ticket);
+    }
+    map['digest_value'] = Variable<String>(digestValue);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || nextAttemptAt != null) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt);
+    }
+    map['enriched_json'] = Variable<String>(enrichedJson);
+    map['device_id'] = Variable<String>(deviceId);
+    return map;
+  }
+
+  DocumentsCompanion toCompanion(bool nullToAbsent) {
+    return DocumentsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      companyId: Value(companyId),
+      environment: Value(environment),
+      tipoComprobante: Value(tipoComprobante),
+      serie: Value(serie),
+      numero: Value(numero),
+      fechaEmision: Value(fechaEmision),
+      clienteTipoDocumento: Value(clienteTipoDocumento),
+      clienteNumeroDocumento: Value(clienteNumeroDocumento),
+      clienteNombre: Value(clienteNombre),
+      moneda: Value(moneda),
+      total: Value(total),
+      status: Value(status),
+      sunatCode: sunatCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sunatCode),
+      sunatDescription: sunatDescription == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sunatDescription),
+      sunatNotes: sunatNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sunatNotes),
+      ticket: ticket == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ticket),
+      digestValue: Value(digestValue),
+      attempts: Value(attempts),
+      nextAttemptAt: nextAttemptAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextAttemptAt),
+      enrichedJson: Value(enrichedJson),
+      deviceId: Value(deviceId),
+    );
+  }
+
+  factory Document.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Document(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      environment: $DocumentsTable.$converterenvironment.fromJson(
+        serializer.fromJson<String>(json['environment']),
+      ),
+      tipoComprobante: serializer.fromJson<String>(json['tipoComprobante']),
+      serie: serializer.fromJson<String>(json['serie']),
+      numero: serializer.fromJson<int>(json['numero']),
+      fechaEmision: serializer.fromJson<String>(json['fechaEmision']),
+      clienteTipoDocumento: serializer.fromJson<String>(
+        json['clienteTipoDocumento'],
+      ),
+      clienteNumeroDocumento: serializer.fromJson<String>(
+        json['clienteNumeroDocumento'],
+      ),
+      clienteNombre: serializer.fromJson<String>(json['clienteNombre']),
+      moneda: serializer.fromJson<String>(json['moneda']),
+      total: serializer.fromJson<String>(json['total']),
+      status: $DocumentsTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
+      sunatCode: serializer.fromJson<String?>(json['sunatCode']),
+      sunatDescription: serializer.fromJson<String?>(json['sunatDescription']),
+      sunatNotes: serializer.fromJson<String?>(json['sunatNotes']),
+      ticket: serializer.fromJson<String?>(json['ticket']),
+      digestValue: serializer.fromJson<String>(json['digestValue']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      nextAttemptAt: serializer.fromJson<DateTime?>(json['nextAttemptAt']),
+      enrichedJson: serializer.fromJson<String>(json['enrichedJson']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'companyId': serializer.toJson<String>(companyId),
+      'environment': serializer.toJson<String>(
+        $DocumentsTable.$converterenvironment.toJson(environment),
+      ),
+      'tipoComprobante': serializer.toJson<String>(tipoComprobante),
+      'serie': serializer.toJson<String>(serie),
+      'numero': serializer.toJson<int>(numero),
+      'fechaEmision': serializer.toJson<String>(fechaEmision),
+      'clienteTipoDocumento': serializer.toJson<String>(clienteTipoDocumento),
+      'clienteNumeroDocumento': serializer.toJson<String>(
+        clienteNumeroDocumento,
+      ),
+      'clienteNombre': serializer.toJson<String>(clienteNombre),
+      'moneda': serializer.toJson<String>(moneda),
+      'total': serializer.toJson<String>(total),
+      'status': serializer.toJson<String>(
+        $DocumentsTable.$converterstatus.toJson(status),
+      ),
+      'sunatCode': serializer.toJson<String?>(sunatCode),
+      'sunatDescription': serializer.toJson<String?>(sunatDescription),
+      'sunatNotes': serializer.toJson<String?>(sunatNotes),
+      'ticket': serializer.toJson<String?>(ticket),
+      'digestValue': serializer.toJson<String>(digestValue),
+      'attempts': serializer.toJson<int>(attempts),
+      'nextAttemptAt': serializer.toJson<DateTime?>(nextAttemptAt),
+      'enrichedJson': serializer.toJson<String>(enrichedJson),
+      'deviceId': serializer.toJson<String>(deviceId),
+    };
+  }
+
+  Document copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? companyId,
+    SunatEnvironment? environment,
+    String? tipoComprobante,
+    String? serie,
+    int? numero,
+    String? fechaEmision,
+    String? clienteTipoDocumento,
+    String? clienteNumeroDocumento,
+    String? clienteNombre,
+    String? moneda,
+    String? total,
+    DocumentStatus? status,
+    Value<String?> sunatCode = const Value.absent(),
+    Value<String?> sunatDescription = const Value.absent(),
+    Value<String?> sunatNotes = const Value.absent(),
+    Value<String?> ticket = const Value.absent(),
+    String? digestValue,
+    int? attempts,
+    Value<DateTime?> nextAttemptAt = const Value.absent(),
+    String? enrichedJson,
+    String? deviceId,
+  }) => Document(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    companyId: companyId ?? this.companyId,
+    environment: environment ?? this.environment,
+    tipoComprobante: tipoComprobante ?? this.tipoComprobante,
+    serie: serie ?? this.serie,
+    numero: numero ?? this.numero,
+    fechaEmision: fechaEmision ?? this.fechaEmision,
+    clienteTipoDocumento: clienteTipoDocumento ?? this.clienteTipoDocumento,
+    clienteNumeroDocumento:
+        clienteNumeroDocumento ?? this.clienteNumeroDocumento,
+    clienteNombre: clienteNombre ?? this.clienteNombre,
+    moneda: moneda ?? this.moneda,
+    total: total ?? this.total,
+    status: status ?? this.status,
+    sunatCode: sunatCode.present ? sunatCode.value : this.sunatCode,
+    sunatDescription: sunatDescription.present
+        ? sunatDescription.value
+        : this.sunatDescription,
+    sunatNotes: sunatNotes.present ? sunatNotes.value : this.sunatNotes,
+    ticket: ticket.present ? ticket.value : this.ticket,
+    digestValue: digestValue ?? this.digestValue,
+    attempts: attempts ?? this.attempts,
+    nextAttemptAt: nextAttemptAt.present
+        ? nextAttemptAt.value
+        : this.nextAttemptAt,
+    enrichedJson: enrichedJson ?? this.enrichedJson,
+    deviceId: deviceId ?? this.deviceId,
+  );
+  Document copyWithCompanion(DocumentsCompanion data) {
+    return Document(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      environment: data.environment.present
+          ? data.environment.value
+          : this.environment,
+      tipoComprobante: data.tipoComprobante.present
+          ? data.tipoComprobante.value
+          : this.tipoComprobante,
+      serie: data.serie.present ? data.serie.value : this.serie,
+      numero: data.numero.present ? data.numero.value : this.numero,
+      fechaEmision: data.fechaEmision.present
+          ? data.fechaEmision.value
+          : this.fechaEmision,
+      clienteTipoDocumento: data.clienteTipoDocumento.present
+          ? data.clienteTipoDocumento.value
+          : this.clienteTipoDocumento,
+      clienteNumeroDocumento: data.clienteNumeroDocumento.present
+          ? data.clienteNumeroDocumento.value
+          : this.clienteNumeroDocumento,
+      clienteNombre: data.clienteNombre.present
+          ? data.clienteNombre.value
+          : this.clienteNombre,
+      moneda: data.moneda.present ? data.moneda.value : this.moneda,
+      total: data.total.present ? data.total.value : this.total,
+      status: data.status.present ? data.status.value : this.status,
+      sunatCode: data.sunatCode.present ? data.sunatCode.value : this.sunatCode,
+      sunatDescription: data.sunatDescription.present
+          ? data.sunatDescription.value
+          : this.sunatDescription,
+      sunatNotes: data.sunatNotes.present
+          ? data.sunatNotes.value
+          : this.sunatNotes,
+      ticket: data.ticket.present ? data.ticket.value : this.ticket,
+      digestValue: data.digestValue.present
+          ? data.digestValue.value
+          : this.digestValue,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      nextAttemptAt: data.nextAttemptAt.present
+          ? data.nextAttemptAt.value
+          : this.nextAttemptAt,
+      enrichedJson: data.enrichedJson.present
+          ? data.enrichedJson.value
+          : this.enrichedJson,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Document(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('environment: $environment, ')
+          ..write('tipoComprobante: $tipoComprobante, ')
+          ..write('serie: $serie, ')
+          ..write('numero: $numero, ')
+          ..write('fechaEmision: $fechaEmision, ')
+          ..write('clienteTipoDocumento: $clienteTipoDocumento, ')
+          ..write('clienteNumeroDocumento: $clienteNumeroDocumento, ')
+          ..write('clienteNombre: $clienteNombre, ')
+          ..write('moneda: $moneda, ')
+          ..write('total: $total, ')
+          ..write('status: $status, ')
+          ..write('sunatCode: $sunatCode, ')
+          ..write('sunatDescription: $sunatDescription, ')
+          ..write('sunatNotes: $sunatNotes, ')
+          ..write('ticket: $ticket, ')
+          ..write('digestValue: $digestValue, ')
+          ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('enrichedJson: $enrichedJson, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    companyId,
+    environment,
+    tipoComprobante,
+    serie,
+    numero,
+    fechaEmision,
+    clienteTipoDocumento,
+    clienteNumeroDocumento,
+    clienteNombre,
+    moneda,
+    total,
+    status,
+    sunatCode,
+    sunatDescription,
+    sunatNotes,
+    ticket,
+    digestValue,
+    attempts,
+    nextAttemptAt,
+    enrichedJson,
+    deviceId,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Document &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.companyId == this.companyId &&
+          other.environment == this.environment &&
+          other.tipoComprobante == this.tipoComprobante &&
+          other.serie == this.serie &&
+          other.numero == this.numero &&
+          other.fechaEmision == this.fechaEmision &&
+          other.clienteTipoDocumento == this.clienteTipoDocumento &&
+          other.clienteNumeroDocumento == this.clienteNumeroDocumento &&
+          other.clienteNombre == this.clienteNombre &&
+          other.moneda == this.moneda &&
+          other.total == this.total &&
+          other.status == this.status &&
+          other.sunatCode == this.sunatCode &&
+          other.sunatDescription == this.sunatDescription &&
+          other.sunatNotes == this.sunatNotes &&
+          other.ticket == this.ticket &&
+          other.digestValue == this.digestValue &&
+          other.attempts == this.attempts &&
+          other.nextAttemptAt == this.nextAttemptAt &&
+          other.enrichedJson == this.enrichedJson &&
+          other.deviceId == this.deviceId);
+}
+
+class DocumentsCompanion extends UpdateCompanion<Document> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> companyId;
+  final Value<SunatEnvironment> environment;
+  final Value<String> tipoComprobante;
+  final Value<String> serie;
+  final Value<int> numero;
+  final Value<String> fechaEmision;
+  final Value<String> clienteTipoDocumento;
+  final Value<String> clienteNumeroDocumento;
+  final Value<String> clienteNombre;
+  final Value<String> moneda;
+  final Value<String> total;
+  final Value<DocumentStatus> status;
+  final Value<String?> sunatCode;
+  final Value<String?> sunatDescription;
+  final Value<String?> sunatNotes;
+  final Value<String?> ticket;
+  final Value<String> digestValue;
+  final Value<int> attempts;
+  final Value<DateTime?> nextAttemptAt;
+  final Value<String> enrichedJson;
+  final Value<String> deviceId;
+  final Value<int> rowid;
+  const DocumentsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.environment = const Value.absent(),
+    this.tipoComprobante = const Value.absent(),
+    this.serie = const Value.absent(),
+    this.numero = const Value.absent(),
+    this.fechaEmision = const Value.absent(),
+    this.clienteTipoDocumento = const Value.absent(),
+    this.clienteNumeroDocumento = const Value.absent(),
+    this.clienteNombre = const Value.absent(),
+    this.moneda = const Value.absent(),
+    this.total = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sunatCode = const Value.absent(),
+    this.sunatDescription = const Value.absent(),
+    this.sunatNotes = const Value.absent(),
+    this.ticket = const Value.absent(),
+    this.digestValue = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
+    this.enrichedJson = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String companyId,
+    required SunatEnvironment environment,
+    required String tipoComprobante,
+    required String serie,
+    required int numero,
+    required String fechaEmision,
+    required String clienteTipoDocumento,
+    required String clienteNumeroDocumento,
+    required String clienteNombre,
+    required String moneda,
+    required String total,
+    required DocumentStatus status,
+    this.sunatCode = const Value.absent(),
+    this.sunatDescription = const Value.absent(),
+    this.sunatNotes = const Value.absent(),
+    this.ticket = const Value.absent(),
+    required String digestValue,
+    this.attempts = const Value.absent(),
+    this.nextAttemptAt = const Value.absent(),
+    required String enrichedJson,
+    required String deviceId,
+    this.rowid = const Value.absent(),
+  }) : companyId = Value(companyId),
+       environment = Value(environment),
+       tipoComprobante = Value(tipoComprobante),
+       serie = Value(serie),
+       numero = Value(numero),
+       fechaEmision = Value(fechaEmision),
+       clienteTipoDocumento = Value(clienteTipoDocumento),
+       clienteNumeroDocumento = Value(clienteNumeroDocumento),
+       clienteNombre = Value(clienteNombre),
+       moneda = Value(moneda),
+       total = Value(total),
+       status = Value(status),
+       digestValue = Value(digestValue),
+       enrichedJson = Value(enrichedJson),
+       deviceId = Value(deviceId);
+  static Insertable<Document> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? companyId,
+    Expression<String>? environment,
+    Expression<String>? tipoComprobante,
+    Expression<String>? serie,
+    Expression<int>? numero,
+    Expression<String>? fechaEmision,
+    Expression<String>? clienteTipoDocumento,
+    Expression<String>? clienteNumeroDocumento,
+    Expression<String>? clienteNombre,
+    Expression<String>? moneda,
+    Expression<String>? total,
+    Expression<String>? status,
+    Expression<String>? sunatCode,
+    Expression<String>? sunatDescription,
+    Expression<String>? sunatNotes,
+    Expression<String>? ticket,
+    Expression<String>? digestValue,
+    Expression<int>? attempts,
+    Expression<DateTime>? nextAttemptAt,
+    Expression<String>? enrichedJson,
+    Expression<String>? deviceId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (companyId != null) 'company_id': companyId,
+      if (environment != null) 'environment': environment,
+      if (tipoComprobante != null) 'tipo_comprobante': tipoComprobante,
+      if (serie != null) 'serie': serie,
+      if (numero != null) 'numero': numero,
+      if (fechaEmision != null) 'fecha_emision': fechaEmision,
+      if (clienteTipoDocumento != null)
+        'cliente_tipo_documento': clienteTipoDocumento,
+      if (clienteNumeroDocumento != null)
+        'cliente_numero_documento': clienteNumeroDocumento,
+      if (clienteNombre != null) 'cliente_nombre': clienteNombre,
+      if (moneda != null) 'moneda': moneda,
+      if (total != null) 'total': total,
+      if (status != null) 'status': status,
+      if (sunatCode != null) 'sunat_code': sunatCode,
+      if (sunatDescription != null) 'sunat_description': sunatDescription,
+      if (sunatNotes != null) 'sunat_notes': sunatNotes,
+      if (ticket != null) 'ticket': ticket,
+      if (digestValue != null) 'digest_value': digestValue,
+      if (attempts != null) 'attempts': attempts,
+      if (nextAttemptAt != null) 'next_attempt_at': nextAttemptAt,
+      if (enrichedJson != null) 'enriched_json': enrichedJson,
+      if (deviceId != null) 'device_id': deviceId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? companyId,
+    Value<SunatEnvironment>? environment,
+    Value<String>? tipoComprobante,
+    Value<String>? serie,
+    Value<int>? numero,
+    Value<String>? fechaEmision,
+    Value<String>? clienteTipoDocumento,
+    Value<String>? clienteNumeroDocumento,
+    Value<String>? clienteNombre,
+    Value<String>? moneda,
+    Value<String>? total,
+    Value<DocumentStatus>? status,
+    Value<String?>? sunatCode,
+    Value<String?>? sunatDescription,
+    Value<String?>? sunatNotes,
+    Value<String?>? ticket,
+    Value<String>? digestValue,
+    Value<int>? attempts,
+    Value<DateTime?>? nextAttemptAt,
+    Value<String>? enrichedJson,
+    Value<String>? deviceId,
+    Value<int>? rowid,
+  }) {
+    return DocumentsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      companyId: companyId ?? this.companyId,
+      environment: environment ?? this.environment,
+      tipoComprobante: tipoComprobante ?? this.tipoComprobante,
+      serie: serie ?? this.serie,
+      numero: numero ?? this.numero,
+      fechaEmision: fechaEmision ?? this.fechaEmision,
+      clienteTipoDocumento: clienteTipoDocumento ?? this.clienteTipoDocumento,
+      clienteNumeroDocumento:
+          clienteNumeroDocumento ?? this.clienteNumeroDocumento,
+      clienteNombre: clienteNombre ?? this.clienteNombre,
+      moneda: moneda ?? this.moneda,
+      total: total ?? this.total,
+      status: status ?? this.status,
+      sunatCode: sunatCode ?? this.sunatCode,
+      sunatDescription: sunatDescription ?? this.sunatDescription,
+      sunatNotes: sunatNotes ?? this.sunatNotes,
+      ticket: ticket ?? this.ticket,
+      digestValue: digestValue ?? this.digestValue,
+      attempts: attempts ?? this.attempts,
+      nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
+      enrichedJson: enrichedJson ?? this.enrichedJson,
+      deviceId: deviceId ?? this.deviceId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (environment.present) {
+      map['environment'] = Variable<String>(
+        $DocumentsTable.$converterenvironment.toSql(environment.value),
+      );
+    }
+    if (tipoComprobante.present) {
+      map['tipo_comprobante'] = Variable<String>(tipoComprobante.value);
+    }
+    if (serie.present) {
+      map['serie'] = Variable<String>(serie.value);
+    }
+    if (numero.present) {
+      map['numero'] = Variable<int>(numero.value);
+    }
+    if (fechaEmision.present) {
+      map['fecha_emision'] = Variable<String>(fechaEmision.value);
+    }
+    if (clienteTipoDocumento.present) {
+      map['cliente_tipo_documento'] = Variable<String>(
+        clienteTipoDocumento.value,
+      );
+    }
+    if (clienteNumeroDocumento.present) {
+      map['cliente_numero_documento'] = Variable<String>(
+        clienteNumeroDocumento.value,
+      );
+    }
+    if (clienteNombre.present) {
+      map['cliente_nombre'] = Variable<String>(clienteNombre.value);
+    }
+    if (moneda.present) {
+      map['moneda'] = Variable<String>(moneda.value);
+    }
+    if (total.present) {
+      map['total'] = Variable<String>(total.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $DocumentsTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (sunatCode.present) {
+      map['sunat_code'] = Variable<String>(sunatCode.value);
+    }
+    if (sunatDescription.present) {
+      map['sunat_description'] = Variable<String>(sunatDescription.value);
+    }
+    if (sunatNotes.present) {
+      map['sunat_notes'] = Variable<String>(sunatNotes.value);
+    }
+    if (ticket.present) {
+      map['ticket'] = Variable<String>(ticket.value);
+    }
+    if (digestValue.present) {
+      map['digest_value'] = Variable<String>(digestValue.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (nextAttemptAt.present) {
+      map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt.value);
+    }
+    if (enrichedJson.present) {
+      map['enriched_json'] = Variable<String>(enrichedJson.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('companyId: $companyId, ')
+          ..write('environment: $environment, ')
+          ..write('tipoComprobante: $tipoComprobante, ')
+          ..write('serie: $serie, ')
+          ..write('numero: $numero, ')
+          ..write('fechaEmision: $fechaEmision, ')
+          ..write('clienteTipoDocumento: $clienteTipoDocumento, ')
+          ..write('clienteNumeroDocumento: $clienteNumeroDocumento, ')
+          ..write('clienteNombre: $clienteNombre, ')
+          ..write('moneda: $moneda, ')
+          ..write('total: $total, ')
+          ..write('status: $status, ')
+          ..write('sunatCode: $sunatCode, ')
+          ..write('sunatDescription: $sunatDescription, ')
+          ..write('sunatNotes: $sunatNotes, ')
+          ..write('ticket: $ticket, ')
+          ..write('digestValue: $digestValue, ')
+          ..write('attempts: $attempts, ')
+          ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('enrichedJson: $enrichedJson, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DocumentFilesTable extends DocumentFiles
+    with TableInfo<$DocumentFilesTable, DocumentFile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentFilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES documents (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DocumentFileKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DocumentFileKind>($DocumentFilesTable.$converterkind);
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    documentId,
+    kind,
+    bytes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'document_files';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DocumentFile> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bytesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {documentId, kind},
+  ];
+  @override
+  DocumentFile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentFile(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      kind: $DocumentFilesTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}bytes'],
+      )!,
+    );
+  }
+
+  @override
+  $DocumentFilesTable createAlias(String alias) {
+    return $DocumentFilesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<DocumentFileKind, String, String> $converterkind =
+      const EnumNameConverter<DocumentFileKind>(DocumentFileKind.values);
+}
+
+class DocumentFile extends DataClass implements Insertable<DocumentFile> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String documentId;
+  final DocumentFileKind kind;
+  final Uint8List bytes;
+  const DocumentFile({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.documentId,
+    required this.kind,
+    required this.bytes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['document_id'] = Variable<String>(documentId);
+    {
+      map['kind'] = Variable<String>(
+        $DocumentFilesTable.$converterkind.toSql(kind),
+      );
+    }
+    map['bytes'] = Variable<Uint8List>(bytes);
+    return map;
+  }
+
+  DocumentFilesCompanion toCompanion(bool nullToAbsent) {
+    return DocumentFilesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      documentId: Value(documentId),
+      kind: Value(kind),
+      bytes: Value(bytes),
+    );
+  }
+
+  factory DocumentFile.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentFile(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      documentId: serializer.fromJson<String>(json['documentId']),
+      kind: $DocumentFilesTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      bytes: serializer.fromJson<Uint8List>(json['bytes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'documentId': serializer.toJson<String>(documentId),
+      'kind': serializer.toJson<String>(
+        $DocumentFilesTable.$converterkind.toJson(kind),
+      ),
+      'bytes': serializer.toJson<Uint8List>(bytes),
+    };
+  }
+
+  DocumentFile copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? documentId,
+    DocumentFileKind? kind,
+    Uint8List? bytes,
+  }) => DocumentFile(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    documentId: documentId ?? this.documentId,
+    kind: kind ?? this.kind,
+    bytes: bytes ?? this.bytes,
+  );
+  DocumentFile copyWithCompanion(DocumentFilesCompanion data) {
+    return DocumentFile(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentFile(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('documentId: $documentId, ')
+          ..write('kind: $kind, ')
+          ..write('bytes: $bytes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    documentId,
+    kind,
+    $driftBlobEquality.hash(bytes),
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentFile &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.documentId == this.documentId &&
+          other.kind == this.kind &&
+          $driftBlobEquality.equals(other.bytes, this.bytes));
+}
+
+class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> documentId;
+  final Value<DocumentFileKind> kind;
+  final Value<Uint8List> bytes;
+  final Value<int> rowid;
+  const DocumentFilesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentFilesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String documentId,
+    required DocumentFileKind kind,
+    required Uint8List bytes,
+    this.rowid = const Value.absent(),
+  }) : documentId = Value(documentId),
+       kind = Value(kind),
+       bytes = Value(bytes);
+  static Insertable<DocumentFile> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? documentId,
+    Expression<String>? kind,
+    Expression<Uint8List>? bytes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (documentId != null) 'document_id': documentId,
+      if (kind != null) 'kind': kind,
+      if (bytes != null) 'bytes': bytes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentFilesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? documentId,
+    Value<DocumentFileKind>? kind,
+    Value<Uint8List>? bytes,
+    Value<int>? rowid,
+  }) {
+    return DocumentFilesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      documentId: documentId ?? this.documentId,
+      kind: kind ?? this.kind,
+      bytes: bytes ?? this.bytes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $DocumentFilesTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentFilesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('documentId: $documentId, ')
+          ..write('kind: $kind, ')
+          ..write('bytes: $bytes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DocumentEventsTable extends DocumentEvents
+    with TableInfo<$DocumentEventsTable, DocumentEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: newId,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: nowUtc,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES documents (id)',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DocumentStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<DocumentStatus>($DocumentEventsTable.$converterstatus);
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _messageMeta = const VerificationMeta(
+    'message',
+  );
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+    'message',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    documentId,
+    status,
+    code,
+    message,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'document_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DocumentEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    }
+    if (data.containsKey('message')) {
+      context.handle(
+        _messageMeta,
+        message.isAcceptableOrUnknown(data['message']!, _messageMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DocumentEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      status: $DocumentEventsTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      ),
+      message: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message'],
+      ),
+    );
+  }
+
+  @override
+  $DocumentEventsTable createAlias(String alias) {
+    return $DocumentEventsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<DocumentStatus, String, String> $converterstatus =
+      const EnumNameConverter<DocumentStatus>(DocumentStatus.values);
+}
+
+class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String documentId;
+  final DocumentStatus status;
+  final String? code;
+  final String? message;
+  const DocumentEvent({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    required this.documentId,
+    required this.status,
+    this.code,
+    this.message,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    map['document_id'] = Variable<String>(documentId);
+    {
+      map['status'] = Variable<String>(
+        $DocumentEventsTable.$converterstatus.toSql(status),
+      );
+    }
+    if (!nullToAbsent || code != null) {
+      map['code'] = Variable<String>(code);
+    }
+    if (!nullToAbsent || message != null) {
+      map['message'] = Variable<String>(message);
+    }
+    return map;
+  }
+
+  DocumentEventsCompanion toCompanion(bool nullToAbsent) {
+    return DocumentEventsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      documentId: Value(documentId),
+      status: Value(status),
+      code: code == null && nullToAbsent ? const Value.absent() : Value(code),
+      message: message == null && nullToAbsent
+          ? const Value.absent()
+          : Value(message),
+    );
+  }
+
+  factory DocumentEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentEvent(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      documentId: serializer.fromJson<String>(json['documentId']),
+      status: $DocumentEventsTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
+      code: serializer.fromJson<String?>(json['code']),
+      message: serializer.fromJson<String?>(json['message']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'documentId': serializer.toJson<String>(documentId),
+      'status': serializer.toJson<String>(
+        $DocumentEventsTable.$converterstatus.toJson(status),
+      ),
+      'code': serializer.toJson<String?>(code),
+      'message': serializer.toJson<String?>(message),
+    };
+  }
+
+  DocumentEvent copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    String? documentId,
+    DocumentStatus? status,
+    Value<String?> code = const Value.absent(),
+    Value<String?> message = const Value.absent(),
+  }) => DocumentEvent(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    documentId: documentId ?? this.documentId,
+    status: status ?? this.status,
+    code: code.present ? code.value : this.code,
+    message: message.present ? message.value : this.message,
+  );
+  DocumentEvent copyWithCompanion(DocumentEventsCompanion data) {
+    return DocumentEvent(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      status: data.status.present ? data.status.value : this.status,
+      code: data.code.present ? data.code.value : this.code,
+      message: data.message.present ? data.message.value : this.message,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentEvent(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('documentId: $documentId, ')
+          ..write('status: $status, ')
+          ..write('code: $code, ')
+          ..write('message: $message')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    documentId,
+    status,
+    code,
+    message,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentEvent &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.documentId == this.documentId &&
+          other.status == this.status &&
+          other.code == this.code &&
+          other.message == this.message);
+}
+
+class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String> documentId;
+  final Value<DocumentStatus> status;
+  final Value<String?> code;
+  final Value<String?> message;
+  final Value<int> rowid;
+  const DocumentEventsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.code = const Value.absent(),
+    this.message = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentEventsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    required String documentId,
+    required DocumentStatus status,
+    this.code = const Value.absent(),
+    this.message = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : documentId = Value(documentId),
+       status = Value(status);
+  static Insertable<DocumentEvent> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? documentId,
+    Expression<String>? status,
+    Expression<String>? code,
+    Expression<String>? message,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (documentId != null) 'document_id': documentId,
+      if (status != null) 'status': status,
+      if (code != null) 'code': code,
+      if (message != null) 'message': message,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentEventsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String>? documentId,
+    Value<DocumentStatus>? status,
+    Value<String?>? code,
+    Value<String?>? message,
+    Value<int>? rowid,
+  }) {
+    return DocumentEventsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      documentId: documentId ?? this.documentId,
+      status: status ?? this.status,
+      code: code ?? this.code,
+      message: message ?? this.message,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $DocumentEventsTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('documentId: $documentId, ')
+          ..write('status: $status, ')
+          ..write('code: $code, ')
+          ..write('message: $message, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $DeviceSettingsTable extends DeviceSettings
     with TableInfo<$DeviceSettingsTable, DeviceSetting> {
   @override
@@ -3814,6 +6218,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SeriesTable series = $SeriesTable(this);
   late final $CustomersTable customers = $CustomersTable(this);
   late final $ProductsTable products = $ProductsTable(this);
+  late final $DocumentsTable documents = $DocumentsTable(this);
+  late final $DocumentFilesTable documentFiles = $DocumentFilesTable(this);
+  late final $DocumentEventsTable documentEvents = $DocumentEventsTable(this);
   late final $DeviceSettingsTable deviceSettings = $DeviceSettingsTable(this);
   late final Index companiesRuc = Index(
     'companies_ruc',
@@ -3822,6 +6229,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index customersDocument = Index(
     'customers_document',
     'CREATE UNIQUE INDEX customers_document ON customers (company_id, tipo_documento_identidad, numero_documento_identidad) WHERE deleted_at IS NULL',
+  );
+  late final Index documentsNumber = Index(
+    'documents_number',
+    'CREATE UNIQUE INDEX documents_number ON documents (company_id, environment, tipo_comprobante, serie, numero)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -3832,9 +6243,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     series,
     customers,
     products,
+    documents,
+    documentFiles,
+    documentEvents,
     deviceSettings,
     companiesRuc,
     customersDocument,
+    documentsNumber,
   ];
   @override
   DriftDatabaseOptions get options =>
@@ -3951,6 +6366,24 @@ final class $$CompaniesTableReferences
     ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_productsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DocumentsTable, List<Document>>
+  _documentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documents,
+    aliasName: 'companies__id__documents__company_id',
+  );
+
+  $$DocumentsTableProcessedTableManager get documentsRefs {
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.companyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4154,6 +6587,31 @@ class $$CompaniesTableFilterComposer
           }) => $$ProductsTableFilterComposer(
             $db: $db,
             $table: $db.products,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> documentsRefs(
+    Expression<bool> Function($$DocumentsTableFilterComposer f) f,
+  ) {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4471,6 +6929,31 @@ class $$CompaniesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> documentsRefs<T extends Object>(
+    Expression<T> Function($$DocumentsTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.companyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CompaniesTableTableManager
@@ -4490,6 +6973,7 @@ class $$CompaniesTableTableManager
             bool seriesRefs,
             bool customersRefs,
             bool productsRefs,
+            bool documentsRefs,
           })
         > {
   $$CompaniesTableTableManager(_$AppDatabase db, $CompaniesTable table)
@@ -4624,6 +7108,7 @@ class $$CompaniesTableTableManager
                 seriesRefs = false,
                 customersRefs = false,
                 productsRefs = false,
+                documentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4631,6 +7116,7 @@ class $$CompaniesTableTableManager
                     if (seriesRefs) db.series,
                     if (customersRefs) db.customers,
                     if (productsRefs) db.products,
+                    if (documentsRefs) db.documents,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4695,6 +7181,26 @@ class $$CompaniesTableTableManager
                           referencedColumn: 'company_id',
                           typedResults: items,
                         ),
+                      if (documentsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Company,
+                          $CompaniesTable,
+                          Document,
+                          $DocumentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CompaniesTableReferences
+                              ._documentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CompaniesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).documentsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'company_id',
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4719,6 +7225,7 @@ typedef $$CompaniesTableProcessedTableManager =
         bool seriesRefs,
         bool customersRefs,
         bool productsRefs,
+        bool documentsRefs,
       })
     >;
 typedef $$SeriesTableCreateCompanionBuilder = SeriesCompanion Function({
@@ -6094,6 +8601,1654 @@ typedef $$ProductsTableProcessedTableManager =
       Product,
       PrefetchHooks Function({bool companyId})
     >;
+typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  required String companyId,
+  required SunatEnvironment environment,
+  required String tipoComprobante,
+  required String serie,
+  required int numero,
+  required String fechaEmision,
+  required String clienteTipoDocumento,
+  required String clienteNumeroDocumento,
+  required String clienteNombre,
+  required String moneda,
+  required String total,
+  required DocumentStatus status,
+  Value<String?> sunatCode,
+  Value<String?> sunatDescription,
+  Value<String?> sunatNotes,
+  Value<String?> ticket,
+  required String digestValue,
+  Value<int> attempts,
+  Value<DateTime?> nextAttemptAt,
+  required String enrichedJson,
+  required String deviceId,
+  Value<int> rowid,
+});
+typedef $$DocumentsTableUpdateCompanionBuilder = DocumentsCompanion Function({
+  Value<String> id,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String> companyId,
+  Value<SunatEnvironment> environment,
+  Value<String> tipoComprobante,
+  Value<String> serie,
+  Value<int> numero,
+  Value<String> fechaEmision,
+  Value<String> clienteTipoDocumento,
+  Value<String> clienteNumeroDocumento,
+  Value<String> clienteNombre,
+  Value<String> moneda,
+  Value<String> total,
+  Value<DocumentStatus> status,
+  Value<String?> sunatCode,
+  Value<String?> sunatDescription,
+  Value<String?> sunatNotes,
+  Value<String?> ticket,
+  Value<String> digestValue,
+  Value<int> attempts,
+  Value<DateTime?> nextAttemptAt,
+  Value<String> enrichedJson,
+  Value<String> deviceId,
+  Value<int> rowid,
+});
+
+final class $$DocumentsTableReferences
+    extends BaseReferences<_$AppDatabase, $DocumentsTable, Document> {
+  $$DocumentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CompaniesTable _companyIdTable(_$AppDatabase db) =>
+      db.companies.createAlias('documents__company_id__companies__id');
+
+  $$CompaniesTableProcessedTableManager get companyId {
+    final $_column = $_itemColumn<String>('company_id')!;
+
+    final manager = $$CompaniesTableTableManager(
+      $_db,
+      $_db.companies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_companyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$DocumentFilesTable, List<DocumentFile>>
+  _documentFilesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documentFiles,
+    aliasName: 'documents__id__document_files__document_id',
+  );
+
+  $$DocumentFilesTableProcessedTableManager get documentFilesRefs {
+    final manager = $$DocumentFilesTableTableManager(
+      $_db,
+      $_db.documentFiles,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentFilesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DocumentEventsTable, List<DocumentEvent>>
+  _documentEventsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.documentEvents,
+    aliasName: 'documents__id__document_events__document_id',
+  );
+
+  $$DocumentEventsTableProcessedTableManager get documentEventsRefs {
+    final manager = $$DocumentEventsTableTableManager(
+      $_db,
+      $_db.documentEvents,
+    ).filter((f) => f.documentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_documentEventsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$DocumentsTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentsTable> {
+  $$DocumentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SunatEnvironment, SunatEnvironment, String>
+  get environment => $composableBuilder(
+    column: $table.environment,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get tipoComprobante => $composableBuilder(
+    column: $table.tipoComprobante,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serie => $composableBuilder(
+    column: $table.serie,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get numero => $composableBuilder(
+    column: $table.numero,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fechaEmision => $composableBuilder(
+    column: $table.fechaEmision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clienteTipoDocumento => $composableBuilder(
+    column: $table.clienteTipoDocumento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clienteNumeroDocumento => $composableBuilder(
+    column: $table.clienteNumeroDocumento,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clienteNombre => $composableBuilder(
+    column: $table.clienteNombre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get moneda => $composableBuilder(
+    column: $table.moneda,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get total => $composableBuilder(
+    column: $table.total,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DocumentStatus, DocumentStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get sunatCode => $composableBuilder(
+    column: $table.sunatCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sunatDescription => $composableBuilder(
+    column: $table.sunatDescription,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sunatNotes => $composableBuilder(
+    column: $table.sunatNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ticket => $composableBuilder(
+    column: $table.ticket,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digestValue => $composableBuilder(
+    column: $table.digestValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get enrichedJson => $composableBuilder(
+    column: $table.enrichedJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CompaniesTableFilterComposer get companyId {
+    final $$CompaniesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableFilterComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> documentFilesRefs(
+    Expression<bool> Function($$DocumentFilesTableFilterComposer f) f,
+  ) {
+    final $$DocumentFilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentFiles,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentFilesTableFilterComposer(
+            $db: $db,
+            $table: $db.documentFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> documentEventsRefs(
+    Expression<bool> Function($$DocumentEventsTableFilterComposer f) f,
+  ) {
+    final $$DocumentEventsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentEvents,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentEventsTableFilterComposer(
+            $db: $db,
+            $table: $db.documentEvents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DocumentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentsTable> {
+  $$DocumentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get environment => $composableBuilder(
+    column: $table.environment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tipoComprobante => $composableBuilder(
+    column: $table.tipoComprobante,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serie => $composableBuilder(
+    column: $table.serie,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get numero => $composableBuilder(
+    column: $table.numero,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fechaEmision => $composableBuilder(
+    column: $table.fechaEmision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clienteTipoDocumento => $composableBuilder(
+    column: $table.clienteTipoDocumento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clienteNumeroDocumento => $composableBuilder(
+    column: $table.clienteNumeroDocumento,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clienteNombre => $composableBuilder(
+    column: $table.clienteNombre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get moneda => $composableBuilder(
+    column: $table.moneda,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get total => $composableBuilder(
+    column: $table.total,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sunatCode => $composableBuilder(
+    column: $table.sunatCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sunatDescription => $composableBuilder(
+    column: $table.sunatDescription,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sunatNotes => $composableBuilder(
+    column: $table.sunatNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ticket => $composableBuilder(
+    column: $table.ticket,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digestValue => $composableBuilder(
+    column: $table.digestValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get enrichedJson => $composableBuilder(
+    column: $table.enrichedJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CompaniesTableOrderingComposer get companyId {
+    final $$CompaniesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableOrderingComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentsTable> {
+  $$DocumentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<SunatEnvironment, String> get environment =>
+      $composableBuilder(
+        column: $table.environment,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get tipoComprobante => $composableBuilder(
+    column: $table.tipoComprobante,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serie =>
+      $composableBuilder(column: $table.serie, builder: (column) => column);
+
+  GeneratedColumn<int> get numero =>
+      $composableBuilder(column: $table.numero, builder: (column) => column);
+
+  GeneratedColumn<String> get fechaEmision => $composableBuilder(
+    column: $table.fechaEmision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clienteTipoDocumento => $composableBuilder(
+    column: $table.clienteTipoDocumento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clienteNumeroDocumento => $composableBuilder(
+    column: $table.clienteNumeroDocumento,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clienteNombre => $composableBuilder(
+    column: $table.clienteNombre,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get moneda =>
+      $composableBuilder(column: $table.moneda, builder: (column) => column);
+
+  GeneratedColumn<String> get total =>
+      $composableBuilder(column: $table.total, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DocumentStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get sunatCode =>
+      $composableBuilder(column: $table.sunatCode, builder: (column) => column);
+
+  GeneratedColumn<String> get sunatDescription => $composableBuilder(
+    column: $table.sunatDescription,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sunatNotes => $composableBuilder(
+    column: $table.sunatNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ticket =>
+      $composableBuilder(column: $table.ticket, builder: (column) => column);
+
+  GeneratedColumn<String> get digestValue => $composableBuilder(
+    column: $table.digestValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get nextAttemptAt => $composableBuilder(
+    column: $table.nextAttemptAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get enrichedJson => $composableBuilder(
+    column: $table.enrichedJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  $$CompaniesTableAnnotationComposer get companyId {
+    final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.companyId,
+      referencedTable: $db.companies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CompaniesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> documentFilesRefs<T extends Object>(
+    Expression<T> Function($$DocumentFilesTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentFilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentFiles,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentFilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documentFiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> documentEventsRefs<T extends Object>(
+    Expression<T> Function($$DocumentEventsTableAnnotationComposer a) f,
+  ) {
+    final $$DocumentEventsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.documentEvents,
+      getReferencedColumn: (t) => t.documentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentEventsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documentEvents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$DocumentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DocumentsTable,
+          Document,
+          $$DocumentsTableFilterComposer,
+          $$DocumentsTableOrderingComposer,
+          $$DocumentsTableAnnotationComposer,
+          $$DocumentsTableCreateCompanionBuilder,
+          $$DocumentsTableUpdateCompanionBuilder,
+          (Document, $$DocumentsTableReferences),
+          Document,
+          PrefetchHooks Function({
+            bool companyId,
+            bool documentFilesRefs,
+            bool documentEventsRefs,
+          })
+        > {
+  $$DocumentsTableTableManager(_$AppDatabase db, $DocumentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DocumentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DocumentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<SunatEnvironment> environment = const Value.absent(),
+                Value<String> tipoComprobante = const Value.absent(),
+                Value<String> serie = const Value.absent(),
+                Value<int> numero = const Value.absent(),
+                Value<String> fechaEmision = const Value.absent(),
+                Value<String> clienteTipoDocumento = const Value.absent(),
+                Value<String> clienteNumeroDocumento = const Value.absent(),
+                Value<String> clienteNombre = const Value.absent(),
+                Value<String> moneda = const Value.absent(),
+                Value<String> total = const Value.absent(),
+                Value<DocumentStatus> status = const Value.absent(),
+                Value<String?> sunatCode = const Value.absent(),
+                Value<String?> sunatDescription = const Value.absent(),
+                Value<String?> sunatNotes = const Value.absent(),
+                Value<String?> ticket = const Value.absent(),
+                Value<String> digestValue = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<DateTime?> nextAttemptAt = const Value.absent(),
+                Value<String> enrichedJson = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                environment: environment,
+                tipoComprobante: tipoComprobante,
+                serie: serie,
+                numero: numero,
+                fechaEmision: fechaEmision,
+                clienteTipoDocumento: clienteTipoDocumento,
+                clienteNumeroDocumento: clienteNumeroDocumento,
+                clienteNombre: clienteNombre,
+                moneda: moneda,
+                total: total,
+                status: status,
+                sunatCode: sunatCode,
+                sunatDescription: sunatDescription,
+                sunatNotes: sunatNotes,
+                ticket: ticket,
+                digestValue: digestValue,
+                attempts: attempts,
+                nextAttemptAt: nextAttemptAt,
+                enrichedJson: enrichedJson,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String companyId,
+                required SunatEnvironment environment,
+                required String tipoComprobante,
+                required String serie,
+                required int numero,
+                required String fechaEmision,
+                required String clienteTipoDocumento,
+                required String clienteNumeroDocumento,
+                required String clienteNombre,
+                required String moneda,
+                required String total,
+                required DocumentStatus status,
+                Value<String?> sunatCode = const Value.absent(),
+                Value<String?> sunatDescription = const Value.absent(),
+                Value<String?> sunatNotes = const Value.absent(),
+                Value<String?> ticket = const Value.absent(),
+                required String digestValue,
+                Value<int> attempts = const Value.absent(),
+                Value<DateTime?> nextAttemptAt = const Value.absent(),
+                required String enrichedJson,
+                required String deviceId,
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                companyId: companyId,
+                environment: environment,
+                tipoComprobante: tipoComprobante,
+                serie: serie,
+                numero: numero,
+                fechaEmision: fechaEmision,
+                clienteTipoDocumento: clienteTipoDocumento,
+                clienteNumeroDocumento: clienteNumeroDocumento,
+                clienteNombre: clienteNombre,
+                moneda: moneda,
+                total: total,
+                status: status,
+                sunatCode: sunatCode,
+                sunatDescription: sunatDescription,
+                sunatNotes: sunatNotes,
+                ticket: ticket,
+                digestValue: digestValue,
+                attempts: attempts,
+                nextAttemptAt: nextAttemptAt,
+                enrichedJson: enrichedJson,
+                deviceId: deviceId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DocumentsTable, Document>(table),
+                  $$DocumentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                companyId = false,
+                documentFilesRefs = false,
+                documentEventsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (documentFilesRefs) db.documentFiles,
+                    if (documentEventsRefs) db.documentEvents,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (companyId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.companyId,
+                            referencedTable: $$DocumentsTableReferences
+                                ._companyIdTable(db),
+                            referencedColumn: $$DocumentsTableReferences
+                                ._companyIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (documentFilesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Document,
+                          $DocumentsTable,
+                          DocumentFile,
+                          $DocumentFilesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DocumentsTableReferences
+                              ._documentFilesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DocumentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).documentFilesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'document_id',
+                          typedResults: items,
+                        ),
+                      if (documentEventsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          Document,
+                          $DocumentsTable,
+                          DocumentEvent,
+                          $DocumentEventsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$DocumentsTableReferences
+                              ._documentEventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$DocumentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).documentEventsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'document_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$DocumentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DocumentsTable,
+      Document,
+      $$DocumentsTableFilterComposer,
+      $$DocumentsTableOrderingComposer,
+      $$DocumentsTableAnnotationComposer,
+      $$DocumentsTableCreateCompanionBuilder,
+      $$DocumentsTableUpdateCompanionBuilder,
+      (Document, $$DocumentsTableReferences),
+      Document,
+      PrefetchHooks Function({
+        bool companyId,
+        bool documentFilesRefs,
+        bool documentEventsRefs,
+      })
+    >;
+typedef $$DocumentFilesTableCreateCompanionBuilder =
+    DocumentFilesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      required String documentId,
+      required DocumentFileKind kind,
+      required Uint8List bytes,
+      Value<int> rowid,
+    });
+typedef $$DocumentFilesTableUpdateCompanionBuilder =
+    DocumentFilesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String> documentId,
+      Value<DocumentFileKind> kind,
+      Value<Uint8List> bytes,
+      Value<int> rowid,
+    });
+
+final class $$DocumentFilesTableReferences
+    extends BaseReferences<_$AppDatabase, $DocumentFilesTable, DocumentFile> {
+  $$DocumentFilesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $DocumentsTable _documentIdTable(_$AppDatabase db) =>
+      db.documents.createAlias('document_files__document_id__documents__id');
+
+  $$DocumentsTableProcessedTableManager get documentId {
+    final $_column = $_itemColumn<String>('document_id')!;
+
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DocumentFilesTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentFilesTable> {
+  $$DocumentFilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DocumentFileKind, DocumentFileKind, String>
+  get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$DocumentsTableFilterComposer get documentId {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentFilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentFilesTable> {
+  $$DocumentFilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$DocumentsTableOrderingComposer get documentId {
+    final $$DocumentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentFilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentFilesTable> {
+  $$DocumentFilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DocumentFileKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  $$DocumentsTableAnnotationComposer get documentId {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentFilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DocumentFilesTable,
+          DocumentFile,
+          $$DocumentFilesTableFilterComposer,
+          $$DocumentFilesTableOrderingComposer,
+          $$DocumentFilesTableAnnotationComposer,
+          $$DocumentFilesTableCreateCompanionBuilder,
+          $$DocumentFilesTableUpdateCompanionBuilder,
+          (DocumentFile, $$DocumentFilesTableReferences),
+          DocumentFile,
+          PrefetchHooks Function({bool documentId})
+        > {
+  $$DocumentFilesTableTableManager(_$AppDatabase db, $DocumentFilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentFilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DocumentFilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DocumentFilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<DocumentFileKind> kind = const Value.absent(),
+                Value<Uint8List> bytes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentFilesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                documentId: documentId,
+                kind: kind,
+                bytes: bytes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String documentId,
+                required DocumentFileKind kind,
+                required Uint8List bytes,
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentFilesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                documentId: documentId,
+                kind: kind,
+                bytes: bytes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DocumentFilesTable, DocumentFile>(table),
+                  $$DocumentFilesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({documentId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (documentId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.documentId,
+                        referencedTable: $$DocumentFilesTableReferences
+                            ._documentIdTable(db),
+                        referencedColumn: $$DocumentFilesTableReferences
+                            ._documentIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DocumentFilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DocumentFilesTable,
+      DocumentFile,
+      $$DocumentFilesTableFilterComposer,
+      $$DocumentFilesTableOrderingComposer,
+      $$DocumentFilesTableAnnotationComposer,
+      $$DocumentFilesTableCreateCompanionBuilder,
+      $$DocumentFilesTableUpdateCompanionBuilder,
+      (DocumentFile, $$DocumentFilesTableReferences),
+      DocumentFile,
+      PrefetchHooks Function({bool documentId})
+    >;
+typedef $$DocumentEventsTableCreateCompanionBuilder =
+    DocumentEventsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      required String documentId,
+      required DocumentStatus status,
+      Value<String?> code,
+      Value<String?> message,
+      Value<int> rowid,
+    });
+typedef $$DocumentEventsTableUpdateCompanionBuilder =
+    DocumentEventsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String> documentId,
+      Value<DocumentStatus> status,
+      Value<String?> code,
+      Value<String?> message,
+      Value<int> rowid,
+    });
+
+final class $$DocumentEventsTableReferences
+    extends BaseReferences<_$AppDatabase, $DocumentEventsTable, DocumentEvent> {
+  $$DocumentEventsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $DocumentsTable _documentIdTable(_$AppDatabase db) =>
+      db.documents.createAlias('document_events__document_id__documents__id');
+
+  $$DocumentsTableProcessedTableManager get documentId {
+    final $_column = $_itemColumn<String>('document_id')!;
+
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_documentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DocumentEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentEventsTable> {
+  $$DocumentEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DocumentStatus, DocumentStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$DocumentsTableFilterComposer get documentId {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentEventsTable> {
+  $$DocumentEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$DocumentsTableOrderingComposer get documentId {
+    final $$DocumentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentEventsTable> {
+  $$DocumentEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<DocumentStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+
+  $$DocumentsTableAnnotationComposer get documentId {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.documentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DocumentEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DocumentEventsTable,
+          DocumentEvent,
+          $$DocumentEventsTableFilterComposer,
+          $$DocumentEventsTableOrderingComposer,
+          $$DocumentEventsTableAnnotationComposer,
+          $$DocumentEventsTableCreateCompanionBuilder,
+          $$DocumentEventsTableUpdateCompanionBuilder,
+          (DocumentEvent, $$DocumentEventsTableReferences),
+          DocumentEvent,
+          PrefetchHooks Function({bool documentId})
+        > {
+  $$DocumentEventsTableTableManager(
+    _$AppDatabase db,
+    $DocumentEventsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DocumentEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DocumentEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<DocumentStatus> status = const Value.absent(),
+                Value<String?> code = const Value.absent(),
+                Value<String?> message = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentEventsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                documentId: documentId,
+                status: status,
+                code: code,
+                message: message,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                required String documentId,
+                required DocumentStatus status,
+                Value<String?> code = const Value.absent(),
+                Value<String?> message = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DocumentEventsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                documentId: documentId,
+                status: status,
+                code: code,
+                message: message,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DocumentEventsTable, DocumentEvent>(table),
+                  $$DocumentEventsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({documentId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (documentId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.documentId,
+                        referencedTable: $$DocumentEventsTableReferences
+                            ._documentIdTable(db),
+                        referencedColumn: $$DocumentEventsTableReferences
+                            ._documentIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DocumentEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DocumentEventsTable,
+      DocumentEvent,
+      $$DocumentEventsTableFilterComposer,
+      $$DocumentEventsTableOrderingComposer,
+      $$DocumentEventsTableAnnotationComposer,
+      $$DocumentEventsTableCreateCompanionBuilder,
+      $$DocumentEventsTableUpdateCompanionBuilder,
+      (DocumentEvent, $$DocumentEventsTableReferences),
+      DocumentEvent,
+      PrefetchHooks Function({bool documentId})
+    >;
 typedef $$DeviceSettingsTableCreateCompanionBuilder =
     DeviceSettingsCompanion Function({
       required String key,
@@ -6255,6 +10410,12 @@ class $AppDatabaseManager {
       $$CustomersTableTableManager(_db, _db.customers);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
+  $$DocumentsTableTableManager get documents =>
+      $$DocumentsTableTableManager(_db, _db.documents);
+  $$DocumentFilesTableTableManager get documentFiles =>
+      $$DocumentFilesTableTableManager(_db, _db.documentFiles);
+  $$DocumentEventsTableTableManager get documentEvents =>
+      $$DocumentEventsTableTableManager(_db, _db.documentEvents);
   $$DeviceSettingsTableTableManager get deviceSettings =>
       $$DeviceSettingsTableTableManager(_db, _db.deviceSettings);
 }
