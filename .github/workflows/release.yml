@@ -1,0 +1,146 @@
+# Builds signed releases and uploads them to Google Play's internal track and
+# TestFlight. Run by hand (Actions → Release → Run workflow) once the secrets
+# in docs/STORE.md ("Release CI") exist; each job stops with a message when
+# its secrets are missing.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      android:
+        description: "Upload to Google Play (internal track)"
+        type: boolean
+        default: true
+      ios:
+        description: "Upload to TestFlight"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.50.0"
+
+jobs:
+  android:
+    if: inputs.android
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      PLAY_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in KEYSTORE PLAY_ACCOUNT; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets for:$missing (docs/STORE.md, Release CI)"
+            exit 1
+          fi
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Signing key
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > android/app/release.jks
+          printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+      # Play needs a new version code on every upload
+      - run: flutter build appbundle --release --build-number=${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: build/app/outputs/bundle/release/app-release.aab
+      - uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.projectopenubl.xhandler
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+
+  ios:
+    if: inputs.ios
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      CERTIFICATE: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+      API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+      API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+    steps:
+      - name: Check secrets
+        run: |
+          missing=""
+          for name in CERTIFICATE TEAM_ID API_KEY_ID API_ISSUER_ID API_PRIVATE_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets for:$missing (docs/STORE.md, Release CI)"
+            exit 1
+          fi
+      - uses: actions/checkout@v7.0.1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+      - uses: apple-actions/download-provisioning-profiles@v3
+        with:
+          bundle-id: io.github.projectopenubl.xhandler
+          profile-type: IOS_APP_STORE
+          issuer-id: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+      - name: Export options
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+          </dict>
+          </plist>
+          EOF
+      - run: >
+          flutter build ipa --release
+          --build-number=${{ github.run_number }}
+          --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: build/ios/ipa/*.ipa
+      # Named after the Xcode product
+      - id: ipa
+        run: echo "path=$(ls build/ios/ipa/*.ipa | head -1)" >> "$GITHUB_OUTPUT"
+      - uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-path: ${{ steps.ipa.outputs.path }}
+          issuer-id: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}

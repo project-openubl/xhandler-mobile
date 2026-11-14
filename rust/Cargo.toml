@@ -22,3 +22,9 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+# Smaller app downloads: the library ships in every APK split
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

@@ -448,6 +448,10 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 
 One PR per phase, each followed by a senior-engineer review.
 
+Phase 8 is prepared in [STORE.md](STORE.md): listing, privacy policy, Data safety and
+privacy labels, export compliance notes, release signing (`android/key.properties`),
+the app icon and a manual Release workflow; publishing needs the owner's accounts.
+
 ---
 
 ## 14. Open items
