@@ -3,6 +3,7 @@
 
 pub mod document;
 pub mod error;
+pub mod ruc;
 pub mod signer;
 pub mod sunat;
 

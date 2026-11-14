@@ -1,0 +1,155 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
+
+import '../../data/database.dart';
+import '../../router.dart';
+import '../../src/rust/api/sunat.dart';
+import '../../strings.dart';
+import '../company/company_repository.dart';
+
+/// The active company's home, or a welcome page before the first company
+class HomePage extends ConsumerWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return switch (ref.watch(activeCompanyProvider)) {
+      AsyncData(value: final company?) => _CompanyHome(company),
+      AsyncData() => const _WelcomePage(),
+      AsyncError(:final error) => Scaffold(body: Center(child: Text('$error'))),
+      _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
+    };
+  }
+}
+
+class _WelcomePage extends StatelessWidget {
+  const _WelcomePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                Strings.welcomeTitle,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 16),
+              const Text(Strings.welcomeText),
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: () => context.push(Routes.newCompany),
+                child: const Text(Strings.createCompany),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanyHome extends StatelessWidget {
+  const _CompanyHome(this.company);
+
+  final Company company;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(company.nombreComercial ?? company.razonSocial),
+      ),
+      drawer: _CompanyDrawer(activeId: company.id),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (company.sunatEnvironment == SunatEnvironment.beta)
+            const TestModeBanner(),
+          const Expanded(
+            child: Center(child: Text(Strings.documentsComingSoon)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Reminds that documents go to SUNAT beta
+class TestModeBanner extends StatelessWidget {
+  const TestModeBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ColoredBox(
+      color: colors.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Text(
+          Strings.testMode,
+          style: TextStyle(color: colors.onTertiaryContainer),
+        ),
+      ),
+    );
+  }
+}
+
+/// Switches between companies and opens the company's pages
+class _CompanyDrawer extends ConsumerWidget {
+  const _CompanyDrawer({required this.activeId});
+
+  final String activeId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final companies = ref.watch(companiesProvider).value ?? const [];
+    void open(String route) {
+      Navigator.of(context).pop();
+      context.push(route);
+    }
+
+    return NavigationDrawer(
+      children: [
+        for (final company in companies)
+          ListTile(
+            leading: const Icon(Icons.business),
+            title: Text(company.razonSocial),
+            subtitle: Text(company.ruc),
+            selected: company.id == activeId,
+            onTap: () {
+              ref.read(companyRepositoryProvider).setActive(company.id);
+              Navigator.of(context).pop();
+            },
+          ),
+        ListTile(
+          leading: const Icon(Icons.add),
+          title: const Text(Strings.addCompany),
+          onTap: () => open(Routes.newCompany),
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.numbers),
+          title: const Text(Strings.series),
+          onTap: () => open(Routes.series),
+        ),
+        ListTile(
+          leading: const Icon(Icons.settings),
+          title: const Text(Strings.companySettings),
+          onTap: () => open(Routes.companySettings),
+        ),
+        ListTile(
+          leading: const Icon(Icons.health_and_safety),
+          title: const Text(Strings.sunatBetaCheckTitle),
+          onTap: () => open(Routes.diagnostics),
+        ),
+      ],
+    );
+  }
+}

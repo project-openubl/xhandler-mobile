@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'features/diagnostics/sunat_beta_check_page.dart';
+import 'router.dart';
 import 'strings.dart';
 
 class App extends StatelessWidget {
@@ -8,13 +8,13 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: Strings.appTitle,
       locale: const Locale('es', 'PE'),
       supportedLocales: const [Locale('es', 'PE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(colorSchemeSeed: Colors.indigo),
-      home: const SunatBetaCheckPage(),
+      routerConfig: router,
     );
   }
 }
