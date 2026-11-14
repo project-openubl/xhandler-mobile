@@ -12,7 +12,8 @@ project owner's accounts, keys or legal review; nothing here was submitted.
    -keysize 4096 -validity 10000 -alias upload`, kept out of git. Enable Play App
    Signing. Locally, `android/key.properties` (git-ignored):
    ```properties
-   storeFile=release.jks        # relative to android/app
+   # storeFile is relative to android/app
+   storeFile=release.jks
    storePassword=…
    keyAlias=upload
    keyPassword=…
@@ -24,14 +25,19 @@ project owner's accounts, keys or legal review; nothing here was submitted.
    website) and enter it in both stores.
 5. **(owner)** Review and submit the Data safety form and App privacy labels below.
 6. **(owner)** Export compliance answers (below) — a legal decision.
-7. **(owner)** Screenshots (phone and tablet) from a device or emulator in test mode.
-8. **(owner)** Optional integrations that need accounts (DESIGN §14): Google Drive /
+7. **(owner)** Screenshots (phone and tablet) from a device or emulator in test mode,
+   and Play's 1024×500 feature graphic. The 512×512 Play icon is `docs/store/icon-512.png`.
+8. **(owner)** Play Console's other "App content" forms: ads (none), content rating,
+   target audience (adults, businesses), financial features (none), government apps
+   (not affiliated). App Store: subtitle and keywords (e.g. subtitle "Facturas, boletas
+   y guías SUNAT").
+9. **(owner)** Optional integrations that need accounts (DESIGN §14): Google Drive /
    iCloud backups, Gmail API / Microsoft Graph email, SIRE.
-9. Add the secrets in "Release CI" and run the Release workflow.
+10. Add the secrets in "Release CI" and run the Release workflow.
 
 ## Store listing (Spanish)
 
-- **Name:** XHandler — Facturación electrónica SUNAT
+- **Name (30 max):** XHandler: Facturación SUNAT
 - **Short description (80):** Emite facturas, boletas y guías electrónicas SUNAT desde tu celular.
 - **Full description:**
 
@@ -52,6 +58,9 @@ project owner's accounts, keys or legal review; nothing here was submitted.
   >
   > Tus datos se guardan cifrados en tu teléfono. XHandler no tiene cuentas ni
   > servidores propios y no recopila información de uso.
+  >
+  > XHandler no está afiliado a SUNAT ni a ninguna entidad del Estado peruano; usa los
+  > servicios públicos de SUNAT para enviar tus comprobantes.
 - **Category:** Business (Play) / Business (App Store)
 - **Contact:** the OpenUBL project's email and website **(owner)**
 
@@ -97,10 +106,9 @@ developer.
 | Question | Answer |
 |---|---|
 | Does the app collect or share user data? | Yes (collected, for app functionality) |
-| Data types | Personal info: name, email address, phone number, other info (RUC/DNI). Financial info: purchase history (invoices). |
+| Data types (required unless noted) | Personal info: name; email address (optional: email delivery); address (customers' and guías' addresses in the documents); user IDs (RUC, SOL user); other info (DNI/RUC of customers). Financial info: other financial info (the user's sales documents). Files and docs (optional: documents sent by email). |
 | Shared with third parties? | No (sending to SUNAT and the user's email/WhatsApp is user-initiated) |
 | Processed ephemerally? | No |
-| Required or optional? | Required (SUNAT); lookup and email are optional |
 | Purpose | App functionality |
 | Encrypted in transit? | Yes (HTTPS / TLS) |
 | Users can request deletion? | Yes: deleting a company or uninstalling removes it from the device |
@@ -113,9 +121,11 @@ developer.
   means data sent to the developer or partners; XHandler sends data to SUNAT, the
   lookup service and the user's mail server on the user's behalf. Declare *Data Not
   Collected* unless Apple's review says otherwise **(owner)**.
-- **Privacy manifest:** the app's own native code (AppDelegate) uses no
-  required-reason APIs; the Flutter engine and plugins ship their own manifests. Check
-  the App Store Connect warnings after the first upload.
+- **Privacy manifest:** `ios/Runner/PrivacyInfo.xcprivacy` declares no tracking and
+  the required-reason APIs of the native code without a manifest of its own (the Rust
+  bridge and SQLite): file timestamps (C617.1), boot time (35F9.1) and disk space
+  (E174.1). The Flutter engine and the plugins ship their own. Adjust it to the first
+  upload's email from Apple if it lists anything else.
 
 ## Permissions
 
@@ -155,14 +165,22 @@ secrets **(owner)**:
 | `PLAY_SERVICE_ACCOUNT_JSON` | Play Console service account with release permission |
 | `IOS_DISTRIBUTION_P12_BASE64`, `IOS_DISTRIBUTION_P12_PASSWORD` | Apple distribution certificate |
 | `APPLE_TEAM_ID` | Apple team |
+| `IOS_PROVISIONING_PROFILE_NAME` | Name of the App Store provisioning profile for `io.github.projectopenubl.xhandler` |
 | `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_PRIVATE_KEY` | App Store Connect API key (`.p8` contents) |
 
 Play requires the first upload of a new app to be made by hand in Play Console; the
-workflow handles the following ones. The iOS job uses manual signing with an App Store
-provisioning profile downloaded with the API key; it hasn't run yet (no Apple account
-here), so expect to adjust it on the first run.
+workflow handles the following ones, numbering builds from the run number + 100 (use
+"Re-run failed jobs", not "all jobs", or a number repeats). While the app is still a
+draft, Play's API only takes `status: draft` releases: change it in the workflow until
+the first release is out. The iOS job uses manual signing with an App Store
+provisioning profile downloaded with the API key: `tool/ios_release_signing.rb` switches
+only the Runner target's Release build to manual signing with the team and profile. It
+hasn't run yet (no Apple account here), so expect to adjust it on the first run. On the
+first TestFlight build, check that the Rust bridge loads: if it fails with "Failed to
+lookup symbol", set the Runner's Strip Style to Non-Global Symbols.
 
 ## App icon
 
 `tool/app_icon.py` draws the icon (a document with a check on OpenUBL blue) and writes
-every Android and iOS size: `python3 tool/app_icon.py .` (needs Pillow).
+every Android (legacy and adaptive) and iOS size and Play's 512×512 icon:
+`python3 tool/app_icon.py .` (needs Pillow).
