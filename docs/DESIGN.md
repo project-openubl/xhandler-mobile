@@ -369,9 +369,13 @@ every company's secrets) through the share sheet (Drive, email, Files…), and "
 copia de seguridad" (welcome page and backup page) replaces everything from such a file.
 File: `XHB1`, salt, nonce, secrets (JSON, AES-256-GCM), then the `VACUUM INTO` snapshot
 re-keyed to the backup key, so the database is never on disk in clear. Argon2id with
-OWASP's minimum (19 MiB, 2 iterations), password of at least 8 characters. A backup from
-a newer schema is refused; an older one migrates when the app opens it. The restored
-phone gets a new `device_id`.
+RFC 9106's second recommendation (64 MiB, 3 iterations; fixed by the `XHB1` version),
+password of at least 8 characters. Files are streamed, never held in memory. A backup
+from a newer schema is refused; an older one migrates when the app opens it. Restoring
+replaces the secrets, then swaps the database in one rename (an interrupted restore keeps
+the old one), cancels the background outbox (a run already in progress is a residual
+risk) and starts the app over with a new provider scope. The restored phone gets a new
+`device_id`.
 
 ---
 

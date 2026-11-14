@@ -30,6 +30,9 @@ Future<void> _start() async {
     checkKeyOpens(file, key);
     runApp(
       ProviderScope(
+        // A new scope on every start (e.g. after a restore): providers,
+        // the router and the outbox start over with the database
+        key: UniqueKey(),
         overrides: [
           databaseProvider.overrideWithValue(
             AppDatabase(openEncryptedDatabase(file, key)),

@@ -29,23 +29,24 @@ const _saltLength = 16;
 const _nonceLength = 12;
 const _macLength = 16;
 
-/// OWASP's minimum for Argon2id: 19 MiB, 2 iterations
+/// RFC 9106's second recommendation: 64 MiB, 3 iterations. The file
+/// holds a signing certificate and SOL credentials, and may sit on a cloud
+/// drive. Changing it needs a new format version.
 final _kdf = Argon2id(
   parallelism: 1,
-  memory: 19456,
-  iterations: 2,
+  memory: 65536,
+  iterations: 3,
   hashLength: 32,
 );
 final _cipher = AesGcm.with256bits();
 
 /// A backup opened with its password, ready to replace this device's data
 class OpenedBackup {
-  const OpenedBackup(this.database, this.secrets, this.createdAt);
+  const OpenedBackup(this.database, this.secrets);
 
   /// The database, already encrypted with this device's key
   final File database;
   final Map<String, String> secrets;
-  final DateTime createdAt;
 }
 
 /// Encrypted backups of everything: the database and every company's
@@ -55,22 +56,26 @@ class OpenedBackup {
 /// the secrets (JSON, AES-256-GCM) and the database. The key comes from
 /// the backup password (Argon2id); it also encrypts the database
 /// (SQLite3MultipleCiphers `PRAGMA rekey`), which is never on disk in clear.
+/// Files are streamed: databases with years of XML and CDRs are large.
 class BackupService {
   BackupService(this._secureStore, this._temporary);
 
   final SecureStore _secureStore;
 
-  /// Where snapshots are prepared
+  /// Where backups are prepared
   final Future<Directory> Function() _temporary;
 
   Future<String> _deviceKey() => _secureStore.databaseKey(databaseExists: true);
 
-  /// Backs up [db], protected by [password]
-  Future<Uint8List> create(AppDatabase db, String password) async {
-    final folder = await _temporary();
-    final snapshot = File(
-      '${folder.path}/snapshot-${DateTime.now().microsecondsSinceEpoch}.db',
-    );
+  Future<File> _temporaryFile(String name) async => File(
+    '${(await _temporary()).path}/$name-${DateTime.now().microsecondsSinceEpoch}',
+  );
+
+  /// Backs up [db], protected by [password], into a temporary file the
+  /// caller deletes once saved
+  Future<File> create(AppDatabase db, String password) async {
+    final snapshot = await _temporaryFile('snapshot');
+    final backup = await _temporaryFile('backup');
     try {
       // A consistent copy while the app keeps working, with this device's key
       await db.customStatement(
@@ -80,13 +85,12 @@ class BackupService {
       final key = await _key(password, salt);
       final deviceKey = await _deviceKey();
       final path = snapshot.path;
-      await Isolate.run(() => _rekey(path, deviceKey, _hex(key)));
+      await _rekeyApart(path, deviceKey, _hex(key));
 
       final nonce = _random(_nonceLength);
       final secrets = await _cipher.encrypt(
         utf8.encode(
           jsonEncode({
-            'created_at': DateTime.now().toUtc().toIso8601String(),
             'schema_version': db.schemaVersion,
             'secrets': await _secureStore.readAllCompanySecrets(),
           }),
@@ -95,48 +99,53 @@ class BackupService {
         nonce: nonce,
       );
       final sealed = [...secrets.cipherText, ...secrets.mac.bytes];
-      return (BytesBuilder(copy: false)
-            ..add(ascii.encode(_magic))
-            ..add(salt)
-            ..add(nonce)
-            ..add(
-              (ByteData(4)..setUint32(0, sealed.length)).buffer.asUint8List(),
-            )
-            ..add(sealed)
-            ..add(await snapshot.readAsBytes()))
-          .takeBytes();
+      final sink = backup.openWrite()
+        ..add(ascii.encode(_magic))
+        ..add(salt)
+        ..add(nonce)
+        ..add((ByteData(4)..setUint32(0, sealed.length)).buffer.asUint8List())
+        ..add(sealed);
+      await sink.addStream(snapshot.openRead());
+      await sink.close();
+      return backup;
+    } on Object {
+      if (backup.existsSync()) await backup.delete();
+      rethrow;
     } finally {
       if (snapshot.existsSync()) await snapshot.delete();
     }
   }
 
   /// Opens a backup made by [create]: checks [password] and prepares the
-  /// database for this device. Throws [WrongPasswordError] or
-  /// [InvalidBackupError].
+  /// database for this device. Throws [WrongPasswordError] (also for a
+  /// damaged file) or [InvalidBackupError].
   Future<OpenedBackup> open(
-    Uint8List bytes, {
+    File backup, {
     required String password,
     required int schemaVersion,
   }) async {
-    const header = 4 + _saltLength + _nonceLength + 4;
-    if (bytes.length < header ||
-        ascii.decode(bytes.sublist(0, 4), allowInvalid: true) != _magic) {
-      throw const InvalidBackupError();
-    }
-    var offset = 4;
-    Uint8List take(int length) {
-      if (offset + length > bytes.length) throw const InvalidBackupError();
-      final part = bytes.sublist(offset, offset + length);
-      offset += length;
-      return part;
-    }
+    final reader = await backup.open();
+    final int databaseOffset;
+    final Uint8List salt, nonce, sealed;
+    try {
+      Future<Uint8List> take(int length) async {
+        final part = await reader.read(length);
+        if (part.length != length) throw const InvalidBackupError();
+        return part;
+      }
 
-    final salt = take(_saltLength);
-    final nonce = take(_nonceLength);
-    final sealedLength = ByteData.sublistView(take(4)).getUint32(0);
-    if (sealedLength < _macLength) throw const InvalidBackupError();
-    final sealed = take(sealedLength);
-    final database = bytes.sublist(offset);
+      if (ascii.decode(await take(4), allowInvalid: true) != _magic) {
+        throw const InvalidBackupError();
+      }
+      salt = await take(_saltLength);
+      nonce = await take(_nonceLength);
+      final sealedLength = ByteData.sublistView(await take(4)).getUint32(0);
+      if (sealedLength < _macLength) throw const InvalidBackupError();
+      sealed = await take(sealedLength);
+      databaseOffset = await reader.position();
+    } finally {
+      await reader.close();
+    }
 
     final key = await _key(password, salt);
     final Map<String, Object?> contents;
@@ -160,37 +169,40 @@ class BackupService {
       throw const InvalidBackupError(newerVersion: true);
     }
 
-    final file = File(
-      '${(await _temporary()).path}/restore-${DateTime.now().microsecondsSinceEpoch}.db',
-    );
-    await file.writeAsBytes(database, flush: true);
-    final deviceKey = await _deviceKey();
-    final path = file.path;
+    final database = await _temporaryFile('restore');
     try {
-      await Isolate.run(
-        () => _rekey(path, _hex(key), deviceKey, newDevice: true),
-      );
-    } on SqliteException {
-      await file.delete();
-      throw const InvalidBackupError();
+      await backup.openRead(databaseOffset).pipe(database.openWrite());
+      final deviceKey = await _deviceKey();
+      final path = database.path;
+      await _rekeyApart(path, _hex(key), deviceKey, newDevice: true);
+    } on Object catch (error) {
+      for (final file in [database, File('${database.path}-journal')]) {
+        if (file.existsSync()) await file.delete();
+      }
+      // Every page is authenticated: a changed or cut database fails here
+      if (error is SqliteException) throw const WrongPasswordError();
+      rethrow;
     }
     return OpenedBackup(
-      file,
+      database,
       (contents['secrets']! as Map<String, Object?>).cast<String, String>(),
-      DateTime.parse(contents['created_at']! as String),
     );
   }
 
   /// Replaces this device's database and secrets with [backup]. The app's
-  /// database must be closed, and opened again afterwards.
+  /// database (and any other connection) must be closed, and opened again
+  /// afterwards. The database is swapped last, in one rename: an
+  /// interrupted restore leaves the old one.
   Future<void> install(OpenedBackup backup, File databaseFile) async {
+    final incoming = File('${databaseFile.path}.restore');
+    await backup.database.copy(incoming.path);
+    await backup.database.delete();
+    await _secureStore.replaceAllCompanySecrets(backup.secrets);
     for (final suffix in ['-wal', '-shm', '-journal']) {
       final file = File('${databaseFile.path}$suffix');
       if (file.existsSync()) await file.delete();
     }
-    await backup.database.copy(databaseFile.path);
-    await backup.database.delete();
-    await _secureStore.replaceAllCompanySecrets(backup.secrets);
+    await incoming.rename(databaseFile.path);
   }
 
   static Future<List<int>> _key(String password, List<int> salt) async =>
@@ -200,8 +212,18 @@ class BackupService {
       )).extractBytes();
 }
 
+/// [_rekey] in an isolate. Top-level so the closure captures only these
+/// strings (open files can't be sent to isolates).
+Future<void> _rekeyApart(
+  String path,
+  String from,
+  String to, {
+  bool newDevice = false,
+}) => Isolate.run(() => _rekey(path, from, to, newDevice: newDevice));
+
 /// Re-encrypts the database at [path] from [from] to [to]. Runs in an
 /// isolate: it rewrites the whole file. A [newDevice] gets its own id
+/// and forgets the old phone's last backup
 /// (docs/DESIGN.md §3.1); documents keep the one that issued them.
 void _rekey(String path, String from, String to, {bool newDevice = false}) {
   final database = sqlite3.open(path);
@@ -212,7 +234,10 @@ void _rekey(String path, String from, String to, {bool newDevice = false}) {
       ..select('SELECT count(*) FROM sqlite_master')
       ..execute("PRAGMA rekey = '$to'");
     if (newDevice) {
-      database.execute("DELETE FROM device_settings WHERE key = 'device_id'");
+      // This phone's own id, and no backup date of another phone
+      database.execute(
+        "DELETE FROM device_settings WHERE key IN ('device_id', 'last_backup_at')",
+      );
     }
   } finally {
     database.close();

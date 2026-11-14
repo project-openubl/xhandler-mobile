@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../../app_restart.dart';
 import '../../data/database.dart';
@@ -10,7 +15,7 @@ import '../../data/providers.dart';
 import '../../peru_date.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
-import '../pdf/share_document.dart';
+import '../document/background_outbox.dart';
 import 'backup_service.dart';
 
 final backupServiceProvider = Provider(
@@ -52,23 +57,22 @@ class _BackupPageState extends ConsumerState<BackupPage> {
   Future<void> _create(BuildContext anchor) async {
     if (!_form.currentState!.validate()) return;
     final db = ref.read(databaseProvider);
+    File? backup;
     try {
-      final backup = await ref
-          .read(backupServiceProvider)
-          .create(db, _password.text);
+      backup = await ref.read(backupServiceProvider).create(db, _password.text);
       if (!anchor.mounted) return;
-      final saved = await shareFiles(
-        [
-          (
-            name: 'xhandler-${peruToday()}.xhbackup',
-            mimeType: 'application/octet-stream',
-            bytes: backup,
-          ),
-        ],
-        subject: Strings.backupTitle,
-        anchor: anchor,
+      final box = anchor.findRenderObject() as RenderBox?;
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(backup.path, mimeType: 'application/octet-stream')],
+          fileNameOverrides: ['xhandler-${peruToday()}.xhbackup'],
+          subject: Strings.backupTitle,
+          sharePositionOrigin: box == null
+              ? null
+              : box.localToGlobal(Offset.zero) & box.size,
+        ),
       );
-      if (!saved) return;
+      if (result.status == ShareResultStatus.dismissed) return;
       await db
           .into(db.deviceSettings)
           .insertOnConflictUpdate(
@@ -83,6 +87,8 @@ class _BackupPageState extends ConsumerState<BackupPage> {
     } on Object catch (error) {
       debugPrint('Backup: $error');
       if (anchor.mounted) showMessage(anchor, Strings.unexpectedError);
+    } finally {
+      if (backup != null && backup.existsSync()) await backup.delete();
     }
   }
 
@@ -146,39 +152,72 @@ class _BackupPageState extends ConsumerState<BackupPage> {
 /// Replaces everything on this phone with a backup file the user picks,
 /// then starts the app over
 Future<void> restoreBackup(BuildContext context, WidgetRef ref) async {
-  final picked = await FilePicker.pickFiles();
-  if (picked.isEmpty) return;
-  final bytes = await picked.first.readAsBytes();
-  if (!context.mounted) return;
   final password = await showDialog<String>(
     context: context,
     builder: (_) => const _RestoreDialog(),
   );
   if (password == null || !context.mounted) return;
-  final db = ref.read(databaseProvider);
   final service = ref.read(backupServiceProvider);
+  final db = ref.read(databaseProvider);
+  final navigator = Navigator.of(context, rootNavigator: true);
+  File? picked;
+  var progress = false;
   try {
-    showMessage(context, Strings.restoring);
+    final files = await FilePicker.pickFiles();
+    if (files.isEmpty || !context.mounted) return;
+    // Nothing else may run until the app starts over
+    progress = true;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 24),
+                Expanded(child: Text(Strings.restoring)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    // Copied in pieces: backups can be large
+    picked = File(
+      '${(await getTemporaryDirectory()).path}/picked-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    final sink = picked.openWrite();
+    await sink.addStream(files.first.readAsByteStream());
+    await sink.close();
     final backup = await service.open(
-      bytes,
+      picked,
       password: password,
       schemaVersion: db.schemaVersion,
     );
+    // The background outbox has its own connection to the database
+    await Workmanager().cancelByUniqueName(outboxTask);
     await db.close();
-    await service.install(backup, await databaseFile());
-    await restartApp();
-  } on WrongPasswordError {
-    if (context.mounted) showMessage(context, Strings.wrongBackupPassword);
-  } on InvalidBackupError catch (error) {
-    if (context.mounted) {
-      showMessage(
-        context,
-        error.newerVersion ? Strings.backupNeedsUpdate : Strings.notABackup,
-      );
+    try {
+      await service.install(backup, await databaseFile());
+    } finally {
+      // The restored database, or the old one if installing failed
+      await restartApp();
     }
   } on Object catch (error) {
-    debugPrint('Restore: $error');
-    if (context.mounted) showMessage(context, Strings.unexpectedError);
+    if (progress) navigator.pop();
+    final message = switch (error) {
+      WrongPasswordError() => Strings.wrongBackupPassword,
+      InvalidBackupError(newerVersion: true) => Strings.backupNeedsUpdate,
+      InvalidBackupError() => Strings.notABackup,
+      _ => Strings.unexpectedError,
+    };
+    if (message == Strings.unexpectedError) debugPrint('Restore: $error');
+    if (context.mounted) showMessage(context, message);
+  } finally {
+    if (picked != null && picked.existsSync()) await picked.delete();
   }
 }
 
@@ -211,6 +250,8 @@ class _RestoreDialogState extends State<_RestoreDialog> {
           TextField(
             controller: _password,
             obscureText: true,
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
               labelText: Strings.backupPassword,
             ),
@@ -223,7 +264,9 @@ class _RestoreDialogState extends State<_RestoreDialog> {
           child: const Text(Strings.cancel),
         ),
         TextButton(
-          onPressed: () => Navigator.pop(context, _password.text),
+          onPressed: _password.text.isEmpty
+              ? null
+              : () => Navigator.pop(context, _password.text),
           child: const Text(Strings.restore),
         ),
       ],
