@@ -84,6 +84,16 @@ abstract final class Catalogs {
     '10': 'Otros conceptos',
   };
 
+  /// Catalog 22, régimen de percepción (rates in perception_retention_draft)
+  static const tiposRegimenPercepcion = {
+    '01': 'Venta interna (2%)',
+    '02': 'Adquisición de combustible (1%)',
+    '03': 'Agente con tasa especial (0,5%)',
+  };
+
+  /// Catalog 23, régimen de retención
+  static const tiposRegimenRetencion = {'01': 'Tasa 3%'};
+
   /// Catalog 10, why a nota de débito is issued; the codes xbuilder supports
   static const tiposNotaDebito = {
     '01': 'Intereses por mora',

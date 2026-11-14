@@ -53,7 +53,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   String _tipoNota = '01';
   late final _sustento = TextEditingController(text: _tiposNota[_tipoNota]);
   String? _serieId;
-  Serie? _serie;
   DocumentTotals? _totals;
   String? _previewError;
   late final _preview = TotalsPreview((totals, error) {
@@ -66,6 +65,21 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   });
 
   bool get _isCredito => widget.tipoComprobante == '07';
+
+  String get _letter => widget.affected.serie.substring(0, 1);
+
+  /// Series of the note type with the affected invoice's letter
+  List<Serie> _series(List<Serie> all) =>
+      activeSeries(all, widget.tipoComprobante, prefix: _letter);
+
+  /// The chosen serie, or the default one
+  Serie? get _serie {
+    final series = _series(
+      ref.read(seriesProvider(widget.company.id)).value ?? const [],
+    );
+    final id = chosenSerieId(series, _serieId, widget.tipoComprobante);
+    return series.where((s) => s.id == id).firstOrNull;
+  }
 
   bool get _wholeInvoice =>
       _isCredito && _wholeInvoiceTipos.contains(_tipoNota);
@@ -84,6 +98,12 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     for (final line in _spec['detalles']! as List)
       DraftLine.fromJson(line as Map<String, Object?>),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _changed());
+  }
 
   @override
   void dispose() {
@@ -177,17 +197,11 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    // The first preview waits for the series
+    // Series loaded after the first frame recompute the preview
     ref.listen(seriesProvider(widget.company.id), (_, _) => _changed());
     final seriesValue = ref.watch(seriesProvider(widget.company.id)).value;
-    final letter = widget.affected.serie.substring(0, 1);
-    final series = activeSeries(
-      seriesValue ?? const [],
-      widget.tipoComprobante,
-      prefix: letter,
-    );
-    _serieId = chosenSerieId(series, _serieId, widget.tipoComprobante);
-    _serie = series.where((s) => s.id == _serieId).firstOrNull;
+    final series = _series(seriesValue ?? const []);
+    final serie = _serie;
     final moneda = widget.affected.moneda;
     final title = _isCredito ? Strings.notaCredito : Strings.notaDebito;
     final warning = _warning;
@@ -213,12 +227,12 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             MissingSerieWarning(
               Strings.noNoteSerie(
                 title.toLowerCase(),
-                '$letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
+                '$_letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
               ),
             ),
           SerieDropdown(
             series: series,
-            value: _serie?.id,
+            value: serie?.id,
             onChanged: (id) {
               _serieId = id;
               _changed();
@@ -259,7 +273,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
           SaveButton(
             label: Strings.emit,
             filled: true,
-            onPressed: _draft == null || _serie == null || warning != null
+            onPressed: _draft == null || serie == null || warning != null
                 ? null
                 : _emit,
           ),

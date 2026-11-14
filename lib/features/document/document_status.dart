@@ -83,6 +83,7 @@ String serieNumero(String serie, int numero) => serie.contains('-')
 String tipoComprobanteLabel(String tipo) => switch (tipo) {
   comunicacionBaja => Strings.comunicacionBaja,
   resumenDiario => Strings.resumenDiario,
+  reversion => Strings.reversion,
   _ => Catalogs.tiposComprobante[tipo] ?? tipo,
 };
 
@@ -128,6 +129,10 @@ String? localCodeMessage(String? code) => switch (code) {
 String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.noLines => 'Agrega al menos un producto.',
   DraftProblem.facturaWithoutRuc => 'Las facturas son para clientes con RUC.',
+  DraftProblem.customerWithoutRuc =>
+    'Las percepciones y retenciones son para empresas con RUC.',
+  DraftProblem.operacionOverTotal =>
+    'El importe debe ser mayor que cero y no superar el total de la factura.',
   DraftProblem.anonymousOver700 =>
     'Las boletas de más de S/ 700 necesitan el DNI del cliente.',
   DraftProblem.cuotasMismatch =>
@@ -138,8 +143,9 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
     'Las notas modifican facturas y boletas aceptadas por SUNAT.',
   DraftProblem.noteExceedsInvoice =>
     'Las notas de crédito no pueden sumar más que el comprobante.',
+  DraftProblem.voidNotesFirst => 'Anula primero sus notas de crédito y débito.',
   DraftProblem.notVoidable =>
-    'Solo se anulan facturas, boletas y notas aceptadas por SUNAT.',
+    'Solo se anulan comprobantes aceptados por SUNAT.',
   DraftProblem.voidingTooLate =>
     'El plazo para anularlo venció ($voidingDays días); '
         'emite una nota de crédito.',

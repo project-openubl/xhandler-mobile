@@ -10,6 +10,7 @@ import '../../widgets/test_mode_banner.dart';
 import '../company/company_repository.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
+import '../document/perception_retention_form_page.dart';
 import '../document/quick_sale_page.dart';
 
 /// The active company's home, or a welcome page before the first company
@@ -122,6 +123,28 @@ class _CompanyHome extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(sheetContext);
                       _newDocument(context, tipo);
+                    },
+                  ),
+                for (final (tipo, title, help) in [
+                  if (company.esAgentePercepcion)
+                    ('40', Strings.percepcion, Strings.percepcionHelp),
+                  if (company.esAgenteRetencion)
+                    ('20', Strings.retencion, Strings.retencionHelp),
+                ])
+                  ListTile(
+                    leading: const Icon(Icons.percent),
+                    title: Text(title),
+                    subtitle: Text(help),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => PerceptionRetentionFormPage(
+                            company,
+                            tipoComprobante: tipo,
+                          ),
+                        ),
+                      );
                     },
                   ),
               ],

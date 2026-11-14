@@ -14,6 +14,14 @@ import 'document_service.dart';
 import 'document_status.dart';
 import 'invoice_draft.dart';
 
+/// Why a document couldn't be issued, in Spanish
+String issueErrorMessage(Object error) => switch (error) {
+  InvalidDraftError(:final problem) => draftProblemMessage(problem),
+  MissingCertificateError() => Strings.missingCertificate,
+  BridgeError(:final message) => documentErrorMessage(message),
+  _ => Strings.unexpectedError,
+};
+
 /// Issues [draft] and sends it (waiting at most 30 s; the outbox finishes
 /// slow sends). Shows why when it can't be issued and returns `null`.
 Future<({String id, DocumentStatus status})?> issueDocument(
@@ -28,14 +36,7 @@ Future<({String id, DocumentStatus status})?> issueDocument(
   try {
     id = await service.emit(company: company, serie: serie, draft: draft);
   } on Object catch (error) {
-    if (context.mounted) {
-      showMessage(context, switch (error) {
-        InvalidDraftError(:final problem) => draftProblemMessage(problem),
-        MissingCertificateError() => Strings.missingCertificate,
-        BridgeError(:final message) => documentErrorMessage(message),
-        _ => Strings.unexpectedError,
-      });
-    }
+    if (context.mounted) showMessage(context, issueErrorMessage(error));
     return null;
   }
   final status = await service

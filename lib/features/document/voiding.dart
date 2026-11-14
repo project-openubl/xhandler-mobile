@@ -4,8 +4,9 @@ import '../../amount_text.dart';
 import '../../data/database.dart';
 import 'invoice_draft.dart';
 
-/// Document types that can be voided: facturas, boletas and their notas
-const voidableTipos = {'01', '03', '07', '08'};
+/// Document types that can be voided: facturas, boletas, their notas,
+/// retenciones and percepciones
+const voidableTipos = {'01', '03', '07', '08', '20', '40'};
 
 /// Days after its issue date a document can still be voided
 const voidingDays = 7;
@@ -16,25 +17,33 @@ const comunicacionBaja = 'RA';
 /// Resumen diario: voids boletas and their notas (B series)
 const resumenDiario = 'RC';
 
+/// Reversión: voids retenciones and percepciones (R and P series)
+const reversion = 'RR';
+
 /// Types of the documents that void others
-const voidingTipos = {comunicacionBaja, resumenDiario};
+const voidingTipos = {comunicacionBaja, resumenDiario, reversion};
 
 /// Whether [document], issued on its date, can still be voided on [today]
 bool inVoidingTime(Document document, String today) =>
-    DateTime.parse(today)
-        .difference(DateTime.parse(document.fechaEmision))
+    // Calendar days, in UTC so daylight saving time doesn't count
+    DateTime.parse('${today}T00:00Z')
+        .difference(DateTime.parse('${document.fechaEmision}T00:00Z'))
         .inDays <=
     voidingDays;
 
 /// The kind of document that voids [document]
-String voidingTipo(Document document) =>
-    document.serie.startsWith('F') ? comunicacionBaja : resumenDiario;
+String voidingTipo(Document document) => switch (document.serie[0]) {
+  'F' => comunicacionBaja,
+  'P' || 'R' => reversion,
+  _ => resumenDiario,
+};
 
 /// Voiding documents are numbered per day: RA-20261113-1, RA-20261113-2...
 String voidingSerie(String tipo, String fechaEmision) =>
     '$tipo-${fechaEmision.replaceAll('-', '')}';
 
-/// The comunicación de baja or resumen diario (xbuilder JSON) that voids
+/// The comunicación de baja, resumen diario or reversión (xbuilder JSON)
+/// that voids
 /// [document] for [motivo] (docs/DESIGN.md §5)
 String voidingJson({
   required Company company,
@@ -49,9 +58,10 @@ String voidingJson({
     'fecha_emision_comprobantes': document.fechaEmision,
     'proveedor': proveedorJson(company),
   };
-  if (voidingTipo(document) == comunicacionBaja) {
+  final tipo = voidingTipo(document);
+  if (tipo != resumenDiario) {
     return jsonEncode({
-      'kind': 'VoidedDocuments',
+      'kind': tipo == reversion ? 'Reversion' : 'VoidedDocuments',
       'spec': {
         ...header,
         'comprobantes': [

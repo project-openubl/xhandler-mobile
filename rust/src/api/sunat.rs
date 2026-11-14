@@ -295,6 +295,11 @@ mod tests {
                     let serie = serie_numero.split('-').next().unwrap().to_string();
                     spec["serie_numero"] = format!("{serie}-{numero}").into();
                 }
+                // Percepciones and retenciones
+                None if spec.get("serie").is_some() => {
+                    spec["numero"] = (numero % 100_000_000).into();
+                }
+                // Comunicaciones de baja and resúmenes
                 None => {
                     spec["numero"] = (numero % 100_000).into();
                     spec["fecha_emision_comprobantes"] = today.clone().into();

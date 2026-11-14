@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../../amount_text.dart';
 import '../../data/database.dart';
+import 'document_service.dart';
 
 /// Tax rates the enrichment uses when a line doesn't set them
 abstract final class TaxRates {
@@ -199,11 +200,16 @@ abstract interface class DocumentDraft {
   /// Catalog 1
   String get tipoComprobante;
   DraftCustomer get customer;
-  List<DraftLine> get lines;
   String get moneda;
 
   /// The document a nota modifies, `null` for invoices
   String? get affectedDocumentId;
+
+  /// Why it can't be issued, checked before taking a number
+  DraftProblem? get problem;
+
+  /// The document's total, from its enriched xbuilder `spec`
+  String totalOf(Map<String, Object?> enrichedSpec);
 
   /// The xbuilder document (`{"kind": ..., "spec": {...}}`)
   String toDocumentJson({
@@ -238,6 +244,10 @@ Map<String, Object?> proveedorJson(Company company) {
   };
 }
 
+/// The total of invoices and notas, from their enriched `spec`
+String _importeTotal(Map<String, Object?> spec) =>
+    '${(spec['total_importe']! as Map)['importe']}';
+
 /// An invoice (factura or boleta) being written
 class InvoiceDraft implements DocumentDraft {
   const InvoiceDraft({
@@ -253,7 +263,6 @@ class InvoiceDraft implements DocumentDraft {
   final String tipoComprobante;
   @override
   final DraftCustomer customer;
-  @override
   final List<DraftLine> lines;
   @override
   final String moneda;
@@ -263,6 +272,19 @@ class InvoiceDraft implements DocumentDraft {
 
   @override
   String? get affectedDocumentId => null;
+
+  @override
+  DraftProblem? get problem {
+    if (lines.isEmpty) return DraftProblem.noLines;
+    if (tipoComprobante == '01' && customer.tipoDocumentoIdentidad != '6') {
+      return DraftProblem.facturaWithoutRuc;
+    }
+    return null;
+  }
+
+  @override
+  String totalOf(Map<String, Object?> enrichedSpec) =>
+      _importeTotal(enrichedSpec);
 
   @override
   String toDocumentJson({
@@ -316,7 +338,6 @@ class NoteDraft implements DocumentDraft {
   final String sustento;
   @override
   final DraftCustomer customer;
-  @override
   final List<DraftLine> lines;
 
   @override
@@ -324,6 +345,13 @@ class NoteDraft implements DocumentDraft {
 
   @override
   String? get affectedDocumentId => affected.id;
+
+  @override
+  DraftProblem? get problem => lines.isEmpty ? DraftProblem.noLines : null;
+
+  @override
+  String totalOf(Map<String, Object?> enrichedSpec) =>
+      _importeTotal(enrichedSpec);
 
   @override
   String toDocumentJson({

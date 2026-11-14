@@ -32,6 +32,12 @@ enum DraftProblem {
   /// Facturas are for customers with a RUC
   facturaWithoutRuc,
 
+  /// Percepciones and retenciones are for customers or suppliers with a RUC
+  customerWithoutRuc,
+
+  /// A percepción or retención is of some amount, up to the factura's total
+  operacionOverTotal,
+
   /// Boletas over S/ 700 need an identified customer
   anonymousOver700,
 
@@ -48,8 +54,11 @@ enum DraftProblem {
   /// Notas de crédito can't credit more than the invoice's total
   noteExceedsInvoice,
 
-  /// Only accepted facturas, boletas and notas can be voided
+  /// Only documents SUNAT accepted can be voided
   notVoidable,
+
+  /// Facturas and boletas are voided after their notas
+  voidNotesFirst,
 
   /// Voiding is allowed up to [voidingDays] after the issue date
   voidingTooLate,
@@ -212,14 +221,9 @@ class DocumentService {
     required Serie serie,
     required DocumentDraft draft,
   }) async {
-    if (draft.lines.isEmpty) {
-      throw const InvalidDraftError(DraftProblem.noLines);
-    }
-    if (draft.tipoComprobante == '01' &&
-        draft.customer.tipoDocumentoIdentidad != '6') {
-      throw const InvalidDraftError(DraftProblem.facturaWithoutRuc);
-    }
-    if (draft is NoteDraft) _checkAffected(draft, company, serie);
+    final problem = draft.problem;
+    if (problem != null) throw InvalidDraftError(problem);
+    if (draft is NoteDraft) await _checkAffected(draft, company, serie);
     final secrets = await _secureStore.readCompanySecrets(company.id);
     final (certificate, password) = await _certificate(company, secrets);
     final deviceId = await _db.deviceId();
@@ -260,8 +264,10 @@ class DocumentService {
           fechaEmision: fechaEmision,
         ),
       );
-      final spec = (jsonDecode(built.enrichedJson) as Map)['spec'] as Map;
-      final total = roundAmount('${(spec['total_importe'] as Map)['importe']}');
+      final spec =
+          (jsonDecode(built.enrichedJson) as Map)['spec']
+              as Map<String, Object?>;
+      final total = roundAmount(draft.totalOf(spec));
       _checkTotals(draft, total, fechaEmision);
       if (draft is NoteDraft && draft.tipoComprobante == '07') {
         final credited = creditedCents(
@@ -325,8 +331,8 @@ class DocumentService {
     return stored;
   }
 
-  /// Issues the comunicación de baja or resumen diario that voids an
-  /// accepted document, ready to send; the document is [DocumentStatus.voiding]
+  /// Issues the comunicación de baja, resumen diario or reversión that voids
+  /// an accepted document, ready to send; the document is [DocumentStatus.voiding]
   /// until SUNAT answers it. Returns the voiding document's id.
   Future<String> voidDocument(
     String documentId, {
@@ -334,10 +340,10 @@ class DocumentService {
   }) async {
     final fechaEmision = peruToday();
     final document = await _documents.find(documentId);
-    _checkVoidable(document, fechaEmision);
     final company = await (_db.select(
       _db.companies,
     )..where((c) => c.id.equals(document.companyId))).getSingle();
+    await _checkVoidable(document, company, fechaEmision);
     final secrets = await _secureStore.readCompanySecrets(company.id);
     final (certificate, password) = await _certificate(company, secrets);
     final deviceId = await _db.deviceId();
@@ -347,7 +353,7 @@ class DocumentService {
     return _db.transaction(() async {
       // Read again: it may have been voided meanwhile
       final current = await _documents.find(documentId);
-      _checkVoidable(current, fechaEmision);
+      await _checkVoidable(current, company, fechaEmision);
       final numero =
           await _documents.lastNumero(
             company.id,
@@ -415,30 +421,50 @@ class DocumentService {
     });
   }
 
-  /// Facturas, boletas and notas accepted by SUNAT up to [voidingDays] ago
-  /// can be voided; later, a nota de crédito is issued instead
-  static void _checkVoidable(Document document, String today) {
+  /// Documents accepted by SUNAT up to [voidingDays] ago can be voided
+  /// (later, a nota de crédito is issued instead), once their notas are
+  Future<void> _checkVoidable(
+    Document document,
+    Company company,
+    String today,
+  ) async {
     if (!voidableTipos.contains(document.tipoComprobante) ||
-        !accepted.contains(document.status)) {
+        !accepted.contains(document.status) ||
+        document.environment != company.sunatEnvironment) {
       throw const InvalidDraftError(DraftProblem.notVoidable);
     }
     if (!inVoidingTime(document, today)) {
       throw const InvalidDraftError(DraftProblem.voidingTooLate);
     }
+    final related = await _documents.related(document.id);
+    if (related.any(
+      (d) =>
+          const {'07', '08'}.contains(d.tipoComprobante) &&
+          d.status != DocumentStatus.rejected &&
+          d.status != DocumentStatus.voided,
+    )) {
+      throw const InvalidDraftError(DraftProblem.voidNotesFirst);
+    }
   }
 
-  /// When SUNAT answers a comunicación de baja or resumen, the document it
-  /// voids is voided, or accepted again if SUNAT rejected the voiding
+  /// Rejections of a voiding document saying SUNAT already has it, or has
+  /// already voided the document: the document isn't accepted again
+  static const _alreadyVoided = {'2223', '2323', '2324', '2987'};
+
+  /// When SUNAT answers a voiding document, the document it voids is
+  /// voided, or accepted again if SUNAT rejected the voiding
   Future<void> _settleVoiding(
     Document voiding,
     DocumentStatus status,
+    String? code,
     String deviceId,
   ) async {
     final voidedId = voiding.affectedDocumentId;
     final isVoided = accepted.contains(status);
     if (!voidingTipos.contains(voiding.tipoComprobante) ||
         voidedId == null ||
-        (!isVoided && status != DocumentStatus.rejected)) {
+        (!isVoided && status != DocumentStatus.rejected) ||
+        (!isVoided && _alreadyVoided.contains(code))) {
       return;
     }
     final voided = await _documents.find(voidedId);
@@ -470,8 +496,13 @@ class DocumentService {
     );
   }
 
-  static void _checkAffected(NoteDraft draft, Company company, Serie serie) {
-    final affected = draft.affected;
+  /// Notas modify accepted facturas and boletas, as they are now
+  Future<void> _checkAffected(
+    NoteDraft draft,
+    Company company,
+    Serie serie,
+  ) async {
+    final affected = await _documents.find(draft.affected.id);
     if (!const {'01', '03'}.contains(affected.tipoComprobante) ||
         !accepted.contains(affected.status) ||
         affected.companyId != company.id ||
@@ -612,14 +643,15 @@ class DocumentService {
       );
     }
     if (response.code != '1033') return response;
-    // Comunicaciones de baja and resúmenes have no CDR to consult
+    // SUNAT's CDR consult covers invoices and notas only
     if (document.environment == SunatEnvironment.production &&
-        voidableTipos.contains(document.tipoComprobante)) {
+        const {'01', '03', '07', '08'}.contains(document.tipoComprobante)) {
       return _request(
         () => _bridge.recover(document, company.ruc, credentials),
       );
     }
-    // Beta has no consult service to recover the CDR
+    // Beta has no consult service, and other documents have no CDR to
+    // consult
     return SunatResponse(
       status: SunatStatus.unknown,
       code: response.code,
@@ -740,7 +772,7 @@ class DocumentService {
         response.code,
         response.description,
       );
-      await _settleVoiding(document, status, deviceId);
+      await _settleVoiding(document, status, response.code, deviceId);
       return status;
     });
   }

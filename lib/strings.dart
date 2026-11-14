@@ -240,10 +240,33 @@ abstract final class Strings {
       'Solo anula comprobantes que el cliente aún no recibió. Si ya lo '
       'recibió, emite una nota de crédito.';
   static const motivo = 'Motivo';
+  static const motivoHelp = 'Para tu historial y para SUNAT';
+  static const voidingRejected = 'SUNAT rechazó la anulación';
   static const comunicacionBaja = 'Comunicación de baja';
   static const resumenDiario = 'Resumen diario';
+  static const reversion = 'Reversión';
   static String voids(String serieNumero) => 'Anula $serieNumero';
   static String voidedBy(String serieNumero) => 'Anulado por $serieNumero';
+
+  // Percepción and retención
+  static const percepcion = 'Percepción';
+  static const percepcionHelp = 'Cobro de una factura a un cliente';
+  static const retencion = 'Retención';
+  static const retencionHelp = 'Pago de una factura a un proveedor';
+  static const selectSupplier = 'Elegir proveedor';
+  static const regimen = 'Régimen';
+  static const facturaSerieNumero = 'Serie y número';
+  static const invalidSerieNumero = 'Escribe la serie y el número: F001-123';
+  static const facturaTotal = 'Total de la factura';
+  static const cobro = 'Cobro';
+  static const pago = 'Pago';
+  static const importeHelp = 'Vacío: el total de la factura';
+  static const fechaCobro = 'Fecha de cobro';
+  static const observaciones = 'Observaciones';
+  static const percibido = 'Percibido';
+  static const retenido = 'Retenido';
+  static const totalCobrado = 'Total cobrado';
+  static const totalPagado = 'Total pagado';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

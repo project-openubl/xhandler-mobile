@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
+import 'package:xhandler_mobile/features/document/perception_retention_draft.dart';
 import 'package:xhandler_mobile/features/document/voiding.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
@@ -294,6 +295,52 @@ void main() {
     expectGoldenJson(
       'resumen_anula_nota_boleta',
       voiding(note, 'Nota emitida por error'),
+    );
+  });
+
+  test('percepción of a factura collected in full', () {
+    const draft = PerceptionRetentionDraft(
+      tipoComprobante: '40',
+      customer: supermercados,
+      tipoRegimen: '01',
+      comprobanteSerieNumero: 'F001-1',
+      comprobanteFechaEmision: '2026-11-10',
+      comprobanteTotal: '1180.00',
+      importeOperacion: '1180.00',
+      fechaOperacion: '2026-11-13',
+    );
+    expect(draft.importe, '23.60');
+    expect(draft.importeNeto, '1203.60');
+    expectGolden('percepcion', draft, 'P001-1');
+  });
+
+  test('retención of a supplier factura paid in part', () {
+    const draft = PerceptionRetentionDraft(
+      tipoComprobante: '20',
+      customer: supermercados,
+      tipoRegimen: '01',
+      comprobanteSerieNumero: 'F002-15',
+      comprobanteFechaEmision: '2026-11-10',
+      comprobanteTotal: '1000.00',
+      importeOperacion: '500.55',
+      fechaOperacion: '2026-11-13',
+      observaciones: 'Primer pago',
+    );
+    expect(draft.importe, '15.02'); // 15.0165, half up
+    expect(draft.importeNeto, '485.53');
+    expectGolden('retencion', draft, 'R001-1');
+  });
+
+  test('reversión of a percepción', () {
+    final percepcion = factura.copyWith(
+      id: 'p1',
+      tipoComprobante: '40',
+      serie: 'P001',
+      numero: 3,
+    );
+    expectGoldenJson(
+      'reversion_percepcion',
+      voiding(percepcion, 'Cobro registrado por error'),
     );
   });
 

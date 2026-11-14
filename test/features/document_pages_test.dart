@@ -17,6 +17,7 @@ import 'package:xhandler_mobile/features/document/documents_list.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/invoice_form_page.dart';
 import 'package:xhandler_mobile/features/document/note_form_page.dart';
+import 'package:xhandler_mobile/features/document/perception_retention_form_page.dart';
 import 'package:xhandler_mobile/features/document/quick_sale_page.dart';
 import 'package:xhandler_mobile/features/product/product_repository.dart';
 import 'package:xhandler_mobile/features/document/sunat_bridge.dart';
@@ -415,6 +416,8 @@ void main() {
       NoteFormPage(company, affected: factura, tipoComprobante: '07'),
     );
     await pumpUntil(tester, () => shows('FC01-00000001'));
+    // Totals without touching anything
+    await pumpUntil(tester, () => shows(Strings.total), 'totals');
     // Anulación de la operación: the factura's lines, read-only
     expect(find.text(Strings.freeLine), findsNothing);
     expect(find.byTooltip(Strings.delete), findsNothing);
@@ -499,6 +502,62 @@ void main() {
       'link',
     );
     expect(find.text(Strings.voidDocument), findsNothing);
+    await data.unmount(tester);
+  });
+
+  testWidgets('a retención withholds 3% of what is paid', (tester) async {
+    final data = TestData();
+    final company = (await tester.runAsync(data.createCompany))!;
+    await tester.runAsync(
+      () => data.database
+          .into(data.database.customers)
+          .insert(
+            CustomersCompanion.insert(
+              companyId: company.id,
+              tipoDocumentoIdentidad: '6',
+              numeroDocumentoIdentidad: '20100070970',
+              nombre: 'PROVEEDOR S.A.C.',
+            ),
+          ),
+    );
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      PerceptionRetentionFormPage(company, tipoComprobante: '20'),
+    );
+    await pumpUntil(tester, () => shows('R001-00000001'));
+    await tester.tap(find.text(Strings.selectSupplier));
+    await pumpUntil(tester, () => shows('PROVEEDOR S.A.C.'));
+    await tester.tap(find.text('PROVEEDOR S.A.C.'));
+    await pumpUntil(tester, () => !shows(Strings.selectSupplier));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, Strings.facturaSerieNumero),
+      'F002-15',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, Strings.facturaTotal),
+      '1000',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, Strings.importe),
+      '500.55',
+    );
+    await pumpUntil(tester, () => shows('S/ 485.53'));
+    expect(find.text('S/ 15.02'), findsOneWidget);
+
+    bridge.responses.add(_accepted);
+    await tester.tap(find.text(Strings.emit));
+    await pumpUntil(tester, () => shows(Strings.viewDocument), 'sheet');
+    final retention = (await tester.runAsync(
+      () => data.database.select(data.database.documents).getSingle(),
+    ))!;
+    expect(retention.serie, 'R001');
+    expect(retention.total, '15.02');
     await data.unmount(tester);
   });
 

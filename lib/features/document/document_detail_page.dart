@@ -8,13 +8,13 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../peru_date.dart';
-import '../../src/rust/api/error.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../company/company_repository.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
+import 'emit_flow.dart';
 import 'note_form_page.dart';
 import 'voiding.dart';
 
@@ -217,14 +217,7 @@ class DocumentDetailPage extends ConsumerWidget {
     try {
       voidingId = await service.voidDocument(document.id, motivo: motivo);
     } on Object catch (error) {
-      if (context.mounted) {
-        showMessage(context, switch (error) {
-          InvalidDraftError(:final problem) => draftProblemMessage(problem),
-          MissingCertificateError() => Strings.missingCertificate,
-          BridgeError(:final message) => documentErrorMessage(message),
-          _ => Strings.unexpectedError,
-        });
-      }
+      if (context.mounted) showMessage(context, issueErrorMessage(error));
       return;
     }
     final status = await service
@@ -234,15 +227,12 @@ class DocumentDetailPage extends ConsumerWidget {
           onTimeout: () => DocumentStatus.pendingSend,
         );
     if (!context.mounted) return;
-    showMessage(
-      context,
-      switch (status) {
-        DocumentStatus.accepted ||
-        DocumentStatus.acceptedWithObservations => DocumentStatus.voided,
-        DocumentStatus.rejected => document.status,
-        _ => DocumentStatus.voiding,
-      }.label,
-    );
+    showMessage(context, switch (status) {
+      DocumentStatus.accepted ||
+      DocumentStatus.acceptedWithObservations => DocumentStatus.voided.label,
+      DocumentStatus.rejected => Strings.voidingRejected,
+      _ => DocumentStatus.voiding.label,
+    });
   }
 }
 
@@ -277,7 +267,10 @@ class _VoidDialogState extends State<_VoidDialog> {
             FormTextField(
               _motivo,
               Strings.motivo,
-              validator: (text) => text.isEmpty ? Strings.required : null,
+              maxLength: 100,
+              helperText: Strings.motivoHelp,
+              // SUNAT observes reasons under 3 characters
+              validator: (text) => text.length < 3 ? Strings.required : null,
             ),
           ],
         ),

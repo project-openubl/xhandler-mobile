@@ -1,0 +1,43 @@
+{
+  "kind": "Perception",
+  "spec": {
+    "serie": "P001",
+    "numero": 1,
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "tipo_regimen": "01",
+    "tipo_regimen_porcentaje": "2",
+    "importe_total_percibido": "23.60",
+    "importe_total_cobrado": "1203.60",
+    "operacion": {
+      "numero_operacion": 1,
+      "fecha_operacion": "2026-11-13",
+      "importe_operacion": "1180.00",
+      "comprobante_afectado": {
+        "tipo_comprobante": "01",
+        "serie_numero": "F001-1",
+        "fecha_emision": "2026-11-10",
+        "importe_total": "1180.00",
+        "moneda": "PEN"
+      }
+    }
+  }
+}

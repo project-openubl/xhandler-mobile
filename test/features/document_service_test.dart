@@ -13,6 +13,7 @@ import 'package:xhandler_mobile/features/company/company_repository.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
+import 'package:xhandler_mobile/features/document/perception_retention_draft.dart';
 import 'package:xhandler_mobile/features/series/series_repository.dart';
 import 'package:xhandler_mobile/peru_date.dart';
 import 'package:xhandler_mobile/src/rust/api/error.dart';
@@ -27,6 +28,12 @@ const _draft = InvoiceDraft(
     nombre: 'Cliente S.A.C.',
   ),
   lines: [DraftLine(descripcion: 'Café', cantidad: '2', precio: '59.00')],
+);
+
+const _rucCustomer = DraftCustomer(
+  tipoDocumentoIdentidad: '6',
+  numeroDocumentoIdentidad: '20100070970',
+  nombre: 'Cliente S.A.C.',
 );
 
 void main() {
@@ -518,6 +525,63 @@ void main() {
     });
   });
 
+  group('percepción and retención', () {
+    PerceptionRetentionDraft draft({
+      DraftCustomer customer = _rucCustomer,
+      String importe = '1180.00',
+    }) => PerceptionRetentionDraft(
+      tipoComprobante: '40',
+      customer: customer,
+      tipoRegimen: '01',
+      comprobanteSerieNumero: 'F001-7',
+      comprobanteFechaEmision: '2026-11-10',
+      comprobanteTotal: '1180.00',
+      importeOperacion: importe,
+      fechaOperacion: '2026-11-13',
+    );
+
+    test('stores the amount perceived as its total', () async {
+      final p001 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('P001'))).getSingle();
+      final id = await service.emit(
+        company: company,
+        serie: p001,
+        draft: draft(),
+      );
+
+      final stored = await document(id);
+      expect(stored.tipoComprobante, '40');
+      expect(stored.total, '23.60');
+      final spec = (jsonDecode(bridge.builtJson.single) as Map)['spec'] as Map;
+      expect(spec['serie'], 'P001');
+      expect(spec['numero'], 1);
+    });
+
+    test('needs a RUC and an amount up to the factura total', () async {
+      final p001 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('P001'))).getSingle();
+      for (final (invalid, problem) in [
+        (draft(customer: anonymousCustomer), DraftProblem.customerWithoutRuc),
+        (draft(importe: '1180.01'), DraftProblem.operacionOverTotal),
+        (draft(importe: '0'), DraftProblem.operacionOverTotal),
+      ]) {
+        await expectLater(
+          service.emit(company: company, serie: p001, draft: invalid),
+          throwsA(
+            isA<InvalidDraftError>().having(
+              (e) => e.problem,
+              'problem',
+              problem,
+            ),
+          ),
+        );
+      }
+      expect(await database.select(database.documents).get(), isEmpty);
+    });
+  });
+
   group('voiding', () {
     const acceptedAnswer = SunatResponse(
       status: SunatStatus.accepted,
@@ -546,6 +610,23 @@ void main() {
       bridge.responses.add(acceptedAnswer);
       await service.send(id);
       return id;
+    }
+
+    Future<String> productionFactura() async {
+      await SecureStore().writeCompanySecrets(company.id, {
+        CompanySecret.certificate: base64Encode([1]),
+        CompanySecret.solUsername: '20123456789USUARIO',
+        CompanySecret.solPassword: 'clave',
+      });
+      await (database.update(
+        database.companies,
+      )..where((c) => c.id.equals(company.id))).write(
+        const CompaniesCompanion(
+          sunatEnvironment: Value(SunatEnvironment.production),
+        ),
+      );
+      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
+      return acceptedDocument();
     }
 
     test('a factura is voided with a comunicación de baja', () async {
@@ -609,13 +690,7 @@ void main() {
     });
 
     test('a rejected voiding leaves the document accepted', () async {
-      await SecureStore().writeCompanySecrets(company.id, {
-        CompanySecret.certificate: base64Encode([1]),
-        CompanySecret.solUsername: '20123456789USUARIO',
-        CompanySecret.solPassword: 'clave',
-      });
-      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
-      final factura = await acceptedDocument();
+      final factura = await productionFactura();
       final voidingId = await service.voidDocument(factura, motivo: 'Error');
       bridge.responses.add(ticket);
       expect(await service.send(voidingId), DocumentStatus.inProgress);
@@ -624,7 +699,7 @@ void main() {
       bridge.responses.add(
         const SunatResponse(
           status: SunatStatus.rejected,
-          code: '2324',
+          code: '2375',
           notes: [],
         ),
       );
@@ -665,6 +740,139 @@ void main() {
       );
     });
 
+    test('a voiding SUNAT already has keeps the document voiding', () async {
+      final factura = await productionFactura();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.add(
+        const SunatResponse(
+          status: SunatStatus.rejected,
+          code: '2324',
+          notes: [],
+        ),
+      );
+
+      expect(await service.send(voidingId), DocumentStatus.rejected);
+      expect((await document(factura)).status, DocumentStatus.voiding);
+    });
+
+    test('a voiding SUNAT did not process can be sent again', () async {
+      final factura = await productionFactura();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.addAll([
+        const SunatResponse(
+          status: SunatStatus.exception,
+          code: '0151',
+          notes: [],
+        ),
+        ticket,
+        acceptedAnswer,
+      ]);
+      expect(await service.send(voidingId), DocumentStatus.exception);
+      expect((await document(factura)).status, DocumentStatus.voiding);
+
+      expect(
+        await service.send(voidingId, manual: true),
+        DocumentStatus.inProgress,
+      );
+      await due(voidingId);
+      expect(await service.send(voidingId), DocumentStatus.accepted);
+      expect((await document(factura)).status, DocumentStatus.voided);
+    });
+
+    test('a percepción is voided with a reversión', () async {
+      final p001 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('P001'))).getSingle();
+      final id = await service.emit(
+        company: company,
+        serie: p001,
+        draft: const PerceptionRetentionDraft(
+          tipoComprobante: '40',
+          customer: _rucCustomer,
+          tipoRegimen: '01',
+          comprobanteSerieNumero: 'F001-7',
+          comprobanteFechaEmision: '2026-11-10',
+          comprobanteTotal: '100',
+          importeOperacion: '100',
+          fechaOperacion: '2026-11-13',
+        ),
+      );
+      bridge.responses.add(acceptedAnswer);
+      await service.send(id);
+
+      final voiding = await document(
+        await service.voidDocument(id, motivo: 'Error'),
+      );
+      expect(voiding.tipoComprobante, 'RR');
+      expect((jsonDecode(voiding.inputJson) as Map)['kind'], 'Reversion');
+    });
+
+    test('an invoice with live notas is voided after them', () async {
+      final factura = await acceptedDocument();
+      final fc01 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('FC01'))).getSingle();
+      final note = await service.emit(
+        company: company,
+        serie: fc01,
+        draft: NoteDraft(
+          tipoComprobante: '07',
+          affected: await document(factura),
+          tipoNota: '01',
+          sustento: 'Anulación',
+          customer: _draft.customer,
+          lines: _draft.lines,
+        ),
+      );
+      await expectLater(
+        service.voidDocument(factura, motivo: 'Error'),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.voidNotesFirst,
+          ),
+        ),
+      );
+
+      await (database.update(
+        database.documents,
+      )..where((d) => d.id.equals(note))).write(
+        const DocumentsCompanion(status: Value(DocumentStatus.rejected)),
+      );
+      await service.voidDocument(factura, motivo: 'Error');
+    });
+
+    test('a nota checks the invoice as it is now', () async {
+      final factura = await document(await acceptedDocument());
+      await service.voidDocument(factura.id, motivo: 'Error');
+      final fc01 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('FC01'))).getSingle();
+
+      await expectLater(
+        service.emit(
+          company: company,
+          serie: fc01,
+          draft: NoteDraft(
+            tipoComprobante: '07',
+            affected: factura, // read before it was voided
+            tipoNota: '01',
+            sustento: 'Anulación',
+            customer: _draft.customer,
+            lines: _draft.lines,
+          ),
+        ),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.invalidAffectedDocument,
+          ),
+        ),
+      );
+    });
+
     test('an accepted nota does not void the document it modifies', () async {
       final factura = await acceptedDocument();
       final fc01 = await (database.select(
@@ -682,7 +890,13 @@ void main() {
           lines: _draft.lines,
         ),
       );
+      // Only reachable with a rejected nota sent again by hand
+      Future<void> setStatus(DocumentStatus status) =>
+          (database.update(database.documents)..where((d) => d.id.equals(note)))
+              .write(DocumentsCompanion(status: Value(status)));
+      await setStatus(DocumentStatus.rejected);
       await service.voidDocument(factura, motivo: 'Error');
+      await setStatus(DocumentStatus.pendingSend);
       bridge.responses.add(acceptedAnswer);
       await service.send(note);
 

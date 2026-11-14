@@ -1,0 +1,29 @@
+{
+  "kind": "Reversion",
+  "spec": {
+    "numero": 1,
+    "fecha_emision": "2026-11-13",
+    "fecha_emision_comprobantes": "2026-11-13",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "comprobantes": [
+      {
+        "tipo_comprobante": "40",
+        "serie": "P001",
+        "numero": 3,
+        "descripcion_sustento": "Cobro registrado por error"
+      }
+    ]
+  }
+}

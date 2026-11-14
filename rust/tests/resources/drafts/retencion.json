@@ -1,0 +1,44 @@
+{
+  "kind": "Retention",
+  "spec": {
+    "serie": "R001",
+    "numero": 1,
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "tipo_regimen": "01",
+    "tipo_regimen_porcentaje": "3",
+    "importe_total_retenido": "15.02",
+    "importe_total_pagado": "485.53",
+    "observaciones": "Primer pago",
+    "operacion": {
+      "numero_operacion": 1,
+      "fecha_operacion": "2026-11-13",
+      "importe_operacion": "500.55",
+      "comprobante_afectado": {
+        "tipo_comprobante": "01",
+        "serie_numero": "F002-15",
+        "fecha_emision": "2026-11-10",
+        "importe_total": "1000.00",
+        "moneda": "PEN"
+      }
+    }
+  }
+}
