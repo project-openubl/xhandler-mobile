@@ -118,6 +118,55 @@ abstract final class Strings {
   static const isDefault = 'Serie por defecto';
   static const serieExists = 'Esta serie ya existe';
 
+  // Customers
+  static const customers = 'Clientes';
+  static const newCustomer = 'Nuevo cliente';
+  static const customer = 'Cliente';
+  static const search = 'Buscar';
+  static const noResults = 'Sin resultados';
+  static const tipoDocumentoIdentidad = 'Tipo de documento';
+  static const numeroDocumento = 'Número de documento';
+  static const invalidDni = 'El DNI tiene 8 dígitos';
+  static const nombre = 'Nombre o razón social';
+  static const telefonoHelp = 'Con código de país, ej. +51987654321';
+  static const lookup = 'Consultar';
+  static const lookupNotFound = 'No se encontró el número';
+  static const lookupFailed =
+      'No se pudo consultar; revisa la conexión y el token';
+  static const customerExists = 'Ya existe un cliente con este documento';
+  static const deleteCustomerConfirm = '¿Eliminar este cliente?';
+
+  // Products
+  static const products = 'Productos';
+  static const newProduct = 'Nuevo producto';
+  static const product = 'Producto';
+  static const descripcion = 'Descripción';
+  static const codigo = 'Código';
+  static const unidadMedida = 'Unidad de medida';
+  static const precio = 'Precio';
+  static const invalidPrecio = 'Un número, ej. 12.50';
+  static const precioIncluyeIgv = 'El precio incluye IGV';
+  static const igvTipo = 'Afectación del IGV';
+  static const esBolsa = 'Bolsa de plástico (paga ICBPER)';
+  static const favorito = 'Favorito (venta rápida)';
+  static const moreOptions = 'Más opciones';
+  static const iscTipo = 'Tipo de ISC';
+  static const iscTasa = 'Tasa o monto de ISC';
+  static const detraccionCodigo = 'Código de detracción';
+  static const deleteProductConfirm = '¿Eliminar este producto?';
+
+  // Lookup settings
+  static const lookupSettings = 'Consulta RUC/DNI';
+  static const lookupNone = 'Sin consulta (ingreso manual)';
+  static const lookupCommercial = 'Decolecta';
+  static const lookupCommercialHelp =
+      'Servicio con plan gratuito: regístrate en decolecta.com y copia tu token.';
+  static const lookupSearchpe = 'searchpe (servidor propio)';
+  static const lookupToken = 'Token';
+  static const lookupUrl = 'URL de searchpe';
+  static const lookupUser = 'Usuario de searchpe';
+  static const lookupPassword = 'Contraseña de searchpe';
+
   // Diagnostics
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';
   static const sunatBetaCheckHelp =

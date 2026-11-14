@@ -21,4 +21,40 @@ abstract final class Catalogs {
     '20': 'R',
     '40': 'P',
   };
+
+  /// Catalog 6, identity documents of customers
+  static const tiposDocumentoIdentidad = {
+    '6': 'RUC',
+    '1': 'DNI',
+    '4': 'Carnet de extranjería',
+    '7': 'Pasaporte',
+    '0': 'Doc. tributario no domiciliado',
+    'A': 'Cédula diplomática',
+  };
+
+  /// Catalog 3, the most used units of measure
+  static const unidadesMedida = {
+    'NIU': 'Unidad',
+    'ZZ': 'Servicio',
+    'KGM': 'Kilogramo',
+    'LTR': 'Litro',
+    'MTR': 'Metro',
+    'BX': 'Caja',
+    'GLL': 'Galón',
+  };
+
+  /// Catalog 7, how IGV applies to a sale
+  static const igvTipos = {
+    '10': 'Gravado',
+    '20': 'Exonerado',
+    '30': 'Inafecto',
+    '40': 'Exportación',
+  };
+
+  /// Catalog 8, how ISC is calculated
+  static const iscTipos = {
+    '01': 'Sistema al valor',
+    '02': 'Aplicación del monto fijo',
+    '03': 'Precios de venta al público',
+  };
 }

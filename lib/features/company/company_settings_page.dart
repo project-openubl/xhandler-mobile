@@ -45,6 +45,11 @@ class CompanySettingsPage extends ConsumerWidget {
             title: const Text(Strings.series),
             onTap: () => context.push(Routes.series),
           ),
+          ListTile(
+            leading: const Icon(Icons.travel_explore),
+            title: const Text(Strings.lookupSettings),
+            onTap: () => context.push(Routes.lookupSettings),
+          ),
           SwitchListTile(
             secondary: const Icon(Icons.science),
             title: const Text(Strings.testModeSwitch),

@@ -138,6 +138,16 @@ class _CompanyDrawer extends ConsumerWidget {
         ),
         const Divider(),
         ListTile(
+          leading: const Icon(Icons.people),
+          title: const Text(Strings.customers),
+          onTap: () => open(Routes.customers),
+        ),
+        ListTile(
+          leading: const Icon(Icons.inventory_2),
+          title: const Text(Strings.products),
+          onTap: () => open(Routes.products),
+        ),
+        ListTile(
           leading: const Icon(Icons.numbers),
           title: const Text(Strings.series),
           onTap: () => open(Routes.series),

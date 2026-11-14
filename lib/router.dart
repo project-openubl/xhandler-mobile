@@ -8,8 +8,11 @@ import 'features/company/certificate_page.dart';
 import 'features/company/company_form_page.dart';
 import 'features/company/company_settings_page.dart';
 import 'features/company/credentials_page.dart';
+import 'features/customer/customers_page.dart';
+import 'features/customer/lookup_settings_page.dart';
 import 'features/diagnostics/sunat_beta_check_page.dart';
 import 'features/home/home_page.dart';
+import 'features/product/products_page.dart';
 import 'features/series/series_page.dart';
 
 /// Routes of the app. Pages under `/company` work on the active company.
@@ -22,6 +25,9 @@ abstract final class Routes {
   static const credentials = '/company/credentials';
   static const series = '/company/series';
   static const diagnostics = '/company/diagnostics';
+  static const lookupSettings = '/company/lookup';
+  static const customers = '/company/customers';
+  static const products = '/company/products';
 }
 
 GoRoute _companyRoute(String path, Widget Function(Company) page) => GoRoute(
@@ -44,6 +50,9 @@ GoRouter buildRouter() => GoRouter(
     _companyRoute(Routes.certificate, CertificatePage.new),
     _companyRoute(Routes.credentials, CredentialsPage.new),
     _companyRoute(Routes.series, SeriesPage.new),
+    _companyRoute(Routes.lookupSettings, LookupSettingsPage.new),
+    _companyRoute(Routes.customers, CustomersPage.new),
+    _companyRoute(Routes.products, ProductsPage.new),
     GoRoute(
       path: Routes.diagnostics,
       builder: (_, _) => const SunatBetaCheckPage(),

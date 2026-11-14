@@ -385,9 +385,9 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 |---|---|---|
 | 0 | xhandler-rust | xsender on `rustls-tls`; xsigner rewritten in pure Rust (RustCrypto + exclusive C14N on quick-xml), byte-for-byte equal signatures vs current implementation, legacy PFX support; builds for Android and iOS targets |
 | 1 | mobile | Scaffold (flutter_rust_bridge create), facade crate, CI (APK + iOS simulator), sign a sample invoice on a real phone |
-| 2 | mobile | Drift schema + encryption (sqlite3mc), company wizard, secure storage, certificate import, series, customers (+ lookup), products, GRE catalogs |
+| 2 | mobile | Drift schema + encryption (sqlite3mc), company wizard, secure storage, certificate import, series, customers (+ lookup), products |
 | 3 | mobile | Emit & send: invoice/boleta full form + quick sale, numbering, status machine, outbox, 1033 recovery, notifications, timeline |
-| 4 | mobile | Remaining documents: notes, GRE, percepción, retención, voiding (RA/RC/RR) |
+| 4 | mobile | Remaining documents: notes, GRE (with vehicle/driver/address catalogs), percepción, retención, voiding (RA/RC/RR) |
 | 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, WhatsApp, share sheet), delivery log |
 | 6 | mobile | Backup/restore (Drive, iCloud), per-company export/import |
 | 7 | mobile | Reports: summary, CSV, Excel, PLE, SIRE |

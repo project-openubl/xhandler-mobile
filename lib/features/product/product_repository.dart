@@ -39,3 +39,10 @@ class ProductRepository {
 final productRepositoryProvider = Provider(
   (ref) => ProductRepository(ref.watch(databaseProvider)),
 );
+
+final productsProvider = StreamProvider.autoDispose
+    .family<List<Product>, ({String companyId, String search})>(
+      (ref, query) => ref
+          .watch(productRepositoryProvider)
+          .watch(query.companyId, search: query.search),
+    );
