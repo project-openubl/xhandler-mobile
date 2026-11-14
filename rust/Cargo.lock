@@ -3177,7 +3177,7 @@ dependencies = [
 [[package]]
 name = "xbuilder"
 version = "0.1.1"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=b79cd16e4ebd6ba0702ca43326705c45c6fae0c3#b79cd16e4ebd6ba0702ca43326705c45c6fae0c3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3193,7 +3193,7 @@ dependencies = [
 [[package]]
 name = "xhandler"
 version = "0.1.0"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=b79cd16e4ebd6ba0702ca43326705c45c6fae0c3#b79cd16e4ebd6ba0702ca43326705c45c6fae0c3"
 dependencies = [
  "xbuilder",
  "xsender",
@@ -3223,7 +3223,7 @@ checksum = "2f45bb2c13fec6a6cb4c0f76a7e94839e110a14ec803ec2940777a94c347bc52"
 [[package]]
 name = "xsender"
 version = "0.1.1"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=b79cd16e4ebd6ba0702ca43326705c45c6fae0c3#b79cd16e4ebd6ba0702ca43326705c45c6fae0c3"
 dependencies = [
  "anyhow",
  "base64",
@@ -3244,7 +3244,7 @@ dependencies = [
 [[package]]
 name = "xsigner"
 version = "0.1.0"
-source = "git+https://github.com/project-openubl/xhandler-rust?rev=ad310c463adea6bb34f162d16ec407e71750a131#ad310c463adea6bb34f162d16ec407e71750a131"
+source = "git+https://github.com/project-openubl/xhandler-rust?rev=b79cd16e4ebd6ba0702ca43326705c45c6fae0c3#b79cd16e4ebd6ba0702ca43326705c45c6fae0c3"
 dependencies = [
  "base64",
  "p12-keystore",

@@ -4105,6 +4105,17 @@ class $DocumentsTable extends Documents
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _inputJsonMeta = const VerificationMeta(
+    'inputJson',
+  );
+  @override
+  late final GeneratedColumn<String> inputJson = GeneratedColumn<String>(
+    'input_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _enrichedJsonMeta = const VerificationMeta(
     'enrichedJson',
   );
@@ -4116,6 +4127,34 @@ class $DocumentsTable extends Documents
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _affectedDocumentIdMeta =
+      const VerificationMeta('affectedDocumentId');
+  @override
+  late final GeneratedColumn<String> affectedDocumentId =
+      GeneratedColumn<String>(
+        'affected_document_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES documents (id)',
+        ),
+      );
+  static const VerificationMeta _voidedByDocumentIdMeta =
+      const VerificationMeta('voidedByDocumentId');
+  @override
+  late final GeneratedColumn<String> voidedByDocumentId =
+      GeneratedColumn<String>(
+        'voided_by_document_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES documents (id)',
+        ),
+      );
   static const VerificationMeta _deviceIdMeta = const VerificationMeta(
     'deviceId',
   );
@@ -4152,7 +4191,10 @@ class $DocumentsTable extends Documents
     digestValue,
     attempts,
     nextAttemptAt,
+    inputJson,
     enrichedJson,
+    affectedDocumentId,
+    voidedByDocumentId,
     deviceId,
   ];
   @override
@@ -4336,6 +4378,14 @@ class $DocumentsTable extends Documents
         ),
       );
     }
+    if (data.containsKey('input_json')) {
+      context.handle(
+        _inputJsonMeta,
+        inputJson.isAcceptableOrUnknown(data['input_json']!, _inputJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_inputJsonMeta);
+    }
     if (data.containsKey('enriched_json')) {
       context.handle(
         _enrichedJsonMeta,
@@ -4346,6 +4396,24 @@ class $DocumentsTable extends Documents
       );
     } else if (isInserting) {
       context.missing(_enrichedJsonMeta);
+    }
+    if (data.containsKey('affected_document_id')) {
+      context.handle(
+        _affectedDocumentIdMeta,
+        affectedDocumentId.isAcceptableOrUnknown(
+          data['affected_document_id']!,
+          _affectedDocumentIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('voided_by_document_id')) {
+      context.handle(
+        _voidedByDocumentIdMeta,
+        voidedByDocumentId.isAcceptableOrUnknown(
+          data['voided_by_document_id']!,
+          _voidedByDocumentIdMeta,
+        ),
+      );
     }
     if (data.containsKey('device_id')) {
       context.handle(
@@ -4460,10 +4528,22 @@ class $DocumentsTable extends Documents
         DriftSqlType.dateTime,
         data['${effectivePrefix}next_attempt_at'],
       ),
+      inputJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}input_json'],
+      )!,
       enrichedJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}enriched_json'],
       )!,
+      affectedDocumentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}affected_document_id'],
+      ),
+      voidedByDocumentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voided_by_document_id'],
+      ),
       deviceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
@@ -4525,8 +4605,18 @@ class Document extends DataClass implements Insertable<Document> {
   final int attempts;
   final DateTime? nextAttemptAt;
 
+  /// What the user entered (xbuilder JSON), to fix and resend it or to
+  /// issue a copy
+  final String inputJson;
+
   /// The document as built (xbuilder JSON, enriched), for the PDF
   final String enrichedJson;
+
+  /// The document a nota de crédito/débito modifies
+  final String? affectedDocumentId;
+
+  /// The comunicación de baja or resumen that voids this document
+  final String? voidedByDocumentId;
 
   /// Device that issued it (DESIGN §3.1)
   final String deviceId;
@@ -4554,7 +4644,10 @@ class Document extends DataClass implements Insertable<Document> {
     required this.digestValue,
     required this.attempts,
     this.nextAttemptAt,
+    required this.inputJson,
     required this.enrichedJson,
+    this.affectedDocumentId,
+    this.voidedByDocumentId,
     required this.deviceId,
   });
   @override
@@ -4603,7 +4696,14 @@ class Document extends DataClass implements Insertable<Document> {
     if (!nullToAbsent || nextAttemptAt != null) {
       map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt);
     }
+    map['input_json'] = Variable<String>(inputJson);
     map['enriched_json'] = Variable<String>(enrichedJson);
+    if (!nullToAbsent || affectedDocumentId != null) {
+      map['affected_document_id'] = Variable<String>(affectedDocumentId);
+    }
+    if (!nullToAbsent || voidedByDocumentId != null) {
+      map['voided_by_document_id'] = Variable<String>(voidedByDocumentId);
+    }
     map['device_id'] = Variable<String>(deviceId);
     return map;
   }
@@ -4645,7 +4745,14 @@ class Document extends DataClass implements Insertable<Document> {
       nextAttemptAt: nextAttemptAt == null && nullToAbsent
           ? const Value.absent()
           : Value(nextAttemptAt),
+      inputJson: Value(inputJson),
       enrichedJson: Value(enrichedJson),
+      affectedDocumentId: affectedDocumentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(affectedDocumentId),
+      voidedByDocumentId: voidedByDocumentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidedByDocumentId),
       deviceId: Value(deviceId),
     );
   }
@@ -4687,7 +4794,14 @@ class Document extends DataClass implements Insertable<Document> {
       digestValue: serializer.fromJson<String>(json['digestValue']),
       attempts: serializer.fromJson<int>(json['attempts']),
       nextAttemptAt: serializer.fromJson<DateTime?>(json['nextAttemptAt']),
+      inputJson: serializer.fromJson<String>(json['inputJson']),
       enrichedJson: serializer.fromJson<String>(json['enrichedJson']),
+      affectedDocumentId: serializer.fromJson<String?>(
+        json['affectedDocumentId'],
+      ),
+      voidedByDocumentId: serializer.fromJson<String?>(
+        json['voidedByDocumentId'],
+      ),
       deviceId: serializer.fromJson<String>(json['deviceId']),
     );
   }
@@ -4724,7 +4838,10 @@ class Document extends DataClass implements Insertable<Document> {
       'digestValue': serializer.toJson<String>(digestValue),
       'attempts': serializer.toJson<int>(attempts),
       'nextAttemptAt': serializer.toJson<DateTime?>(nextAttemptAt),
+      'inputJson': serializer.toJson<String>(inputJson),
       'enrichedJson': serializer.toJson<String>(enrichedJson),
+      'affectedDocumentId': serializer.toJson<String?>(affectedDocumentId),
+      'voidedByDocumentId': serializer.toJson<String?>(voidedByDocumentId),
       'deviceId': serializer.toJson<String>(deviceId),
     };
   }
@@ -4753,7 +4870,10 @@ class Document extends DataClass implements Insertable<Document> {
     String? digestValue,
     int? attempts,
     Value<DateTime?> nextAttemptAt = const Value.absent(),
+    String? inputJson,
     String? enrichedJson,
+    Value<String?> affectedDocumentId = const Value.absent(),
+    Value<String?> voidedByDocumentId = const Value.absent(),
     String? deviceId,
   }) => Document(
     id: id ?? this.id,
@@ -4784,7 +4904,14 @@ class Document extends DataClass implements Insertable<Document> {
     nextAttemptAt: nextAttemptAt.present
         ? nextAttemptAt.value
         : this.nextAttemptAt,
+    inputJson: inputJson ?? this.inputJson,
     enrichedJson: enrichedJson ?? this.enrichedJson,
+    affectedDocumentId: affectedDocumentId.present
+        ? affectedDocumentId.value
+        : this.affectedDocumentId,
+    voidedByDocumentId: voidedByDocumentId.present
+        ? voidedByDocumentId.value
+        : this.voidedByDocumentId,
     deviceId: deviceId ?? this.deviceId,
   );
   Document copyWithCompanion(DocumentsCompanion data) {
@@ -4832,9 +4959,16 @@ class Document extends DataClass implements Insertable<Document> {
       nextAttemptAt: data.nextAttemptAt.present
           ? data.nextAttemptAt.value
           : this.nextAttemptAt,
+      inputJson: data.inputJson.present ? data.inputJson.value : this.inputJson,
       enrichedJson: data.enrichedJson.present
           ? data.enrichedJson.value
           : this.enrichedJson,
+      affectedDocumentId: data.affectedDocumentId.present
+          ? data.affectedDocumentId.value
+          : this.affectedDocumentId,
+      voidedByDocumentId: data.voidedByDocumentId.present
+          ? data.voidedByDocumentId.value
+          : this.voidedByDocumentId,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
@@ -4865,7 +4999,10 @@ class Document extends DataClass implements Insertable<Document> {
           ..write('digestValue: $digestValue, ')
           ..write('attempts: $attempts, ')
           ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('inputJson: $inputJson, ')
           ..write('enrichedJson: $enrichedJson, ')
+          ..write('affectedDocumentId: $affectedDocumentId, ')
+          ..write('voidedByDocumentId: $voidedByDocumentId, ')
           ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
@@ -4896,7 +5033,10 @@ class Document extends DataClass implements Insertable<Document> {
     digestValue,
     attempts,
     nextAttemptAt,
+    inputJson,
     enrichedJson,
+    affectedDocumentId,
+    voidedByDocumentId,
     deviceId,
   ]);
   @override
@@ -4926,7 +5066,10 @@ class Document extends DataClass implements Insertable<Document> {
           other.digestValue == this.digestValue &&
           other.attempts == this.attempts &&
           other.nextAttemptAt == this.nextAttemptAt &&
+          other.inputJson == this.inputJson &&
           other.enrichedJson == this.enrichedJson &&
+          other.affectedDocumentId == this.affectedDocumentId &&
+          other.voidedByDocumentId == this.voidedByDocumentId &&
           other.deviceId == this.deviceId);
 }
 
@@ -4954,7 +5097,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
   final Value<String> digestValue;
   final Value<int> attempts;
   final Value<DateTime?> nextAttemptAt;
+  final Value<String> inputJson;
   final Value<String> enrichedJson;
+  final Value<String?> affectedDocumentId;
+  final Value<String?> voidedByDocumentId;
   final Value<String> deviceId;
   final Value<int> rowid;
   const DocumentsCompanion({
@@ -4981,7 +5127,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     this.digestValue = const Value.absent(),
     this.attempts = const Value.absent(),
     this.nextAttemptAt = const Value.absent(),
+    this.inputJson = const Value.absent(),
     this.enrichedJson = const Value.absent(),
+    this.affectedDocumentId = const Value.absent(),
+    this.voidedByDocumentId = const Value.absent(),
     this.deviceId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -5009,7 +5158,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     required String digestValue,
     this.attempts = const Value.absent(),
     this.nextAttemptAt = const Value.absent(),
+    required String inputJson,
     required String enrichedJson,
+    this.affectedDocumentId = const Value.absent(),
+    this.voidedByDocumentId = const Value.absent(),
     required String deviceId,
     this.rowid = const Value.absent(),
   }) : companyId = Value(companyId),
@@ -5025,6 +5177,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
        total = Value(total),
        status = Value(status),
        digestValue = Value(digestValue),
+       inputJson = Value(inputJson),
        enrichedJson = Value(enrichedJson),
        deviceId = Value(deviceId);
   static Insertable<Document> custom({
@@ -5051,7 +5204,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Expression<String>? digestValue,
     Expression<int>? attempts,
     Expression<DateTime>? nextAttemptAt,
+    Expression<String>? inputJson,
     Expression<String>? enrichedJson,
+    Expression<String>? affectedDocumentId,
+    Expression<String>? voidedByDocumentId,
     Expression<String>? deviceId,
     Expression<int>? rowid,
   }) {
@@ -5081,7 +5237,12 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       if (digestValue != null) 'digest_value': digestValue,
       if (attempts != null) 'attempts': attempts,
       if (nextAttemptAt != null) 'next_attempt_at': nextAttemptAt,
+      if (inputJson != null) 'input_json': inputJson,
       if (enrichedJson != null) 'enriched_json': enrichedJson,
+      if (affectedDocumentId != null)
+        'affected_document_id': affectedDocumentId,
+      if (voidedByDocumentId != null)
+        'voided_by_document_id': voidedByDocumentId,
       if (deviceId != null) 'device_id': deviceId,
       if (rowid != null) 'rowid': rowid,
     });
@@ -5111,7 +5272,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Value<String>? digestValue,
     Value<int>? attempts,
     Value<DateTime?>? nextAttemptAt,
+    Value<String>? inputJson,
     Value<String>? enrichedJson,
+    Value<String?>? affectedDocumentId,
+    Value<String?>? voidedByDocumentId,
     Value<String>? deviceId,
     Value<int>? rowid,
   }) {
@@ -5140,7 +5304,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
       digestValue: digestValue ?? this.digestValue,
       attempts: attempts ?? this.attempts,
       nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
+      inputJson: inputJson ?? this.inputJson,
       enrichedJson: enrichedJson ?? this.enrichedJson,
+      affectedDocumentId: affectedDocumentId ?? this.affectedDocumentId,
+      voidedByDocumentId: voidedByDocumentId ?? this.voidedByDocumentId,
       deviceId: deviceId ?? this.deviceId,
       rowid: rowid ?? this.rowid,
     );
@@ -5226,8 +5393,17 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     if (nextAttemptAt.present) {
       map['next_attempt_at'] = Variable<DateTime>(nextAttemptAt.value);
     }
+    if (inputJson.present) {
+      map['input_json'] = Variable<String>(inputJson.value);
+    }
     if (enrichedJson.present) {
       map['enriched_json'] = Variable<String>(enrichedJson.value);
+    }
+    if (affectedDocumentId.present) {
+      map['affected_document_id'] = Variable<String>(affectedDocumentId.value);
+    }
+    if (voidedByDocumentId.present) {
+      map['voided_by_document_id'] = Variable<String>(voidedByDocumentId.value);
     }
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
@@ -5264,7 +5440,10 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           ..write('digestValue: $digestValue, ')
           ..write('attempts: $attempts, ')
           ..write('nextAttemptAt: $nextAttemptAt, ')
+          ..write('inputJson: $inputJson, ')
           ..write('enrichedJson: $enrichedJson, ')
+          ..write('affectedDocumentId: $affectedDocumentId, ')
+          ..write('voidedByDocumentId: $voidedByDocumentId, ')
           ..write('deviceId: $deviceId, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5355,6 +5534,15 @@ class $DocumentFilesTable extends DocumentFiles
     type: DriftSqlType.blob,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sha256Meta = const VerificationMeta('sha256');
+  @override
+  late final GeneratedColumn<String> sha256 = GeneratedColumn<String>(
+    'sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5364,6 +5552,7 @@ class $DocumentFilesTable extends DocumentFiles
     documentId,
     kind,
     bytes,
+    sha256,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5414,6 +5603,14 @@ class $DocumentFilesTable extends DocumentFiles
     } else if (isInserting) {
       context.missing(_bytesMeta);
     }
+    if (data.containsKey('sha256')) {
+      context.handle(
+        _sha256Meta,
+        sha256.isAcceptableOrUnknown(data['sha256']!, _sha256Meta),
+      );
+    } else if (isInserting) {
+      context.missing(_sha256Meta);
+    }
     return context;
   }
 
@@ -5457,6 +5654,10 @@ class $DocumentFilesTable extends DocumentFiles
         DriftSqlType.blob,
         data['${effectivePrefix}bytes'],
       )!,
+      sha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha256'],
+      )!,
     );
   }
 
@@ -5477,6 +5678,9 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
   final String documentId;
   final DocumentFileKind kind;
   final Uint8List bytes;
+
+  /// Hex SHA-256 of [bytes], to upload a file once (DESIGN §3.1)
+  final String sha256;
   const DocumentFile({
     required this.id,
     required this.createdAt,
@@ -5485,6 +5689,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     required this.documentId,
     required this.kind,
     required this.bytes,
+    required this.sha256,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5502,6 +5707,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       );
     }
     map['bytes'] = Variable<Uint8List>(bytes);
+    map['sha256'] = Variable<String>(sha256);
     return map;
   }
 
@@ -5516,6 +5722,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
       documentId: Value(documentId),
       kind: Value(kind),
       bytes: Value(bytes),
+      sha256: Value(sha256),
     );
   }
 
@@ -5534,6 +5741,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
         serializer.fromJson<String>(json['kind']),
       ),
       bytes: serializer.fromJson<Uint8List>(json['bytes']),
+      sha256: serializer.fromJson<String>(json['sha256']),
     );
   }
   @override
@@ -5549,6 +5757,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
         $DocumentFilesTable.$converterkind.toJson(kind),
       ),
       'bytes': serializer.toJson<Uint8List>(bytes),
+      'sha256': serializer.toJson<String>(sha256),
     };
   }
 
@@ -5560,6 +5769,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     String? documentId,
     DocumentFileKind? kind,
     Uint8List? bytes,
+    String? sha256,
   }) => DocumentFile(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -5568,6 +5778,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     documentId: documentId ?? this.documentId,
     kind: kind ?? this.kind,
     bytes: bytes ?? this.bytes,
+    sha256: sha256 ?? this.sha256,
   );
   DocumentFile copyWithCompanion(DocumentFilesCompanion data) {
     return DocumentFile(
@@ -5580,6 +5791,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
           : this.documentId,
       kind: data.kind.present ? data.kind.value : this.kind,
       bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      sha256: data.sha256.present ? data.sha256.value : this.sha256,
     );
   }
 
@@ -5592,7 +5804,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
           ..write('deletedAt: $deletedAt, ')
           ..write('documentId: $documentId, ')
           ..write('kind: $kind, ')
-          ..write('bytes: $bytes')
+          ..write('bytes: $bytes, ')
+          ..write('sha256: $sha256')
           ..write(')'))
         .toString();
   }
@@ -5606,6 +5819,7 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
     documentId,
     kind,
     $driftBlobEquality.hash(bytes),
+    sha256,
   );
   @override
   bool operator ==(Object other) =>
@@ -5617,7 +5831,8 @@ class DocumentFile extends DataClass implements Insertable<DocumentFile> {
           other.deletedAt == this.deletedAt &&
           other.documentId == this.documentId &&
           other.kind == this.kind &&
-          $driftBlobEquality.equals(other.bytes, this.bytes));
+          $driftBlobEquality.equals(other.bytes, this.bytes) &&
+          other.sha256 == this.sha256);
 }
 
 class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
@@ -5628,6 +5843,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
   final Value<String> documentId;
   final Value<DocumentFileKind> kind;
   final Value<Uint8List> bytes;
+  final Value<String> sha256;
   final Value<int> rowid;
   const DocumentFilesCompanion({
     this.id = const Value.absent(),
@@ -5637,6 +5853,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     this.documentId = const Value.absent(),
     this.kind = const Value.absent(),
     this.bytes = const Value.absent(),
+    this.sha256 = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DocumentFilesCompanion.insert({
@@ -5647,10 +5864,12 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     required String documentId,
     required DocumentFileKind kind,
     required Uint8List bytes,
+    required String sha256,
     this.rowid = const Value.absent(),
   }) : documentId = Value(documentId),
        kind = Value(kind),
-       bytes = Value(bytes);
+       bytes = Value(bytes),
+       sha256 = Value(sha256);
   static Insertable<DocumentFile> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -5659,6 +5878,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     Expression<String>? documentId,
     Expression<String>? kind,
     Expression<Uint8List>? bytes,
+    Expression<String>? sha256,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5669,6 +5889,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
       if (documentId != null) 'document_id': documentId,
       if (kind != null) 'kind': kind,
       if (bytes != null) 'bytes': bytes,
+      if (sha256 != null) 'sha256': sha256,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5681,6 +5902,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     Value<String>? documentId,
     Value<DocumentFileKind>? kind,
     Value<Uint8List>? bytes,
+    Value<String>? sha256,
     Value<int>? rowid,
   }) {
     return DocumentFilesCompanion(
@@ -5691,6 +5913,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
       documentId: documentId ?? this.documentId,
       kind: kind ?? this.kind,
       bytes: bytes ?? this.bytes,
+      sha256: sha256 ?? this.sha256,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5721,6 +5944,9 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
     if (bytes.present) {
       map['bytes'] = Variable<Uint8List>(bytes.value);
     }
+    if (sha256.present) {
+      map['sha256'] = Variable<String>(sha256.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5737,6 +5963,7 @@ class DocumentFilesCompanion extends UpdateCompanion<DocumentFile> {
           ..write('documentId: $documentId, ')
           ..write('kind: $kind, ')
           ..write('bytes: $bytes, ')
+          ..write('sha256: $sha256, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5837,6 +6064,17 @@ class $DocumentEventsTable extends DocumentEvents
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5847,6 +6085,7 @@ class $DocumentEventsTable extends DocumentEvents
     status,
     code,
     message,
+    deviceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5901,6 +6140,14 @@ class $DocumentEventsTable extends DocumentEvents
         message.isAcceptableOrUnknown(data['message']!, _messageMeta),
       );
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
     return context;
   }
 
@@ -5944,6 +6191,10 @@ class $DocumentEventsTable extends DocumentEvents
         DriftSqlType.string,
         data['${effectivePrefix}message'],
       ),
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
     );
   }
 
@@ -5965,6 +6216,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
   final DocumentStatus status;
   final String? code;
   final String? message;
+  final String deviceId;
   const DocumentEvent({
     required this.id,
     required this.createdAt,
@@ -5974,6 +6226,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
     required this.status,
     this.code,
     this.message,
+    required this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5996,6 +6249,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
     if (!nullToAbsent || message != null) {
       map['message'] = Variable<String>(message);
     }
+    map['device_id'] = Variable<String>(deviceId);
     return map;
   }
 
@@ -6013,6 +6267,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
       message: message == null && nullToAbsent
           ? const Value.absent()
           : Value(message),
+      deviceId: Value(deviceId),
     );
   }
 
@@ -6032,6 +6287,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
       ),
       code: serializer.fromJson<String?>(json['code']),
       message: serializer.fromJson<String?>(json['message']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
     );
   }
   @override
@@ -6048,6 +6304,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
       ),
       'code': serializer.toJson<String?>(code),
       'message': serializer.toJson<String?>(message),
+      'deviceId': serializer.toJson<String>(deviceId),
     };
   }
 
@@ -6060,6 +6317,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
     DocumentStatus? status,
     Value<String?> code = const Value.absent(),
     Value<String?> message = const Value.absent(),
+    String? deviceId,
   }) => DocumentEvent(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -6069,6 +6327,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
     status: status ?? this.status,
     code: code.present ? code.value : this.code,
     message: message.present ? message.value : this.message,
+    deviceId: deviceId ?? this.deviceId,
   );
   DocumentEvent copyWithCompanion(DocumentEventsCompanion data) {
     return DocumentEvent(
@@ -6082,6 +6341,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
       status: data.status.present ? data.status.value : this.status,
       code: data.code.present ? data.code.value : this.code,
       message: data.message.present ? data.message.value : this.message,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -6095,7 +6355,8 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
           ..write('documentId: $documentId, ')
           ..write('status: $status, ')
           ..write('code: $code, ')
-          ..write('message: $message')
+          ..write('message: $message, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -6110,6 +6371,7 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
     status,
     code,
     message,
+    deviceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -6122,7 +6384,8 @@ class DocumentEvent extends DataClass implements Insertable<DocumentEvent> {
           other.documentId == this.documentId &&
           other.status == this.status &&
           other.code == this.code &&
-          other.message == this.message);
+          other.message == this.message &&
+          other.deviceId == this.deviceId);
 }
 
 class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
@@ -6134,6 +6397,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
   final Value<DocumentStatus> status;
   final Value<String?> code;
   final Value<String?> message;
+  final Value<String> deviceId;
   final Value<int> rowid;
   const DocumentEventsCompanion({
     this.id = const Value.absent(),
@@ -6144,6 +6408,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
     this.status = const Value.absent(),
     this.code = const Value.absent(),
     this.message = const Value.absent(),
+    this.deviceId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DocumentEventsCompanion.insert({
@@ -6155,9 +6420,11 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
     required DocumentStatus status,
     this.code = const Value.absent(),
     this.message = const Value.absent(),
+    required String deviceId,
     this.rowid = const Value.absent(),
   }) : documentId = Value(documentId),
-       status = Value(status);
+       status = Value(status),
+       deviceId = Value(deviceId);
   static Insertable<DocumentEvent> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -6167,6 +6434,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
     Expression<String>? status,
     Expression<String>? code,
     Expression<String>? message,
+    Expression<String>? deviceId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6178,6 +6446,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
       if (status != null) 'status': status,
       if (code != null) 'code': code,
       if (message != null) 'message': message,
+      if (deviceId != null) 'device_id': deviceId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6191,6 +6460,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
     Value<DocumentStatus>? status,
     Value<String?>? code,
     Value<String?>? message,
+    Value<String>? deviceId,
     Value<int>? rowid,
   }) {
     return DocumentEventsCompanion(
@@ -6202,6 +6472,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
       status: status ?? this.status,
       code: code ?? this.code,
       message: message ?? this.message,
+      deviceId: deviceId ?? this.deviceId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6235,6 +6506,9 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
     if (message.present) {
       map['message'] = Variable<String>(message.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6252,6 +6526,7 @@ class DocumentEventsCompanion extends UpdateCompanion<DocumentEvent> {
           ..write('status: $status, ')
           ..write('code: $code, ')
           ..write('message: $message, ')
+          ..write('deviceId: $deviceId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6489,6 +6764,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'documents_number',
     'CREATE UNIQUE INDEX documents_number ON documents (company_id, environment, tipo_comprobante, serie, numero)',
   );
+  late final Index documentsList = Index(
+    'documents_list',
+    'CREATE INDEX documents_list ON documents (company_id, environment, created_at)',
+  );
+  late final Index documentsOutbox = Index(
+    'documents_outbox',
+    'CREATE INDEX documents_outbox ON documents (status, next_attempt_at)',
+  );
+  late final Index documentEventsTimeline = Index(
+    'document_events_timeline',
+    'CREATE INDEX document_events_timeline ON document_events (document_id, created_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6505,6 +6792,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     companiesRuc,
     customersDocument,
     documentsNumber,
+    documentsList,
+    documentsOutbox,
+    documentEventsTimeline,
   ];
   @override
   DriftDatabaseOptions get options =>
@@ -8979,7 +9269,10 @@ typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
   required String digestValue,
   Value<int> attempts,
   Value<DateTime?> nextAttemptAt,
+  required String inputJson,
   required String enrichedJson,
+  Value<String?> affectedDocumentId,
+  Value<String?> voidedByDocumentId,
   required String deviceId,
   Value<int> rowid,
 });
@@ -9007,7 +9300,10 @@ typedef $$DocumentsTableUpdateCompanionBuilder = DocumentsCompanion Function({
   Value<String> digestValue,
   Value<int> attempts,
   Value<DateTime?> nextAttemptAt,
+  Value<String> inputJson,
   Value<String> enrichedJson,
+  Value<String?> affectedDocumentId,
+  Value<String?> voidedByDocumentId,
   Value<String> deviceId,
   Value<int> rowid,
 });
@@ -9027,6 +9323,42 @@ final class $$DocumentsTableReferences
       $_db.companies,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_companyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $DocumentsTable _affectedDocumentIdTable(_$AppDatabase db) => db
+      .documents
+      .createAlias('documents__affected_document_id__documents__id');
+
+  $$DocumentsTableProcessedTableManager? get affectedDocumentId {
+    final $_column = $_itemColumn<String>('affected_document_id');
+    if ($_column == null) return null;
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_affectedDocumentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $DocumentsTable _voidedByDocumentIdTable(_$AppDatabase db) => db
+      .documents
+      .createAlias('documents__voided_by_document_id__documents__id');
+
+  $$DocumentsTableProcessedTableManager? get voidedByDocumentId {
+    final $_column = $_itemColumn<String>('voided_by_document_id');
+    if ($_column == null) return null;
+    final manager = $$DocumentsTableTableManager(
+      $_db,
+      $_db.documents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_voidedByDocumentIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -9191,6 +9523,11 @@ class $$DocumentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get inputJson => $composableBuilder(
+    column: $table.inputJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get enrichedJson => $composableBuilder(
     column: $table.enrichedJson,
     builder: (column) => ColumnFilters(column),
@@ -9215,6 +9552,52 @@ class $$DocumentsTableFilterComposer
           }) => $$CompaniesTableFilterComposer(
             $db: $db,
             $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableFilterComposer get affectedDocumentId {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.affectedDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableFilterComposer get voidedByDocumentId {
+    final $$DocumentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voidedByDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableFilterComposer(
+            $db: $db,
+            $table: $db.documents,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9394,6 +9777,11 @@ class $$DocumentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get inputJson => $composableBuilder(
+    column: $table.inputJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get enrichedJson => $composableBuilder(
     column: $table.enrichedJson,
     builder: (column) => ColumnOrderings(column),
@@ -9418,6 +9806,52 @@ class $$DocumentsTableOrderingComposer
           }) => $$CompaniesTableOrderingComposer(
             $db: $db,
             $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableOrderingComposer get affectedDocumentId {
+    final $$DocumentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.affectedDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableOrderingComposer get voidedByDocumentId {
+    final $$DocumentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voidedByDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.documents,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9524,6 +9958,9 @@ class $$DocumentsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get inputJson =>
+      $composableBuilder(column: $table.inputJson, builder: (column) => column);
+
   GeneratedColumn<String> get enrichedJson => $composableBuilder(
     column: $table.enrichedJson,
     builder: (column) => column,
@@ -9546,6 +9983,52 @@ class $$DocumentsTableAnnotationComposer
           }) => $$CompaniesTableAnnotationComposer(
             $db: $db,
             $table: $db.companies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableAnnotationComposer get affectedDocumentId {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.affectedDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$DocumentsTableAnnotationComposer get voidedByDocumentId {
+    final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.voidedByDocumentId,
+      referencedTable: $db.documents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DocumentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.documents,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9621,6 +10104,8 @@ class $$DocumentsTableTableManager
           Document,
           PrefetchHooks Function({
             bool companyId,
+            bool affectedDocumentId,
+            bool voidedByDocumentId,
             bool documentFilesRefs,
             bool documentEventsRefs,
           })
@@ -9661,7 +10146,10 @@ class $$DocumentsTableTableManager
                 Value<String> digestValue = const Value.absent(),
                 Value<int> attempts = const Value.absent(),
                 Value<DateTime?> nextAttemptAt = const Value.absent(),
+                Value<String> inputJson = const Value.absent(),
                 Value<String> enrichedJson = const Value.absent(),
+                Value<String?> affectedDocumentId = const Value.absent(),
+                Value<String?> voidedByDocumentId = const Value.absent(),
                 Value<String> deviceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsCompanion(
@@ -9688,7 +10176,10 @@ class $$DocumentsTableTableManager
                 digestValue: digestValue,
                 attempts: attempts,
                 nextAttemptAt: nextAttemptAt,
+                inputJson: inputJson,
                 enrichedJson: enrichedJson,
+                affectedDocumentId: affectedDocumentId,
+                voidedByDocumentId: voidedByDocumentId,
                 deviceId: deviceId,
                 rowid: rowid,
               ),
@@ -9717,7 +10208,10 @@ class $$DocumentsTableTableManager
                 required String digestValue,
                 Value<int> attempts = const Value.absent(),
                 Value<DateTime?> nextAttemptAt = const Value.absent(),
+                required String inputJson,
                 required String enrichedJson,
+                Value<String?> affectedDocumentId = const Value.absent(),
+                Value<String?> voidedByDocumentId = const Value.absent(),
                 required String deviceId,
                 Value<int> rowid = const Value.absent(),
               }) => DocumentsCompanion.insert(
@@ -9744,7 +10238,10 @@ class $$DocumentsTableTableManager
                 digestValue: digestValue,
                 attempts: attempts,
                 nextAttemptAt: nextAttemptAt,
+                inputJson: inputJson,
                 enrichedJson: enrichedJson,
+                affectedDocumentId: affectedDocumentId,
+                voidedByDocumentId: voidedByDocumentId,
                 deviceId: deviceId,
                 rowid: rowid,
               ),
@@ -9759,6 +10256,8 @@ class $$DocumentsTableTableManager
           prefetchHooksCallback:
               ({
                 companyId = false,
+                affectedDocumentId = false,
+                voidedByDocumentId = false,
                 documentFilesRefs = false,
                 documentEventsRefs = false,
               }) {
@@ -9792,6 +10291,28 @@ class $$DocumentsTableTableManager
                                 ._companyIdTable(db),
                             referencedColumn: $$DocumentsTableReferences
                                 ._companyIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (affectedDocumentId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.affectedDocumentId,
+                            referencedTable: $$DocumentsTableReferences
+                                ._affectedDocumentIdTable(db),
+                            referencedColumn: $$DocumentsTableReferences
+                                ._affectedDocumentIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (voidedByDocumentId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.voidedByDocumentId,
+                            referencedTable: $$DocumentsTableReferences
+                                ._voidedByDocumentIdTable(db),
+                            referencedColumn: $$DocumentsTableReferences
+                                ._voidedByDocumentIdTable(db)
                                 .id,
                           ) as T;
                         }
@@ -9862,6 +10383,8 @@ typedef $$DocumentsTableProcessedTableManager =
       Document,
       PrefetchHooks Function({
         bool companyId,
+        bool affectedDocumentId,
+        bool voidedByDocumentId,
         bool documentFilesRefs,
         bool documentEventsRefs,
       })
@@ -9875,6 +10398,7 @@ typedef $$DocumentFilesTableCreateCompanionBuilder =
       required String documentId,
       required DocumentFileKind kind,
       required Uint8List bytes,
+      required String sha256,
       Value<int> rowid,
     });
 typedef $$DocumentFilesTableUpdateCompanionBuilder =
@@ -9886,6 +10410,7 @@ typedef $$DocumentFilesTableUpdateCompanionBuilder =
       Value<String> documentId,
       Value<DocumentFileKind> kind,
       Value<Uint8List> bytes,
+      Value<String> sha256,
       Value<int> rowid,
     });
 
@@ -9955,6 +10480,11 @@ class $$DocumentFilesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$DocumentsTableFilterComposer get documentId {
     final $$DocumentsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -10018,6 +10548,11 @@ class $$DocumentFilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sha256 => $composableBuilder(
+    column: $table.sha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DocumentsTableOrderingComposer get documentId {
     final $$DocumentsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10068,6 +10603,9 @@ class $$DocumentFilesTableAnnotationComposer
 
   GeneratedColumn<Uint8List> get bytes =>
       $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<String> get sha256 =>
+      $composableBuilder(column: $table.sha256, builder: (column) => column);
 
   $$DocumentsTableAnnotationComposer get documentId {
     final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
@@ -10128,6 +10666,7 @@ class $$DocumentFilesTableTableManager
                 Value<String> documentId = const Value.absent(),
                 Value<DocumentFileKind> kind = const Value.absent(),
                 Value<Uint8List> bytes = const Value.absent(),
+                Value<String> sha256 = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentFilesCompanion(
                 id: id,
@@ -10137,6 +10676,7 @@ class $$DocumentFilesTableTableManager
                 documentId: documentId,
                 kind: kind,
                 bytes: bytes,
+                sha256: sha256,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10148,6 +10688,7 @@ class $$DocumentFilesTableTableManager
                 required String documentId,
                 required DocumentFileKind kind,
                 required Uint8List bytes,
+                required String sha256,
                 Value<int> rowid = const Value.absent(),
               }) => DocumentFilesCompanion.insert(
                 id: id,
@@ -10157,6 +10698,7 @@ class $$DocumentFilesTableTableManager
                 documentId: documentId,
                 kind: kind,
                 bytes: bytes,
+                sha256: sha256,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10234,6 +10776,7 @@ typedef $$DocumentEventsTableCreateCompanionBuilder =
       required DocumentStatus status,
       Value<String?> code,
       Value<String?> message,
+      required String deviceId,
       Value<int> rowid,
     });
 typedef $$DocumentEventsTableUpdateCompanionBuilder =
@@ -10246,6 +10789,7 @@ typedef $$DocumentEventsTableUpdateCompanionBuilder =
       Value<DocumentStatus> status,
       Value<String?> code,
       Value<String?> message,
+      Value<String> deviceId,
       Value<int> rowid,
     });
 
@@ -10320,6 +10864,11 @@ class $$DocumentEventsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$DocumentsTableFilterComposer get documentId {
     final $$DocumentsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -10388,6 +10937,11 @@ class $$DocumentEventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$DocumentsTableOrderingComposer get documentId {
     final $$DocumentsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10441,6 +10995,9 @@ class $$DocumentEventsTableAnnotationComposer
 
   GeneratedColumn<String> get message =>
       $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 
   $$DocumentsTableAnnotationComposer get documentId {
     final $$DocumentsTableAnnotationComposer composer = $composerBuilder(
@@ -10504,6 +11061,7 @@ class $$DocumentEventsTableTableManager
                 Value<DocumentStatus> status = const Value.absent(),
                 Value<String?> code = const Value.absent(),
                 Value<String?> message = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DocumentEventsCompanion(
                 id: id,
@@ -10514,6 +11072,7 @@ class $$DocumentEventsTableTableManager
                 status: status,
                 code: code,
                 message: message,
+                deviceId: deviceId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10526,6 +11085,7 @@ class $$DocumentEventsTableTableManager
                 required DocumentStatus status,
                 Value<String?> code = const Value.absent(),
                 Value<String?> message = const Value.absent(),
+                required String deviceId,
                 Value<int> rowid = const Value.absent(),
               }) => DocumentEventsCompanion.insert(
                 id: id,
@@ -10536,6 +11096,7 @@ class $$DocumentEventsTableTableManager
                 status: status,
                 code: code,
                 message: message,
+                deviceId: deviceId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -21,4 +21,19 @@ void main() {
     expect(percentToFraction('100'), '1.00');
     expect(percentToFraction('250'), '2.50');
   });
+
+  test('roundAmount rounds half up', () {
+    expect(roundAmount('30.300000000000000000000000000'), '30.30');
+    expect(roundAmount('118'), '118.00');
+    expect(roundAmount('0.005'), '0.01');
+    expect(roundAmount('2.344'), '2.34');
+    expect(roundAmount('9.995'), '10.00');
+    expect(roundAmount('-1.5'), '-1.50');
+  });
+
+  test('toCents', () {
+    expect(toCents('700'), BigInt.from(70000));
+    expect(toCents('700.004'), BigInt.from(70000));
+    expect(toCents('590.5'), BigInt.from(59050));
+  });
 }

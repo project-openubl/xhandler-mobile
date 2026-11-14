@@ -49,6 +49,42 @@ class DocumentRepository {
     )..where((f) => f.documentId.equals(documentId) & f.kind.equalsValue(kind));
     return (await query.getSingleOrNull())?.bytes;
   }
+
+  /// Documents waiting for SUNAT whose next attempt is due (the outbox)
+  Future<List<Document>> due(DateTime now) {
+    final query = _db.select(_db.documents)
+      ..where(
+        (d) =>
+            d.deletedAt.isNull() &
+            d.status.isInValues(const [
+              DocumentStatus.pendingSend,
+              DocumentStatus.inProgress,
+            ]) &
+            (d.nextAttemptAt.isNull() |
+                d.nextAttemptAt.isSmallerOrEqualValue(now)),
+      )
+      ..orderBy([(d) => OrderingTerm(expression: d.createdAt)]);
+    return query.get();
+  }
+
+  /// Highest number issued in the serie, 0 when none
+  Future<int> lastNumero(
+    String companyId,
+    SunatEnvironment environment,
+    String tipoComprobante,
+    String serie,
+  ) async {
+    final last = _db.documents.numero.max();
+    final query = _db.selectOnly(_db.documents)
+      ..addColumns([last])
+      ..where(
+        _db.documents.companyId.equals(companyId) &
+            _db.documents.environment.equalsValue(environment) &
+            _db.documents.tipoComprobante.equals(tipoComprobante) &
+            _db.documents.serie.equals(serie),
+      );
+    return (await query.map((row) => row.read(last)).getSingle()) ?? 0;
+  }
 }
 
 final documentRepositoryProvider = Provider(

@@ -9,7 +9,7 @@ import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `from_cdr`, `from_client_error`, `from_fault`, `into_response`, `response`, `sender`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`
 
 /// Sends a signed document. Guias de remision can't be sent to beta, which
 /// SUNAT doesn't have for them.
@@ -33,6 +33,23 @@ Future<SunatResponse> verifyTicket({
   xml: xml,
   ticket: ticket,
   environment: environment,
+  credentials: credentials,
+);
+
+/// The CDR of a document SUNAT already registered, e.g. when a resend
+/// answers 1033 because the first send timed out after SUNAT got it.
+/// SUNAT's consult service only exists in production.
+Future<SunatResponse> getStatusCdr({
+  required String ruc,
+  required String tipoComprobante,
+  required String serie,
+  required int numero,
+  required SunatCredentials credentials,
+}) => RustLib.instance.api.crateApiSunatGetStatusCdr(
+  ruc: ruc,
+  tipoComprobante: tipoComprobante,
+  serie: serie,
+  numero: numero,
   credentials: credentials,
 );
 

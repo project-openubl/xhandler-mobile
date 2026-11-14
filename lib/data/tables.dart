@@ -180,6 +180,13 @@ enum DocumentStatus {
   'CREATE UNIQUE INDEX documents_number ON documents '
   '(company_id, environment, tipo_comprobante, serie, numero)',
 )
+@TableIndex.sql(
+  'CREATE INDEX documents_list ON documents '
+  '(company_id, environment, created_at)',
+)
+@TableIndex.sql(
+  'CREATE INDEX documents_outbox ON documents (status, next_attempt_at)',
+)
 class Documents extends Table with SyncColumns {
   TextColumn get companyId => text().references(Companies, #id)();
 
@@ -217,8 +224,20 @@ class Documents extends Table with SyncColumns {
   IntColumn get attempts => integer().withDefault(const Constant(0))();
   DateTimeColumn get nextAttemptAt => dateTime().nullable()();
 
+  /// What the user entered (xbuilder JSON), to fix and resend it or to
+  /// issue a copy
+  TextColumn get inputJson => text()();
+
   /// The document as built (xbuilder JSON, enriched), for the PDF
   TextColumn get enrichedJson => text()();
+
+  /// The document a nota de crédito/débito modifies
+  TextColumn get affectedDocumentId =>
+      text().nullable().references(Documents, #id)();
+
+  /// The comunicación de baja or resumen that voids this document
+  TextColumn get voidedByDocumentId =>
+      text().nullable().references(Documents, #id)();
 
   /// Device that issued it (DESIGN §3.1)
   TextColumn get deviceId => text()();
@@ -231,6 +250,9 @@ class DocumentFiles extends Table with SyncColumns {
   TextColumn get kind => textEnum<DocumentFileKind>()();
   BlobColumn get bytes => blob()();
 
+  /// Hex SHA-256 of [bytes], to upload a file once (DESIGN §3.1)
+  TextColumn get sha256 => text()();
+
   @override
   List<Set<Column>> get uniqueKeys => [
     {documentId, kind},
@@ -238,11 +260,16 @@ class DocumentFiles extends Table with SyncColumns {
 }
 
 /// Timeline of a document: every status change and SUNAT answer
+@TableIndex.sql(
+  'CREATE INDEX document_events_timeline ON document_events '
+  '(document_id, created_at)',
+)
 class DocumentEvents extends Table with SyncColumns {
   TextColumn get documentId => text().references(Documents, #id)();
   TextColumn get status => textEnum<DocumentStatus>()();
   TextColumn get code => text().nullable()();
   TextColumn get message => text().nullable()();
+  TextColumn get deviceId => text()();
 }
 
 /// Settings of this device (not synced)

@@ -27,3 +27,22 @@ String percentToFraction(String percent) {
       .replaceFirst(RegExp(r'^0+(?=\d)'), '');
   return '$whole.${padded.substring(padded.length - 2)}$decimals';
 }
+
+/// [amount] rounded half-up to [scale] decimals: "30.3000000000" → "30.30"
+String roundAmount(String amount, [int scale = 2]) {
+  final negative = amount.startsWith('-');
+  final digits = negative ? amount.substring(1) : amount;
+  final [integer, decimals] = digits.contains('.')
+      ? digits.split('.')
+      : [digits, ''];
+  final padded = decimals.padRight(scale + 1, '0');
+  var units = BigInt.parse('$integer${padded.substring(0, scale)}');
+  if (int.parse(padded[scale]) >= 5) units += BigInt.one;
+  final text = units.toString().padLeft(scale + 1, '0');
+  final split = text.length - scale;
+  return '${negative ? '-' : ''}${text.substring(0, split)}.${text.substring(split)}';
+}
+
+/// [amount] in cents, to compare and add amounts exactly
+BigInt toCents(String amount) =>
+    BigInt.parse(roundAmount(amount).replaceAll('.', ''));

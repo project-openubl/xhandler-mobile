@@ -7,9 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/company/company_repository.dart';
+import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/sunat_bridge.dart';
+import 'package:xhandler_mobile/features/series/series_repository.dart';
 import 'package:xhandler_mobile/src/rust/api/document.dart';
 import 'package:xhandler_mobile/src/rust/api/error.dart';
 import 'package:xhandler_mobile/src/rust/api/signer.dart';
@@ -18,6 +20,7 @@ import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 /// Answers like the bridge without the native library
 class FakeBridge implements SunatBridge {
   final builtJson = <String>[];
+  String total = '118.000000000000';
   final responses = <SunatResponse>[];
   final calls = <String>[];
   BridgeError? buildError;
@@ -36,7 +39,7 @@ class FakeBridge implements SunatBridge {
         'kind': 'Invoice',
         'spec': {
           ...spec,
-          'total_importe': {'importe': '118.00'},
+          'total_importe': {'importe': total},
         },
       }),
     );
@@ -56,6 +59,16 @@ class FakeBridge implements SunatBridge {
     SunatCredentials credentials,
   ) async {
     calls.add('send ${credentials.username}');
+    return responses.removeAt(0);
+  }
+
+  @override
+  Future<SunatResponse> recover(
+    Document document,
+    String ruc,
+    SunatCredentials credentials,
+  ) async {
+    calls.add('recover ${document.serie}-${document.numero}');
     return responses.removeAt(0);
   }
 
@@ -95,6 +108,7 @@ void main() {
     bridge = FakeBridge();
     service = DocumentService(
       database,
+      DocumentRepository(database),
       SecureStore(),
       bridge,
       demoCertificate: () async => Uint8List(1),
@@ -127,7 +141,7 @@ void main() {
       expect(first.numero, 1);
       expect((await document(second)).numero, 2);
       expect(first.status, DocumentStatus.pendingSend);
-      expect(first.total, '118.00');
+      expect(first.total, '118.00'); // rounded
       expect(first.digestValue, 'hash');
 
       final spec = (jsonDecode(bridge.builtJson.first) as Map)['spec'] as Map;
@@ -272,6 +286,244 @@ void main() {
 
       expect((await document(due)).status, DocumentStatus.accepted);
       expect((await document(later)).status, DocumentStatus.pendingSend);
+    });
+  });
+
+  group('emit checks the draft before using a number', () {
+    Future<void> expectProblem(
+      InvoiceDraft draft,
+      DraftProblem problem, {
+      Serie? serie,
+    }) async {
+      await expectLater(
+        service.emit(company: company, serie: serie ?? f001, draft: draft),
+        throwsA(
+          isA<InvalidDraftError>().having((e) => e.problem, 'problem', problem),
+        ),
+      );
+      expect(await database.select(database.documents).get(), isEmpty);
+    }
+
+    test('facturas are for RUC customers', () async {
+      await expectProblem(
+        const InvoiceDraft(
+          tipoComprobante: '01',
+          moneda: 'PEN',
+          customer: anonymousCustomer,
+          lines: [DraftLine(descripcion: 'x', cantidad: '1', precio: '1')],
+        ),
+        DraftProblem.facturaWithoutRuc,
+      );
+    });
+
+    test('anonymous boletas up to S/ 700', () async {
+      final b001 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('B001'))).getSingle();
+      bridge.total = '700.01';
+      await expectProblem(
+        const InvoiceDraft(
+          tipoComprobante: '03',
+          moneda: 'PEN',
+          customer: anonymousCustomer,
+          lines: [DraftLine(descripcion: 'x', cantidad: '1', precio: '700.01')],
+        ),
+        DraftProblem.anonymousOver700,
+        serie: b001,
+      );
+    });
+
+    test('installments add up to the total, after today', () async {
+      await expectProblem(
+        const InvoiceDraft(
+          tipoComprobante: '01',
+          moneda: 'PEN',
+          customer: DraftCustomer(
+            tipoDocumentoIdentidad: '6',
+            numeroDocumentoIdentidad: '20100070970',
+            nombre: 'Cliente',
+          ),
+          lines: [DraftLine(descripcion: 'x', cantidad: '2', precio: '59')],
+          cuotas: [DraftCuota(importe: '100', fechaPago: '2099-01-01')],
+        ),
+        DraftProblem.cuotasMismatch,
+      );
+    });
+
+    test('the serie must be of the document type', () async {
+      final b001 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('B001'))).getSingle();
+      await expectLater(
+        service.emit(company: company, serie: b001, draft: _draft),
+        throwsA(isA<StateError>()),
+      );
+    });
+  });
+
+  test('a lowered next number never reuses an issued one', () async {
+    await emit();
+    await emit();
+    await (database.update(database.series)..where((s) => s.id.equals(f001.id)))
+        .write(const SeriesCompanion(nextNumber: Value(1)));
+
+    final third = await emit();
+
+    expect((await document(third)).numero, 3);
+  });
+
+  group('send, more cases', () {
+    test('keeps the observations of an accepted document', () async {
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(
+          status: SunatStatus.accepted,
+          code: '0',
+          notes: ['4252 - El dato ingresado como atributo no cumple'],
+        ),
+      );
+
+      expect(await service.send(id), DocumentStatus.acceptedWithObservations);
+      expect(jsonDecode((await document(id)).sunatNotes!), hasLength(1));
+    });
+
+    test('does nothing to a document SUNAT already answered', () async {
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+      await service.send(id);
+
+      expect(await service.send(id, manual: true), DocumentStatus.accepted);
+      expect(bridge.calls, hasLength(1));
+    });
+
+    test('runs one send at a time', () async {
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+
+      final results = await Future.wait([service.sendDue(), service.sendDue()]);
+
+      expect(results, hasLength(2));
+      expect(bridge.calls, hasLength(1));
+      expect((await document(id)).status, DocumentStatus.accepted);
+    });
+
+    test('a resend after an exception sends again instead of checking the old ticket', () async {
+      final id = await emit();
+      bridge.responses.addAll([
+        const SunatResponse(
+          status: SunatStatus.inProgress,
+          notes: [],
+          ticket: 'T1',
+        ),
+        const SunatResponse(
+          status: SunatStatus.exception,
+          code: '0111',
+          notes: [],
+        ),
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      ]);
+
+      await service.send(id); // ticket
+      await service.send(id); // the ticket ends in an exception
+      expect((await document(id)).ticket, isNull);
+      await service.send(id, manual: true);
+
+      expect(bridge.calls, [
+        'send 20123456789MODDATOS',
+        'verify T1',
+        'send 20123456789MODDATOS',
+      ]);
+    });
+
+    test('1033 recovers the CDR in production, is unknown in beta', () async {
+      final beta = await emit();
+      const registered = SunatResponse(
+        status: SunatStatus.exception,
+        code: '1033',
+        description: 'El comprobante fue registrado previamente',
+        notes: [],
+      );
+      bridge.responses.add(registered);
+      expect(await service.send(beta), DocumentStatus.unknown);
+
+      final secureStore = SecureStore();
+      await secureStore.writeCompanySecrets(company.id, {
+        CompanySecret.certificate: base64Encode([1]),
+        CompanySecret.solUsername: '20123456789USUARIO',
+        CompanySecret.solPassword: 'clave',
+      });
+      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
+      await SeriesRepository(database)
+          .resetNumbers(company.id, SunatEnvironment.production);
+      final production = await emit();
+      bridge.responses.addAll([
+        registered,
+        SunatResponse(
+          status: SunatStatus.accepted,
+          code: '0',
+          notes: const [],
+          cdrZip: Uint8List(1),
+        ),
+      ]);
+
+      expect(await service.send(production), DocumentStatus.accepted);
+      expect(bridge.calls.last, 'recover F001-1');
+      expect(bridge.calls[bridge.calls.length - 2], 'send 20123456789USUARIO');
+    });
+
+    test('production without SOL credentials says so', () async {
+      await SecureStore().writeCompanySecrets(company.id, {
+        CompanySecret.certificate: base64Encode([1]),
+      });
+      company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
+      final id = await emit();
+
+      expect(await service.send(id), DocumentStatus.exception);
+      expect((await document(id)).sunatCode, LocalCodes.noCredentials);
+      expect(bridge.calls, isEmpty);
+    });
+
+    test("an unreadable answer is asked again later; other errors don't stop the outbox", () async {
+      final first = await emit();
+      final second = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+      await (database.delete(
+        database.documentFiles,
+      )..where((f) => f.documentId.equals(first))).go();
+
+      await service.sendDue();
+
+      expect((await document(first)).status, DocumentStatus.exception);
+      expect((await document(first)).sunatCode, LocalCodes.error);
+      expect((await document(second)).status, DocumentStatus.accepted);
+    });
+
+    test('repeated failures update one event instead of piling up', () async {
+      final id = await emit();
+      const noAnswer = SunatResponse(
+        status: SunatStatus.notDelivered,
+        description: 'timeout',
+        notes: [],
+      );
+      bridge.responses.addAll([noAnswer, noAnswer, noAnswer]);
+      for (var i = 0; i < 3; i++) {
+        await (database.update(database.documents)
+              ..where((d) => d.id.equals(id)))
+            .write(const DocumentsCompanion(nextAttemptAt: Value(null)));
+        await service.send(id);
+      }
+
+      final events = await (database.select(
+        database.documentEvents,
+      )..where((e) => e.documentId.equals(id))).get();
+      // Issued and its three retries are one "pending" event
+      expect(events.single.message, 'timeout');
     });
   });
 

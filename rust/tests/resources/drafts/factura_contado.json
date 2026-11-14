@@ -1,0 +1,62 @@
+{
+  "kind": "Invoice",
+  "spec": {
+    "serie_numero": "F001-1",
+    "tipo_comprobante": "01",
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A.",
+      "direccion": {
+        "direccion": "CAL. MORELLI 181",
+        "distrito": "SAN BORJA",
+        "provincia": "LIMA",
+        "departamento": "LIMA",
+        "ubigeo": "150130"
+      },
+      "contacto": {
+        "email": "compras@example.com"
+      }
+    },
+    "detalles": [
+      {
+        "descripcion": "Cerveza",
+        "cantidad": "6",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "7.50",
+        "igv_tipo": "10",
+        "codigo": "CER-01",
+        "codigo_sunat": "50202201",
+        "isc_tipo": "01",
+        "isc_tasa": "0.30",
+        "icb_aplica": false
+      },
+      {
+        "descripcion": "Bolsa plástica",
+        "cantidad": "1",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "0.10",
+        "igv_tipo": "10",
+        "icb_aplica": true
+      }
+    ],
+    "forma_pago": {
+      "tipo": "Contado"
+    }
+  }
+}

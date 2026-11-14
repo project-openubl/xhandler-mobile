@@ -91,6 +91,27 @@ pub(crate) mod tests {
         );
     }
 
+    /// The JSON the Flutter app produces (test/features/invoice_draft_test.dart
+    /// writes these files) must build and sign
+    #[test]
+    fn build_document_accepts_the_app_drafts() {
+        let mut built = 0;
+        for entry in std::fs::read_dir("tests/resources/drafts").unwrap() {
+            let path = entry.unwrap().path();
+            let json = std::fs::read_to_string(&path).unwrap();
+            let document = build_document(json, defaults())
+                .unwrap_or_else(|error| panic!("{path:?}: {}", error.message));
+            crate::api::signer::sign_document(
+                document.xml,
+                crate::api::signer::tests::certificate(),
+                "password".into(),
+            )
+            .unwrap_or_else(|error| panic!("{path:?}: {}", error.message));
+            built += 1;
+        }
+        assert!(built >= 3);
+    }
+
     #[test]
     fn build_document_rejects_unknown_kinds() {
         let json = r#"{"kind": "Unknown", "spec": {}}"#;

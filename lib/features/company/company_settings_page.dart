@@ -8,6 +8,7 @@ import '../../router.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../series/series_repository.dart';
 import 'company_repository.dart';
 
 /// Settings of the active company
@@ -76,13 +77,13 @@ class CompanySettingsPage extends ConsumerWidget {
 
   /// Leaving test mode needs the certificate and SOL credentials, and the
   /// user's confirmation: documents become real.
-  // TODO(phase 3): archive the beta documents and reset the series (DESIGN §1)
   Future<void> _setTestMode(
     BuildContext context,
     WidgetRef ref,
     bool beta,
   ) async {
     final repository = ref.read(companyRepositoryProvider);
+    final series = ref.read(seriesRepositoryProvider);
     if (!beta) {
       final secrets = await repository.readSecrets(company.id);
       if (!context.mounted) return;
@@ -100,14 +101,15 @@ class CompanySettingsPage extends ConsumerWidget {
         return;
       }
     }
+    final environment = beta
+        ? SunatEnvironment.beta
+        : SunatEnvironment.production;
     await repository.update(
       company.id,
-      CompaniesCompanion(
-        sunatEnvironment: Value(
-          beta ? SunatEnvironment.beta : SunatEnvironment.production,
-        ),
-      ),
+      CompaniesCompanion(sunatEnvironment: Value(environment)),
     );
+    // Test documents don't use up real numbers
+    await series.resetNumbers(company.id, environment);
   }
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {

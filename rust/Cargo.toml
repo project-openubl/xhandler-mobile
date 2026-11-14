@@ -10,7 +10,7 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 flutter_rust_bridge = { version = "=2.13.0", features = ["chrono"] }
-xhandler = { git = "https://github.com/project-openubl/xhandler-rust", rev = "ad310c463adea6bb34f162d16ec407e71750a131" }
+xhandler = { git = "https://github.com/project-openubl/xhandler-rust", rev = "b79cd16e4ebd6ba0702ca43326705c45c6fae0c3" }
 anyhow = "1.0"
 base64 = "0.22"
 chrono = "0.4"

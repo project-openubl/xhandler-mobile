@@ -1111,6 +1111,16 @@
             "dsl_features": []
           },
           {
+            "name": "input_json",
+            "getter_name": "inputJson",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
             "name": "enriched_json",
             "getter_name": "enrichedJson",
             "moor_type": "string",
@@ -1119,6 +1129,58 @@
             "default_dart": null,
             "default_client_dart": null,
             "dsl_features": []
+          },
+          {
+            "name": "affected_document_id",
+            "getter_name": "affectedDocumentId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES documents (id)",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES documents (id)"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "documents",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "voided_by_document_id",
+            "getter_name": "voidedByDocumentId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES documents (id)",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES documents (id)"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "documents",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
           },
           {
             "name": "device_id",
@@ -1233,6 +1295,16 @@
             "name": "bytes",
             "getter_name": "bytes",
             "moor_type": "blob",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "sha256",
+            "getter_name": "sha256",
+            "moor_type": "string",
             "nullable": false,
             "customConstraints": null,
             "default_dart": null,
@@ -1363,6 +1435,16 @@
             "default_dart": null,
             "default_client_dart": null,
             "dsl_features": []
+          },
+          {
+            "name": "device_id",
+            "getter_name": "deviceId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
           }
         ],
         "is_virtual": false,
@@ -1451,6 +1533,48 @@
         "unique": true,
         "columns": []
       }
+    },
+    {
+      "id": 11,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "documents_list",
+        "sql": "CREATE INDEX documents_list ON documents (company_id, environment, created_at)",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 12,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "documents_outbox",
+        "sql": "CREATE INDEX documents_outbox ON documents (status, next_attempt_at)",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 13,
+      "references": [
+        6
+      ],
+      "type": "index",
+      "data": {
+        "on": 6,
+        "name": "document_events_timeline",
+        "sql": "CREATE INDEX document_events_timeline ON document_events (document_id, created_at)",
+        "unique": false,
+        "columns": []
+      }
     }
   ],
   "fixed_sql": [
@@ -1495,7 +1619,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"documents\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"environment\" TEXT NOT NULL, \"tipo_comprobante\" TEXT NOT NULL, \"serie\" TEXT NOT NULL, \"numero\" INTEGER NOT NULL, \"fecha_emision\" TEXT NOT NULL, \"cliente_tipo_documento\" TEXT NOT NULL, \"cliente_numero_documento\" TEXT NOT NULL, \"cliente_nombre\" TEXT NOT NULL, \"moneda\" TEXT NOT NULL, \"total\" TEXT NOT NULL, \"status\" TEXT NOT NULL, \"sunat_code\" TEXT NULL, \"sunat_description\" TEXT NULL, \"sunat_notes\" TEXT NULL, \"ticket\" TEXT NULL, \"digest_value\" TEXT NOT NULL, \"attempts\" INTEGER NOT NULL DEFAULT 0, \"next_attempt_at\" TEXT NULL, \"enriched_json\" TEXT NOT NULL, \"device_id\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"documents\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"environment\" TEXT NOT NULL, \"tipo_comprobante\" TEXT NOT NULL, \"serie\" TEXT NOT NULL, \"numero\" INTEGER NOT NULL, \"fecha_emision\" TEXT NOT NULL, \"cliente_tipo_documento\" TEXT NOT NULL, \"cliente_numero_documento\" TEXT NOT NULL, \"cliente_nombre\" TEXT NOT NULL, \"moneda\" TEXT NOT NULL, \"total\" TEXT NOT NULL, \"status\" TEXT NOT NULL, \"sunat_code\" TEXT NULL, \"sunat_description\" TEXT NULL, \"sunat_notes\" TEXT NULL, \"ticket\" TEXT NULL, \"digest_value\" TEXT NOT NULL, \"attempts\" INTEGER NOT NULL DEFAULT 0, \"next_attempt_at\" TEXT NULL, \"input_json\" TEXT NOT NULL, \"enriched_json\" TEXT NOT NULL, \"affected_document_id\" TEXT NULL REFERENCES documents (id), \"voided_by_document_id\" TEXT NULL REFERENCES documents (id), \"device_id\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },
@@ -1504,7 +1628,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"document_files\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"document_id\" TEXT NOT NULL REFERENCES documents (id), \"kind\" TEXT NOT NULL, \"bytes\" BLOB NOT NULL, PRIMARY KEY (\"id\"), UNIQUE (\"document_id\", \"kind\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"document_files\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"document_id\" TEXT NOT NULL REFERENCES documents (id), \"kind\" TEXT NOT NULL, \"bytes\" BLOB NOT NULL, \"sha256\" TEXT NOT NULL, PRIMARY KEY (\"id\"), UNIQUE (\"document_id\", \"kind\"));"
         }
       ]
     },
@@ -1513,7 +1637,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"document_events\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"document_id\" TEXT NOT NULL REFERENCES documents (id), \"status\" TEXT NOT NULL, \"code\" TEXT NULL, \"message\" TEXT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"document_events\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"document_id\" TEXT NOT NULL REFERENCES documents (id), \"status\" TEXT NOT NULL, \"code\" TEXT NULL, \"message\" TEXT NULL, \"device_id\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },
@@ -1550,6 +1674,33 @@
         {
           "dialect": "sqlite",
           "sql": "CREATE UNIQUE INDEX documents_number ON documents (company_id, environment, tipo_comprobante, serie, numero)"
+        }
+      ]
+    },
+    {
+      "name": "documents_list",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX documents_list ON documents (company_id, environment, created_at)"
+        }
+      ]
+    },
+    {
+      "name": "documents_outbox",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX documents_outbox ON documents (status, next_attempt_at)"
+        }
+      ]
+    },
+    {
+      "name": "document_events_timeline",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX document_events_timeline ON document_events (document_id, created_at)"
         }
       ]
     }

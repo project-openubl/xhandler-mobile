@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/database.dart';
+
 import '../../src/rust/api/document.dart';
 import '../../src/rust/api/signer.dart';
 import '../../src/rust/api/sunat.dart';
@@ -39,6 +41,19 @@ class SunatBridge {
     xml: xml,
     ticket: ticket,
     environment: environment,
+    credentials: credentials,
+  );
+
+  /// The CDR of a document SUNAT already has (production only)
+  Future<SunatResponse> recover(
+    Document document,
+    String ruc,
+    SunatCredentials credentials,
+  ) => getStatusCdr(
+    ruc: ruc,
+    tipoComprobante: document.tipoComprobante,
+    serie: document.serie,
+    numero: document.numero,
     credentials: credentials,
   );
 }

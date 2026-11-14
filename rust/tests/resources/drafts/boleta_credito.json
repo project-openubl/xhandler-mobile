@@ -1,0 +1,50 @@
+{
+  "kind": "Invoice",
+  "spec": {
+    "serie_numero": "B001-25",
+    "tipo_comprobante": "03",
+    "fecha_emision": "2026-11-13",
+    "moneda": "USD",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "1",
+      "numero_documento_identidad": "46027897",
+      "nombre": "JUANA PEREZ"
+    },
+    "detalles": [
+      {
+        "descripcion": "Servicio de consultoría",
+        "cantidad": "1",
+        "unidad_medida": "ZZ",
+        "precio": "1000",
+        "igv_tipo": "10",
+        "icb_aplica": false
+      }
+    ],
+    "forma_pago": {
+      "tipo": "Credito",
+      "cuotas": [
+        {
+          "importe": "590",
+          "fecha_pago": "2026-12-13"
+        },
+        {
+          "importe": "590",
+          "fecha_pago": "2027-01-13"
+        }
+      ]
+    }
+  }
+}

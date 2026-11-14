@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../src/rust/api/sunat.dart';
 
 /// Series a new company starts with, all suggested for their document type:
 /// (Catalog 1 document type, serie)
@@ -53,6 +54,32 @@ class SeriesRepository {
 
   Future<void> update(String id, SeriesCompanion changes) =>
       _db.updateRow(_db.series, id, changes);
+
+  /// After switching environment (test mode ↔ production), each serie
+  /// continues from the last number issued in [environment], 1 when none
+  Future<void> resetNumbers(String companyId, SunatEnvironment environment) =>
+      _db.transaction(() async {
+        final series = await (_db.select(
+          _db.series,
+        )..where((s) => s.companyId.equals(companyId))).get();
+        for (final serie in series) {
+          final last = _db.documents.numero.max();
+          final query = _db.selectOnly(_db.documents)
+            ..addColumns([last])
+            ..where(
+              _db.documents.companyId.equals(companyId) &
+                  _db.documents.environment.equalsValue(environment) &
+                  _db.documents.tipoComprobante.equals(serie.tipoComprobante) &
+                  _db.documents.serie.equals(serie.serie),
+            );
+          final lastNumero =
+              await query.map((row) => row.read(last)).getSingle() ?? 0;
+          await update(
+            serie.id,
+            SeriesCompanion(nextNumber: Value(lastNumero + 1)),
+          );
+        }
+      });
 
   /// Makes [serie] the suggested one of its document type. Notas de crédito
   /// and débito have one per affected document (F... for facturas, B... for

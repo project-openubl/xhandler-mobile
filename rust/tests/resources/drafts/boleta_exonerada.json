@@ -1,0 +1,40 @@
+{
+  "kind": "Invoice",
+  "spec": {
+    "serie_numero": "B001-26",
+    "tipo_comprobante": "03",
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "0",
+      "numero_documento_identidad": "-",
+      "nombre": "CLIENTES VARIOS"
+    },
+    "detalles": [
+      {
+        "descripcion": "Libro",
+        "cantidad": "2",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "45",
+        "igv_tipo": "20",
+        "icb_aplica": false
+      }
+    ],
+    "forma_pago": {
+      "tipo": "Contado"
+    }
+  }
+}

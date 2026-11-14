@@ -1,8 +1,9 @@
 use base64::engine::general_purpose;
 use base64::Engine;
 use xhandler::prelude::{
-    CdrMetadata, Credentials, FileSender, FileSenderError, SendFileAggregatedResponse, Status,
-    SunatClientError, SunatFault, UblFile, Urls, VerifyTicketAggregatedResponse,
+    CdrMetadata, ConsultDocument, ConsultResponse, Credentials, FileSender, FileSenderError,
+    SendFileAggregatedResponse, Status, SunatClient, SunatClientError, SunatFault, UblFile, Urls,
+    VerifyTicketAggregatedResponse, BILL_CONSULT_SERVICE_URL,
 };
 
 use crate::api::error::BridgeError;
@@ -92,18 +93,59 @@ pub async fn verify_ticket(
     })
 }
 
+/// The CDR of a document SUNAT already registered, e.g. when a resend
+/// answers 1033 because the first send timed out after SUNAT got it.
+/// SUNAT's consult service only exists in production.
+pub async fn get_status_cdr(
+    ruc: String,
+    tipo_comprobante: String,
+    serie: String,
+    numero: u32,
+    credentials: SunatCredentials,
+) -> Result<SunatResponse, BridgeError> {
+    let document = ConsultDocument {
+        ruc,
+        tipo_comprobante,
+        serie,
+        numero,
+    };
+    let result = SunatClient::default()
+        .get_status_cdr(BILL_CONSULT_SERVICE_URL, &document, &credentials.into())
+        .await;
+    match result {
+        Ok(ConsultResponse::Status(status)) => match status.cdr_base64 {
+            Some(cdr_base64) => CdrMetadata::from_zip_base64(&cdr_base64)
+                .and_then(|cdr| from_cdr(&cdr_base64, cdr))
+                .map_err(BridgeError::other),
+            None => Ok(response(
+                SunatStatus::Unknown,
+                Some(status.status_code),
+                status.status_message,
+            )),
+        },
+        Ok(ConsultResponse::Fault(fault)) => Ok(from_fault(fault)),
+        Err(error) => from_client_error(error),
+    }
+}
+
 fn sender(environment: SunatEnvironment, credentials: SunatCredentials) -> FileSender {
     FileSender {
         urls: match environment {
             SunatEnvironment::Beta => Urls::beta(),
             SunatEnvironment::Production => Urls::production(),
         },
-        credentials: Credentials {
+        credentials: credentials.into(),
+    }
+}
+
+impl From<SunatCredentials> for Credentials {
+    fn from(credentials: SunatCredentials) -> Self {
+        Self {
             username: credentials.username,
             password: credentials.password,
             client_id: credentials.client_id,
             client_secret: credentials.client_secret,
-        },
+        }
     }
 }
 
@@ -189,7 +231,8 @@ impl From<Status> for SunatStatus {
 #[cfg(test)]
 mod tests {
     use super::{send_document, SunatCredentials, SunatEnvironment, SunatStatus};
-    use crate::api::document::tests::invoice;
+    use crate::api::document::build_document;
+    use crate::api::document::tests::{defaults, invoice};
     use crate::api::signer::sign_document;
     use crate::api::signer::tests::certificate;
 
@@ -213,6 +256,29 @@ mod tests {
 
         assert!(matches!(response.status, SunatStatus::Accepted));
         assert!(response.cdr_zip.is_some());
+    }
+
+    /// Quick sales issue boletas to anonymous customers ("0", "-"):
+    /// `cargo test -- --ignored`
+    #[tokio::test]
+    #[ignore]
+    async fn send_anonymous_boleta_to_beta() {
+        let json = std::fs::read_to_string("tests/resources/drafts/boleta_exonerada.json")
+            .unwrap()
+            .replace("20123456789", "10467793549")
+            .replace("B001-26", &format!("B001-{}", std::process::id()));
+        let built = build_document(json, defaults()).unwrap();
+        let signed = sign_document(built.xml, certificate(), "password".into()).unwrap();
+        let response = send_document(signed.xml, SunatEnvironment::Beta, beta_credentials())
+            .await
+            .unwrap();
+
+        assert!(
+            matches!(response.status, SunatStatus::Accepted),
+            "{:?} {:?}",
+            response.code,
+            response.description
+        );
     }
 
     #[tokio::test]
