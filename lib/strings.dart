@@ -383,13 +383,17 @@ abstract final class Strings {
   static const salesRegister = 'Registro de ventas';
   static const previousMonth = 'Mes anterior';
   static const nextMonth = 'Mes siguiente';
-  static const noSales = 'No hay ventas aceptadas por SUNAT en este mes.';
+  static const noSales = 'No hay ventas en este mes.';
+  static String unconfirmedCount(int count) =>
+      '$count aún sin respuesta de SUNAT: el mes puede cambiar.';
   static String documentsCount(int count, int voided) =>
       '$count comprobantes${voided == 0 ? '' : ' ($voided anulados)'}';
   static const export = 'Exportar';
   static const salesRegisterHelp =
-      'Facturas, boletas y notas aceptadas por SUNAT; las notas de crédito '
-      'restan y las anuladas figuran sin importes.';
+      'Facturas, boletas y notas emitidas (salvo las rechazadas), con su '
+      'estado; las notas de crédito restan y las anuladas figuran sin '
+      'importes. Los importes en dólares no se convierten a soles. Para '
+      'abrir en Excel usa el archivo Excel.';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

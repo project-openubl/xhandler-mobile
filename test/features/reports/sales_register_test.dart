@@ -69,6 +69,7 @@ void main() {
     );
     expect(nota.igv, '-6.88');
     expect(nota.total, '-45.60');
+    expect(nota.exonerado, '0.00'); // not -0.00
     expect(nota.modifica, '01 F001-1');
   });
 
@@ -94,8 +95,35 @@ void main() {
     expect(pen.moneda, 'PEN');
     expect(pen.count, 4);
     expect(pen.voided, 1);
+    expect(pen.unconfirmed, 0);
     expect(pen.total, '45.60'); // 45.60 − 45.60 + 45.60 + 0
     expect(usd.total, '45.60');
+  });
+
+  test('unconfirmed documents are counted apart', () {
+    final [summary] = salesSummaries([
+      SalesRow.of(_document()),
+      SalesRow.of(_document(id: 'p', status: DocumentStatus.pendingSend)),
+      SalesRow.of(_document(id: 'v', status: DocumentStatus.voiding)),
+    ]);
+    expect(summary.unconfirmed, 2);
+    expect(summary.total, '136.80'); // they are issued sales
+  });
+
+  test('CSV text never runs as a formula; amounts keep their sign', () {
+    final spec = (jsonDecode(_enriched) as Map)['spec'] as Map;
+    final lines = utf8
+        .decode(
+          salesCsv([
+            SalesRow.of(_document(nombre: '=1+1')),
+            SalesRow.of(
+              _document(tipo: '07', enriched: jsonEncode({'spec': spec})),
+            ),
+          ]).sublist(3),
+        )
+        .split('\r\n');
+    expect(lines[1], contains(",'=1+1,"));
+    expect(lines[2], contains(',-6.88,'));
   });
 
   test('CSV with a BOM, quoting what needs it', () {
@@ -129,7 +157,8 @@ void main() {
       File(path).writeAsBytesSync(xlsx);
     }
     final sheet = files['xl/worksheets/sheet1.xml']!;
-    expect(sheet, contains('<c><v>29.42</v></c>'));
+    expect(sheet, contains('<c s="1"><v>29.42</v></c>'));
+    expect(files['xl/styles.xml'], contains('numFmtId="4"'));
     expect(sheet, contains('A &amp; B &lt;S.A.&gt;'));
   });
 
@@ -159,6 +188,15 @@ void main() {
         _document(id: 'd', numero: 4, status: DocumentStatus.pendingSend),
         _document(id: 'e', numero: 5, fecha: '2026-12-01'),
         _document(id: 'g', tipo: '09', serie: 'T001'),
+        _document(id: 'h', numero: 6, status: DocumentStatus.voiding),
+        _document(
+          id: 'i',
+          numero: 7,
+        ).copyWith(environment: SunatEnvironment.production),
+        _document(
+          id: 'j',
+          numero: 8,
+        ).copyWith(deletedAt: Value(DateTime.utc(2026))),
       ]) {
         await database
             .into(database.documents)
@@ -173,7 +211,11 @@ void main() {
         tipos: salesTipos,
         statuses: salesStatuses,
       );
-      expect([for (final document in issued) document.id], ['a', 'b']);
+      // Not rejected, other months, guías, production or deleted ones
+      expect(
+        [for (final document in issued) document.id],
+        ['a', 'd', 'h', 'b'],
+      );
     },
   );
 }

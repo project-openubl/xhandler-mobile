@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../amount_text.dart';
 import '../../data/database.dart';
 import '../../peru_date.dart';
+import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../document/document_repository.dart';
@@ -55,7 +56,10 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
     List<SalesRow> rows, {
     required bool excel,
   }) async {
-    final name = 'ventas-${widget.company.ruc}-$_period';
+    final beta = widget.company.sunatEnvironment == SunatEnvironment.beta;
+    // Test data says so in its name
+    final name =
+        'ventas-${widget.company.ruc}-$_period${beta ? '-prueba' : ''}';
     await shareFiles(
       [
         excel
@@ -115,7 +119,9 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
             ],
           ),
           const SizedBox(height: 8),
-          if (rows == null)
+          if (sales.hasError)
+            const Text(Strings.unexpectedError)
+          else if (rows == null)
             const Center(child: CircularProgressIndicator())
           else if (rows.isEmpty)
             const Padding(
@@ -133,6 +139,13 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                       Text(
                         Strings.documentsCount(summary.count, summary.voided),
                       ),
+                      if (summary.unconfirmed > 0)
+                        Text(
+                          Strings.unconfirmedCount(summary.unconfirmed),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                       for (final (label, amount) in [
                         (Strings.opGravada, summary.gravado),
                         (Strings.igv, summary.igv),
@@ -173,7 +186,6 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
-          if (sales.hasError) const Text(Strings.unexpectedError),
         ],
       ),
     );

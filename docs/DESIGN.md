@@ -386,9 +386,9 @@ risk) and starts the app over with a new provider scope. The restored phone gets
   One generator producing rows, several output formats.
 - Exports are shared through the delivery module.
 
-Built so far: "Reportes" shows a month's sales register (accepted and voided facturas,
-boletas and notas of the current mode; notas de crédito subtract, voided ones have no
-amounts) with totals per currency, exported as CSV (UTF-8 with BOM) or Excel. The `excel`
+Built so far: "Reportes" shows a month's sales register (every issued factura, boleta and
+nota of the current mode but the rejected ones, with its status; notas de crédito
+subtract, voided ones have no amounts, unconfirmed ones are flagged) with totals per currency, exported as CSV (UTF-8 with BOM) or Excel. The `excel`
 package conflicts with `pdf`'s `xml` version, so the app writes the one-sheet `.xlsx`
 itself (inline strings, numeric amounts; checked with LibreOffice).
 
@@ -469,6 +469,8 @@ One PR per phase, each followed by a senior-engineer review.
 - Automatic backups to Google Drive `appDataFolder` / iCloud Drive and their schedule:
   need a Google Cloud OAuth client and the iCloud entitlement for the app's Apple team.
   Per-company export/import is also pending.
+- Sales in other currencies in soles (SBS exchange rate of the issue date), as the
+  register and the IGV declaration need them.
 - PLE 14.1 and the SIRE RVIE replacement file: SIRE replaced PLE (RS 000125-2026) and
   builds the sales proposal from the electronic documents SUNAT already has, so a file is
   rarely needed; both layouts must be checked field by field against SUNAT's current

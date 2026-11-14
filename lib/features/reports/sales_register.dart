@@ -7,16 +7,16 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../document/document_service.dart';
+import '../document/document_status.dart';
 
 /// Document types in the sales register (registro de ventas)
 const salesTipos = {'01', '03', '07', '08'};
 
-/// Statuses that count: accepted, and voided (listed with no amounts)
-const salesStatuses = {
-  DocumentStatus.accepted,
-  DocumentStatus.acceptedWithObservations,
-  DocumentStatus.voided,
-};
+/// Statuses in the register: every issued document but the rejected ones.
+/// Voided ones are listed without amounts; those SUNAT hasn't confirmed
+/// yet are listed with their status, so the month isn't silently short.
+final salesStatuses = {...DocumentStatus.values}
+  ..remove(DocumentStatus.rejected);
 
 /// A document as the sales register lists it. Amounts are in the
 /// document's currency; notas de crédito subtract, voided ones are zero.
@@ -38,12 +38,13 @@ class SalesRow {
     required this.igv,
     required this.icb,
     required this.total,
-    required this.voided,
+    required this.status,
     this.modifica,
   });
 
   factory SalesRow.of(Document document) {
     final voided = document.status == DocumentStatus.voided;
+    final status = document.status;
     final spec =
         (jsonDecode(document.enrichedJson) as Map<String, Object?>)['spec']
             as Map<String, Object?>;
@@ -70,7 +71,7 @@ class SalesRow {
       igv: amount(totals.igv),
       icb: amount(totals.icb),
       total: amount(roundAmount(document.total)),
-      voided: voided,
+      status: status,
       modifica: afectado is String
           ? '${spec['comprobante_afectado_tipo']} $afectado'
           : null,
@@ -93,7 +94,12 @@ class SalesRow {
   final String igv;
   final String icb;
   final String total;
-  final bool voided;
+  final DocumentStatus status;
+
+  bool get voided => status == DocumentStatus.voided;
+
+  /// SUNAT hasn't confirmed it yet (or its voiding)
+  bool get unconfirmed => !voided && !DocumentService.accepted.contains(status);
 
   /// The document a nota modifies: "01 F001-1"
   final String? modifica;
@@ -136,18 +142,16 @@ final List<_Column> _columns = [
   (title: 'IGV', amount: true, value: (row) => row.igv),
   (title: 'ICBPER', amount: true, value: (row) => row.icb),
   (title: 'Total', amount: true, value: (row) => row.total),
-  (
-    title: 'Estado',
-    amount: false,
-    value: (row) => row.voided ? 'Anulado' : 'Aceptado',
-  ),
+  (title: 'Estado', amount: false, value: (row) => row.status.label),
   (title: 'Modifica a', amount: false, value: (row) => row.modifica ?? ''),
 ];
 
 /// The register as CSV (UTF-8 with BOM, so Excel reads the accents)
 Uint8List salesCsv(List<SalesRow> rows) {
-  String field(Object value) {
-    final text = '$value';
+  String field(Object value, {bool amount = false}) {
+    var text = '$value';
+    // A name like "=HYPERLINK(...)" would run as a formula in Excel
+    if (!amount && RegExp(r'^[=+\-@\t\r]').hasMatch(text)) text = "'$text";
     return RegExp(r'[",\r\n]').hasMatch(text)
         ? '"${text.replaceAll('"', '""')}"'
         : text;
@@ -156,7 +160,9 @@ Uint8List salesCsv(List<SalesRow> rows) {
   final lines = [
     _columns.map((column) => field(column.title)).join(','),
     for (final row in rows)
-      _columns.map((column) => field(column.value(row))).join(','),
+      _columns
+          .map((column) => field(column.value(row), amount: column.amount))
+          .join(','),
   ];
   return Uint8List.fromList([
     0xef, 0xbb, 0xbf, // BOM
@@ -167,12 +173,15 @@ Uint8List salesCsv(List<SalesRow> rows) {
 /// The register as an Excel workbook (.xlsx), amounts as numbers
 Uint8List salesXlsx(List<SalesRow> rows) {
   String escape(String text) => text
+      // Characters XML 1.0 forbids would make the file "corrupt"
+      .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '')
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;');
+  // Style 1: amounts with two decimals (built-in format 4, #,##0.00)
   String cell(Object value, {required bool number}) => number
-      ? '<c><v>$value</v></c>'
+      ? '<c s="1"><v>$value</v></c>'
       : '<c t="inlineStr"><is><t xml:space="preserve">${escape('$value')}</t></is></c>';
   String sheetRow(Iterable<String> cells) => '<row>${cells.join()}</row>';
 
@@ -203,6 +212,7 @@ Uint8List salesXlsx(List<SalesRow> rows) {
             '<Default Extension="xml" ContentType="application/xml"/>'
             '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
             '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
             '</Types>',
       ),
     )
@@ -231,7 +241,23 @@ Uint8List salesXlsx(List<SalesRow> rows) {
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
             '</Relationships>',
+      ),
+    )
+    ..add(
+      ArchiveFile.string(
+        'xl/styles.xml',
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>'
+            '<fills count="2"><fill><patternFill patternType="none"/></fill>'
+            '<fill><patternFill patternType="gray125"/></fill></fills>'
+            '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            '<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
+            '</styleSheet>',
       ),
     )
     ..add(ArchiveFile.string('xl/worksheets/sheet1.xml', sheet.toString()));
@@ -243,6 +269,7 @@ class SalesSummary {
   SalesSummary(this.moneda, Iterable<SalesRow> rows)
     : count = rows.length,
       voided = rows.where((row) => row.voided).length,
+      unconfirmed = rows.where((row) => row.unconfirmed).length,
       gravado = _sum(rows, (row) => row.gravado),
       igv = _sum(rows, (row) => row.igv),
       total = _sum(rows, (row) => row.total);
@@ -250,19 +277,15 @@ class SalesSummary {
   final String moneda;
   final int count;
   final int voided;
+
+  /// Waiting for SUNAT's answer: the month may still change
+  final int unconfirmed;
   final String gravado;
   final String igv;
   final String total;
 
   static String _sum(Iterable<SalesRow> rows, String Function(SalesRow) of) =>
-      fromCents(
-        rows.fold(BigInt.zero, (sum, row) {
-          final value = of(row);
-          return value.startsWith('-')
-              ? sum - toCents(value.substring(1))
-              : sum + toCents(value);
-        }),
-      );
+      fromCents(rows.fold(BigInt.zero, (sum, row) => sum + toCents(of(row))));
 }
 
 /// One summary per currency, PEN first
