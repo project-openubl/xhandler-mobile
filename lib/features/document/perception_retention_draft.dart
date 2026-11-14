@@ -13,7 +13,9 @@ const tasasRetencion = {'01': '3'};
 
 /// A comprobante de percepción ("40", charged to a customer paying a
 /// factura) or retención ("20", withheld from a supplier's factura): one
-/// collection or payment of one factura, always in soles
+/// collection or payment of one factura in soles (the document's amounts
+/// are always in soles; facturas in other currencies need an exchange rate,
+/// not supported yet)
 /// (docs/DESIGN.md §6)
 class PerceptionRetentionDraft implements DocumentDraft {
   const PerceptionRetentionDraft({
@@ -120,12 +122,13 @@ class PerceptionRetentionDraft implements DocumentDraft {
         'operacion': {
           'numero_operacion': 1,
           'fecha_operacion': fechaOperacion,
-          'importe_operacion': importeOperacion,
+          // SUNAT takes 2 decimals
+          'importe_operacion': fromCents(toCents(importeOperacion)),
           'comprobante_afectado': {
             'tipo_comprobante': '01',
             'serie_numero': comprobanteSerieNumero,
             'fecha_emision': comprobanteFechaEmision,
-            'importe_total': comprobanteTotal,
+            'importe_total': fromCents(toCents(comprobanteTotal)),
             'moneda': moneda,
           },
         },

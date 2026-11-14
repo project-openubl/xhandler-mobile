@@ -91,8 +91,13 @@ class DespatchAdviceDraft implements DocumentDraft {
   @override
   DraftProblem? get problem {
     if (lines.isEmpty) return DraftProblem.noLines;
+    if (customer.isAnonymous) return DraftProblem.anonymousDestinatario;
     if (partida == null || llegada == null) {
       return DraftProblem.missingAddresses;
+    }
+    if (motivo == '04' &&
+        (partida?.codigoLocal == null || llegada?.codigoLocal == null)) {
+      return DraftProblem.missingCodigoLocal;
     }
     final hasTransport = _isPrivado
         ? vehiculoM1L || (vehicle != null && driver != null)

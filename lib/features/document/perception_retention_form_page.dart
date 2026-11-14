@@ -34,7 +34,9 @@ class PerceptionRetentionFormPage extends ConsumerStatefulWidget {
 }
 
 /// "F001-123"
-final _facturaSerieNumero = RegExp(r'^[A-Z0-9]{4}-\d{1,8}$');
+final _facturaSerieNumero = RegExp(
+  r'^(E001|F[A-Z0-9]{3}|\d{4})-(?!0+$)\d{1,8}$',
+);
 
 class _PerceptionRetentionFormPageState
     extends ConsumerState<PerceptionRetentionFormPage> {
@@ -53,6 +55,13 @@ class _PerceptionRetentionFormPageState
 
   bool get _isPercepcion => widget.tipoComprobante == '40';
 
+  /// SUNAT takes collections and payments from the factura's date and this
+  /// month (codes 2612, 2625)
+  DateTime get _firstFechaOperacion {
+    final month = DateTime(_today.year, _today.month);
+    return _fechaComprobante.isAfter(month) ? _fechaComprobante : month;
+  }
+
   @override
   void dispose() {
     _comprobante.dispose();
@@ -66,7 +75,9 @@ class _PerceptionRetentionFormPageState
   PerceptionRetentionDraft? get _draft {
     final customer = _customer;
     final total = parseAmount(_total.text);
-    final importe = parseAmount(_importe.text) ?? total;
+    final importe = _importe.text.trim().isEmpty
+        ? total
+        : parseAmount(_importe.text);
     if (customer == null ||
         total == null ||
         importe == null ||
@@ -176,7 +187,7 @@ class _PerceptionRetentionFormPageState
               _comprobante,
               Strings.facturaSerieNumero,
               helperText: 'F001-123',
-              validator: (text) => _facturaSerieNumero.hasMatch(text)
+              validator: (text) => _facturaSerieNumero.hasMatch(text.trim())
                   ? null
                   : Strings.invalidSerieNumero,
             ),
@@ -188,8 +199,8 @@ class _PerceptionRetentionFormPageState
                 if (picked != null) {
                   setState(() {
                     _fechaComprobante = picked;
-                    if (_fechaOperacion.isBefore(picked)) {
-                      _fechaOperacion = picked;
+                    if (_fechaOperacion.isBefore(_firstFechaOperacion)) {
+                      _fechaOperacion = _firstFechaOperacion;
                     }
                   });
                 }
@@ -199,6 +210,7 @@ class _PerceptionRetentionFormPageState
               _total,
               Strings.facturaTotal,
               prefixText: 'S/ ',
+              helperText: Strings.onlySoles,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -224,7 +236,7 @@ class _PerceptionRetentionFormPageState
               onTap: () async {
                 final picked = await _pickDate(
                   _fechaOperacion,
-                  first: _fechaComprobante,
+                  first: _firstFechaOperacion,
                 );
                 if (picked != null) setState(() => _fechaOperacion = picked);
               },

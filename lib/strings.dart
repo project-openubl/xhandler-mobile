@@ -308,6 +308,8 @@ abstract final class Strings {
   static const invalidLicencia = 'La licencia tiene de 9 a 10 letras o números';
   static const newAddress = 'Nueva dirección';
   static const addressName = 'Nombre (ej. Almacén Ate)';
+  static const invalidCirculacion = 'De 10 a 15 letras o números';
+  static const onlySoles = 'Solo facturas en soles';
   static const codigoLocalHelp =
       'Solo en traslados entre establecimientos de la empresa';
 

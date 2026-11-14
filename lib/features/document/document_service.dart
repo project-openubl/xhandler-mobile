@@ -47,6 +47,12 @@ enum DraftProblem {
   /// Motivo "otros" needs a description
   missingMotivo,
 
+  /// Guías go to an identified destinatario
+  anonymousDestinatario,
+
+  /// Transfers between the company's establishments need their SUNAT codes
+  missingCodigoLocal,
+
   /// Boletas over S/ 700 need an identified customer
   anonymousOver700,
 
@@ -465,7 +471,7 @@ class DocumentService {
 
   /// Rejections of a voiding document saying SUNAT already has it, or has
   /// already voided the document: the document isn't accepted again
-  static const _alreadyVoided = {'2223', '2323', '2324', '2987'};
+  static const _alreadyVoided = {'2223', '2323', '2324', '2751', '2987'};
 
   /// When SUNAT answers a voiding document, the document it voids is
   /// voided, or accepted again if SUNAT rejected the voiding

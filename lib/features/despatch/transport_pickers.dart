@@ -194,7 +194,11 @@ class _SaveDialogState<T> extends ConsumerState<_SaveDialog<T>> {
   }
 }
 
-String? _required(String text) => text.isEmpty ? Strings.required : null;
+String? _required(String text) => text.trim().isEmpty ? Strings.required : null;
+
+/// Uppercase letters and digits only: "abc-123" → "ABC123"
+String _clean(String text) =>
+    text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
 class _VehicleDialog extends StatefulWidget {
   const _VehicleDialog(this.company);
@@ -217,8 +221,7 @@ class _VehicleDialogState extends State<_VehicleDialog> {
   }
 
   /// "abc-123" → "ABC123"
-  String get _cleanPlaca =>
-      _placa.text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+  String get _cleanPlaca => _clean(_placa.text);
 
   @override
   Widget build(BuildContext context) {
@@ -236,13 +239,22 @@ class _VehicleDialogState extends State<_VehicleDialog> {
           _circulacion,
           Strings.numeroCirculacion,
           helperText: Strings.optional,
+          validator: (text) =>
+              text.isEmpty ||
+                  RegExp(r'^[A-Z0-9]{10,15}$').hasMatch(_clean(text))
+              ? null
+              : Strings.invalidCirculacion,
         ),
       ],
       save: (repository) => repository.createVehicle(
         VehiclesCompanion.insert(
           companyId: widget.company.id,
           placa: _cleanPlaca,
-          numeroCirculacion: Value(optionalText(_circulacion)),
+          numeroCirculacion: Value(
+            _clean(_circulacion.text).isEmpty
+                ? null
+                : _clean(_circulacion.text),
+          ),
         ),
       ),
     );
@@ -359,6 +371,9 @@ class _AddressDialogState extends State<_AddressDialog> {
           digitsOnly: true,
           maxLength: 4,
           helperText: Strings.codigoLocalHelp,
+          validator: (text) => text.isEmpty || text.length == 4
+              ? null
+              : Strings.invalidCodigoLocal,
         ),
       ],
       save: (repository) => repository.createAddress(

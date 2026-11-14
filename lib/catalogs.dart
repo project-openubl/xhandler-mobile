@@ -98,7 +98,6 @@ abstract final class Catalogs {
   /// need no third party
   static const motivosTraslado = {
     '01': 'Venta',
-    '02': 'Compra',
     '04': 'Traslado entre establecimientos de la misma empresa',
     '06': 'Devolución',
     '13': 'Otros',

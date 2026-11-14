@@ -435,6 +435,73 @@ void main() {
     );
   });
 
+  test('percepción amounts go to SUNAT with 2 decimals', () {
+    final json = jsonDecode(
+      const PerceptionRetentionDraft(
+        tipoComprobante: '40',
+        customer: supermercados,
+        tipoRegimen: '01',
+        comprobanteSerieNumero: 'F001-1',
+        comprobanteFechaEmision: '2026-11-10',
+        comprobanteTotal: '1180.004',
+        importeOperacion: '100.555',
+        fechaOperacion: '2026-11-13',
+      ).toDocumentJson(
+        company: _company,
+        serieNumero: 'P001-1',
+        fechaEmision: '2026-11-13',
+      ),
+    );
+    final operacion = (json as Map)['spec']['operacion'] as Map;
+    expect(operacion['importe_operacion'], '100.56');
+    expect(
+      (operacion['comprobante_afectado'] as Map)['importe_total'],
+      '1180.00',
+    );
+  });
+
+  group('guía problems', () {
+    DespatchAdviceDraft guia({
+      DraftCustomer customer = supermercados,
+      String motivo = '01',
+      GuiaPoint partida = almacen,
+      GuiaPoint llegada = tienda,
+    }) => DespatchAdviceDraft(
+      customer: customer,
+      lines: const [DraftLine(descripcion: 'Café', cantidad: '1', precio: '0')],
+      motivo: motivo,
+      fechaTraslado: '2026-11-13',
+      pesoTotal: '1',
+      modalidad: ModalidadTraslado.privado,
+      vehiculoM1L: true,
+      partida: partida,
+      llegada: llegada,
+    );
+
+    test('an identified destinatario', () {
+      expect(guia().problem, isNull);
+      expect(
+        guia(customer: anonymousCustomer).problem,
+        DraftProblem.anonymousDestinatario,
+      );
+    });
+
+    test('transfers between establishments carry their codes', () {
+      expect(guia(motivo: '04').problem, DraftProblem.missingCodigoLocal);
+      const local = (ubigeo: '150101', direccion: 'AV. 1', codigoLocal: '0001');
+      final json = jsonDecode(
+        guia(motivo: '04', partida: local, llegada: local).toDocumentJson(
+          company: _company,
+          serieNumero: 'T001-1',
+          fechaEmision: '2026-11-13',
+        ),
+      );
+      final partida = (json as Map)['spec']['envio']['partida'] as Map;
+      expect(partida['codigo_local'], '0001');
+      expect(partida['ruc'], _company.ruc);
+    });
+  });
+
   test('DraftLine.fromJson reads back what toJson wrote', () {
     const line = DraftLine(
       descripcion: 'Cerveza',

@@ -64,9 +64,11 @@ class _DespatchAdviceFormPageState
     final spec =
         (jsonDecode(related.inputJson) as Map<String, Object?>)['spec']!
             as Map<String, Object?>;
-    _customer = DraftCustomer.fromJson(
+    final customer = DraftCustomer.fromJson(
       spec['cliente']! as Map<String, Object?>,
     );
+    // "Clientes varios" can't receive a guía
+    _customer = customer.isAnonymous ? null : customer;
     _lines = [
       for (final line in spec['detalles']! as List)
         DraftLine.fromJson(line as Map<String, Object?>),
@@ -101,7 +103,11 @@ class _DespatchAdviceFormPageState
       motivoDescripcion: _motivo == '13'
           ? optionalText(_motivoDescripcion)
           : null,
-      fechaTraslado: isoDate(_fechaTraslado),
+      // Not before the issue date, even if the form was opened yesterday
+      fechaTraslado: [
+        isoDate(_fechaTraslado),
+        peruToday(),
+      ].reduce((a, b) => a.compareTo(b) >= 0 ? a : b),
       pesoTotal: peso,
       numeroBultos: int.tryParse(_bultos.text.trim()),
       modalidad: _modalidad,
@@ -125,7 +131,19 @@ class _DespatchAdviceFormPageState
         ? (Strings.companyAddress, company.ubigeo, company.direccion)
         : (Strings.customerAddress, customer?.ubigeo, customer?.direccion);
     if (ubigeo == null || direccion == null || ubigeo.isEmpty) return const [];
-    return [(label, (ubigeo: ubigeo, direccion: direccion, codigoLocal: null))];
+    final codigoLocal = forPartida ? company.codigoLocal : null;
+    return [
+      (
+        label,
+        (
+          ubigeo: ubigeo,
+          direccion: direccion,
+          codigoLocal: codigoLocal == null || codigoLocal.isEmpty
+              ? null
+              : codigoLocal,
+        ),
+      ),
+    ];
   }
 
   Future<void> _editLine({int? index}) async {

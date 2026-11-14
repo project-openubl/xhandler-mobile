@@ -827,6 +827,21 @@ void main() {
       expect((await document(factura)).status, DocumentStatus.voiding);
     });
 
+    test('a reversión SUNAT already has keeps the document voiding', () async {
+      final factura = await productionFactura();
+      final voidingId = await service.voidDocument(factura, motivo: 'Error');
+      bridge.responses.add(
+        const SunatResponse(
+          status: SunatStatus.rejected,
+          code: '2751',
+          notes: [],
+        ),
+      );
+
+      await service.send(voidingId);
+      expect((await document(factura)).status, DocumentStatus.voiding);
+    });
+
     test('a voiding SUNAT did not process can be sent again', () async {
       final factura = await productionFactura();
       final voidingId = await service.voidDocument(factura, motivo: 'Error');

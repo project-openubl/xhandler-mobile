@@ -140,6 +140,10 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.missingTransport =>
     'Indica el vehículo y el conductor, o el transportista con RUC.',
   DraftProblem.missingMotivo => 'Describe el motivo del traslado.',
+  DraftProblem.anonymousDestinatario =>
+    'Elige un destinatario con documento de identidad.',
+  DraftProblem.missingCodigoLocal =>
+    'Indica el código de establecimiento de ambos puntos.',
   DraftProblem.operacionOverTotal =>
     'El importe debe ser mayor que cero y no superar el total de la factura.',
   DraftProblem.anonymousOver700 =>
