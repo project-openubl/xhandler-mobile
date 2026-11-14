@@ -3,16 +3,21 @@ import 'package:uuid/uuid.dart';
 
 import '../src/rust/api/sunat.dart';
 
+const _uuid = Uuid();
+
 /// New row id: a UUIDv7, unique across devices and sortable by creation
-String newId() => const Uuid().v7();
+String newId() => _uuid.v7();
+
+/// Timestamps are stored in UTC (DESIGN §3.1)
+DateTime nowUtc() => DateTime.now().toUtc();
 
 /// Columns of every table a future sync backend would replicate
 /// (docs/DESIGN.md §3.1): device-generated sortable ids, timestamps and soft
 /// deletes.
 mixin SyncColumns on Table {
   TextColumn get id => text().clientDefault(newId)();
-  DateTimeColumn get createdAt => dateTime().clientDefault(DateTime.now)();
-  DateTimeColumn get updatedAt => dateTime().clientDefault(DateTime.now)();
+  DateTimeColumn get createdAt => dateTime().clientDefault(nowUtc)();
+  DateTimeColumn get updatedAt => dateTime().clientDefault(nowUtc)();
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
@@ -21,6 +26,10 @@ mixin SyncColumns on Table {
 
 /// A company is the namespace of everything else. Its secrets (certificate,
 /// SOL credentials...) are in the secure storage, not here.
+@TableIndex.sql(
+  'CREATE UNIQUE INDEX companies_ruc ON companies (ruc) '
+  'WHERE deleted_at IS NULL',
+)
 class Companies extends Table with SyncColumns {
   TextColumn get ruc => text().withLength(min: 11, max: 11)();
   TextColumn get razonSocial => text()();
@@ -66,7 +75,9 @@ class Companies extends Table with SyncColumns {
 
 enum LookupProvider { none, commercial, searchpe }
 
-/// Document numbering: each series gives `serie-number` to one document type
+/// Document numbering: each series gives `serie-number` to one document type.
+/// Series are never deleted, so their numbers are never reused; they are
+/// deactivated instead.
 @DataClassName('Serie')
 class Series extends Table with SyncColumns {
   TextColumn get companyId => text().references(Companies, #id)();
@@ -81,12 +92,19 @@ class Series extends Table with SyncColumns {
   /// Suggested series for its document type
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+
   @override
   List<Set<Column>> get uniqueKeys => [
     {companyId, tipoComprobante, serie},
   ];
 }
 
+@TableIndex.sql(
+  'CREATE UNIQUE INDEX customers_document ON customers '
+  '(company_id, tipo_documento_identidad, numero_documento_identidad) '
+  'WHERE deleted_at IS NULL',
+)
 class Customers extends Table with SyncColumns {
   TextColumn get companyId => text().references(Companies, #id)();
 

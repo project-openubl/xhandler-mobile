@@ -14,16 +14,16 @@ class CompanyRepository {
 
   static const _activeCompanyKey = 'active_company_id';
 
-  Stream<List<Company>> watchAll() {
-    final query = _db.select(_db.companies)
-      ..where((c) => c.deletedAt.isNull())
-      ..orderBy([(c) => OrderingTerm(expression: c.razonSocial)]);
-    return query.watch();
-  }
+  Stream<List<Company>> watchAll() => _companies().watch();
 
-  Future<Company?> find(String id) => (_db.select(
+  SimpleSelectStatement<$CompaniesTable, Company> _companies() =>
+      _db.select(_db.companies)
+        ..where((c) => c.deletedAt.isNull())
+        ..orderBy([(c) => OrderingTerm(expression: c.razonSocial)]);
+
+  Future<Company?> findByRuc(String ruc) => (_db.select(
     _db.companies,
-  )..where((c) => c.id.equals(id) & c.deletedAt.isNull())).getSingleOrNull();
+  )..where((c) => c.ruc.equals(ruc) & c.deletedAt.isNull())).getSingleOrNull();
 
   /// Adds the company with its [defaultSeries] and makes it the active one
   Future<String> create(CompaniesCompanion company) =>
@@ -45,17 +45,27 @@ class CompanyRepository {
         return created.id;
       });
 
-  Future<void> update(CompaniesCompanion company) =>
-      (_db.update(_db.companies)..where((c) => c.id.equals(company.id.value)))
-          .write(company.copyWith(updatedAt: Value(DateTime.now())));
+  Future<void> update(String id, CompaniesCompanion changes) =>
+      _db.updateRow(_db.companies, id, changes);
 
-  /// Hides the company (soft delete, see docs/DESIGN.md §3.1) and deletes
-  /// its secrets
+  /// Hides the company (DESIGN §3.1), activates another one if it was the
+  /// active one, and deletes its secrets
   Future<void> delete(String id) async {
-    final now = DateTime.now();
-    await (_db.update(_db.companies)..where((c) => c.id.equals(id))).write(
-      CompaniesCompanion(deletedAt: Value(now), updatedAt: Value(now)),
-    );
+    await _db.transaction(() async {
+      await _db.softDelete(_db.companies, id);
+      final active = await (_db.select(
+        _db.deviceSettings,
+      )..where((s) => s.key.equals(_activeCompanyKey))).getSingleOrNull();
+      if (active?.value != id) return;
+      final remaining = await _companies().get();
+      if (remaining.isEmpty) {
+        await (_db.delete(
+          _db.deviceSettings,
+        )..where((s) => s.key.equals(_activeCompanyKey))).go();
+      } else {
+        await setActive(remaining.first.id);
+      }
+    });
     await _secureStore.deleteCompanySecrets(id);
   }
 
@@ -80,7 +90,8 @@ class CompanyRepository {
   Future<CompanySecrets> readSecrets(String id) =>
       _secureStore.readCompanySecrets(id);
 
-  Future<void> writeSecrets(String id, CompanySecrets secrets) =>
+  /// See [SecureStore.writeCompanySecrets]
+  Future<void> writeSecrets(String id, Map<CompanySecret, String?> secrets) =>
       _secureStore.writeCompanySecrets(id, secrets);
 }
 

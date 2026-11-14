@@ -16,8 +16,8 @@ class CustomerRepository {
         (c) =>
             c.companyId.equals(companyId) &
             c.deletedAt.isNull() &
-            (c.nombre.contains(search) |
-                c.numeroDocumentoIdentidad.contains(search)),
+            (containsText(c.nombre, search) |
+                containsText(c.numeroDocumentoIdentidad, search)),
       )
       ..orderBy([(c) => OrderingTerm(expression: c.nombre)]);
     return query.watch();
@@ -39,18 +39,13 @@ class CustomerRepository {
     return query.getSingleOrNull();
   }
 
-  Future<void> save(CustomersCompanion customer) => _db
-      .into(_db.customers)
-      .insertOnConflictUpdate(
-        customer.copyWith(updatedAt: Value(DateTime.now())),
-      );
+  Future<void> create(CustomersCompanion customer) =>
+      _db.into(_db.customers).insert(customer);
 
-  Future<void> delete(String id) {
-    final now = DateTime.now();
-    return (_db.update(_db.customers)..where((c) => c.id.equals(id))).write(
-      CustomersCompanion(deletedAt: Value(now), updatedAt: Value(now)),
-    );
-  }
+  Future<void> update(String id, CustomersCompanion changes) =>
+      _db.updateRow(_db.customers, id, changes);
+
+  Future<void> delete(String id) => _db.softDelete(_db.customers, id);
 }
 
 final customerRepositoryProvider = Provider(

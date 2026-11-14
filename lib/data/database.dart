@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../src/rust/api/sunat.dart';
 import 'tables.dart';
@@ -18,20 +17,33 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
-  );
-}
+  /// Updates a row that isn't deleted and stamps `updated_at`. `id` and
+  /// `deleted_at` in [changes] are ignored.
+  Future<void> updateRow<T extends SyncColumns, D>(
+    TableInfo<T, D> table,
+    String id,
+    Insertable<D> changes,
+  ) {
+    final columns = {
+      ...changes.toColumns(false),
+      'updated_at': Variable(nowUtc()),
+    }..removeWhere((name, _) => name == 'id' || name == 'deleted_at');
+    final query = update(table)
+      ..where((row) => row.id.equals(id) & row.deletedAt.isNull());
+    return query.write(RawValuesInsertable(columns));
+  }
 
-/// Opens the app's database file, encrypted with [key] (hex)
-AppDatabase openAppDatabase(String key) {
-  return AppDatabase(
-    LazyDatabase(() async {
-      final directory = await getApplicationSupportDirectory();
-      return openEncryptedDatabase(File('${directory.path}/xhandler.db'), key);
-    }),
-  );
+  /// Hides the row (DESIGN §3.1: deletions must be replicable)
+  Future<void> softDelete<T extends SyncColumns, D>(
+    TableInfo<T, D> table,
+    String id,
+  ) {
+    final now = Variable(nowUtc());
+    final query = update(table)..where((row) => row.id.equals(id));
+    return query.write(
+      RawValuesInsertable({'deleted_at': now, 'updated_at': now}),
+    );
+  }
 }
 
 /// SQLite3MultipleCiphers database file encrypted with [key] (hex)
@@ -41,6 +53,17 @@ QueryExecutor openEncryptedDatabase(File file, String key) {
   }
   return NativeDatabase.createInBackground(
     file,
-    setup: (database) => database.execute("PRAGMA key = '$key'"),
+    setup: (database) => database
+      ..execute("PRAGMA key = '$key'")
+      ..execute('PRAGMA foreign_keys = ON'),
   );
+}
+
+/// `column LIKE '%text%'`, with `%` and `_` in [text] taken literally
+Expression<bool> containsText(Expression<String> column, String text) {
+  final escaped = text.replaceAllMapped(
+    RegExp(r'[\\%_]'),
+    (match) => '\\${match[0]}',
+  );
+  return column.like('%$escaped%', escapeChar: r'\');
 }

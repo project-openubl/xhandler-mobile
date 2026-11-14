@@ -25,33 +25,39 @@ class SeriesRepository {
 
   Stream<List<Serie>> watchByCompany(String companyId) {
     final query = _db.select(_db.series)
-      ..where((s) => s.companyId.equals(companyId) & s.deletedAt.isNull())
-      ..orderBy([(s) => OrderingTerm(expression: s.tipoComprobante)])
-      ..orderBy([(s) => OrderingTerm(expression: s.serie)]);
+      ..where((s) => s.companyId.equals(companyId))
+      ..orderBy([
+        (s) => OrderingTerm(expression: s.tipoComprobante),
+        (s) => OrderingTerm(expression: s.serie),
+      ]);
     return query.watch();
   }
 
-  Future<void> save(SeriesCompanion serie) => _db
-      .into(_db.series)
-      .insertOnConflictUpdate(serie.copyWith(updatedAt: Value(DateTime.now())));
+  Future<void> create(SeriesCompanion serie) =>
+      _db.into(_db.series).insert(serie);
+
+  Future<void> update(String id, SeriesCompanion changes) =>
+      _db.updateRow(_db.series, id, changes);
 
   /// Makes [serie] the suggested one of its document type. Notas de crédito
   /// and débito have one per affected document (F... for facturas, B... for
-  /// boletas), so only series starting with the same letter are replaced.
+  /// boletas), so only series starting with the same letter are replaced;
+  /// the other types have a single kind.
   Future<void> setDefault(Serie serie) => _db.transaction(() async {
-    final now = DateTime.now();
-    await (_db.update(_db.series)..where(
-          (s) =>
-              s.companyId.equals(serie.companyId) &
-              s.tipoComprobante.equals(serie.tipoComprobante) &
-              s.serie.like('${serie.serie[0]}%'),
-        ))
-        .write(
-          SeriesCompanion(isDefault: const Value(false), updatedAt: Value(now)),
-        );
-    await (_db.update(_db.series)..where((s) => s.id.equals(serie.id))).write(
-      SeriesCompanion(isDefault: const Value(true), updatedAt: Value(now)),
-    );
+    final sameKind =
+        await (_db.select(_db.series)..where(
+              (s) =>
+                  s.companyId.equals(serie.companyId) &
+                  s.tipoComprobante.equals(serie.tipoComprobante) &
+                  s.serie.like('${serie.serie[0]}%'),
+            ))
+            .get();
+    for (final other in sameKind) {
+      await update(
+        other.id,
+        SeriesCompanion(isDefault: Value(other.id == serie.id)),
+      );
+    }
   });
 }
 

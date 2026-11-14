@@ -4,40 +4,74 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+enum CompanySecret {
+  /// PKCS#12 keystore (.pfx), base64
+  certificate,
+  certificatePassword,
+  solUsername,
+  solPassword,
+  greClientId,
+  greClientSecret,
+  lookupToken,
+}
+
 /// Secrets of a company, kept in the Android Keystore / iOS Keychain
 class CompanySecrets {
-  const CompanySecrets({
-    this.certificate,
-    this.certificatePassword,
-    this.solUsername,
-    this.solPassword,
-    this.greClientId,
-    this.greClientSecret,
-    this.lookupToken,
-  });
+  const CompanySecrets(this._values);
 
-  /// PKCS#12 keystore (.pfx)
-  final Uint8List? certificate;
-  final String? certificatePassword;
-  final String? solUsername;
-  final String? solPassword;
-  final String? greClientId;
-  final String? greClientSecret;
-  final String? lookupToken;
+  final Map<CompanySecret, String> _values;
+
+  Uint8List? get certificate {
+    final certificate = _values[CompanySecret.certificate];
+    return certificate == null ? null : base64Decode(certificate);
+  }
+
+  String? get certificatePassword => _values[CompanySecret.certificatePassword];
+  String? get solUsername => _values[CompanySecret.solUsername];
+  String? get solPassword => _values[CompanySecret.solPassword];
+  String? get greClientId => _values[CompanySecret.greClientId];
+  String? get greClientSecret => _values[CompanySecret.greClientSecret];
+  String? get lookupToken => _values[CompanySecret.lookupToken];
+}
+
+/// The database exists but its key is gone (e.g. the secure storage was
+/// wiped): the database can't be opened anymore
+class DatabaseKeyLostError implements Exception {
+  const DatabaseKeyLostError();
 }
 
 class SecureStore {
-  SecureStore([this._storage = const FlutterSecureStorage()]);
+  SecureStore([FlutterSecureStorage? storage])
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            // Fail instead of silently wiping everything
+            aOptions: AndroidOptions(resetOnError: false),
+            // Readable by background backups after the first unlock, and
+            // kept out of iCloud: the app's own backup carries the secrets
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock_this_device,
+            ),
+          );
 
   final FlutterSecureStorage _storage;
 
   static const _databaseKey = 'database_key';
 
-  /// Key of the encrypted database, generated the first time
-  Future<String> databaseKey() async {
-    final existing = await _storage.read(key: _databaseKey);
-    if (existing != null) return existing;
+  /// Key of the encrypted database. Call it once, at startup.
+  ///
+  /// Without a database this is a fresh install: what a previous install
+  /// left (iOS keeps the keychain after uninstalling) is deleted and a new
+  /// key is generated. Throws [DatabaseKeyLostError] when the database
+  /// exists but its key doesn't.
+  Future<String> databaseKey({required bool databaseExists}) async {
+    if (databaseExists) {
+      final key = await _storage.read(key: _databaseKey);
+      if (key == null) throw const DatabaseKeyLostError();
+      return key;
+    }
 
+    await _storage.deleteAll();
     final random = Random.secure();
     final key = List.generate(
       32,
@@ -48,44 +82,34 @@ class SecureStore {
   }
 
   Future<CompanySecrets> readCompanySecrets(String companyId) async {
-    Future<String?> read(String name) =>
-        _storage.read(key: _companyKey(companyId, name));
-    final certificate = await read('certificate');
-    return CompanySecrets(
-      certificate: certificate == null ? null : base64Decode(certificate),
-      certificatePassword: await read('certificate_password'),
-      solUsername: await read('sol_username'),
-      solPassword: await read('sol_password'),
-      greClientId: await read('gre_client_id'),
-      greClientSecret: await read('gre_client_secret'),
-      lookupToken: await read('lookup_token'),
-    );
+    final values = <CompanySecret, String>{};
+    for (final secret in CompanySecret.values) {
+      final value = await _storage.read(key: _key(companyId, secret));
+      if (value != null) values[secret] = value;
+    }
+    return CompanySecrets(values);
   }
 
-  /// Replaces all the secrets of the company; `null` values are deleted
+  /// Writes the given secrets; a `null` value deletes that secret and the
+  /// ones not given are left as they are
   Future<void> writeCompanySecrets(
     String companyId,
-    CompanySecrets secrets,
+    Map<CompanySecret, String?> secrets,
   ) async {
-    final values = {
-      'certificate': secrets.certificate == null
-          ? null
-          : base64Encode(secrets.certificate!),
-      'certificate_password': secrets.certificatePassword,
-      'sol_username': secrets.solUsername,
-      'sol_password': secrets.solPassword,
-      'gre_client_id': secrets.greClientId,
-      'gre_client_secret': secrets.greClientSecret,
-      'lookup_token': secrets.lookupToken,
-    };
-    for (final MapEntry(:key, :value) in values.entries) {
-      await _storage.write(key: _companyKey(companyId, key), value: value);
+    for (final MapEntry(:key, :value) in secrets.entries) {
+      await _storage.write(key: _key(companyId, key), value: value);
     }
   }
 
-  Future<void> deleteCompanySecrets(String companyId) =>
-      writeCompanySecrets(companyId, const CompanySecrets());
+  /// Deletes every secret of the company, including any added in later
+  /// versions
+  Future<void> deleteCompanySecrets(String companyId) async {
+    final prefix = 'company/$companyId/';
+    for (final key in (await _storage.readAll()).keys.toList()) {
+      if (key.startsWith(prefix)) await _storage.delete(key: key);
+    }
+  }
 
-  static String _companyKey(String companyId, String name) =>
-      'company/$companyId/$name';
+  static String _key(String companyId, CompanySecret secret) =>
+      'company/$companyId/${secret.name}';
 }

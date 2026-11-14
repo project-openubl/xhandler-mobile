@@ -317,7 +317,10 @@ Every delivery is logged in `delivery`.
 
 ## 9. Backup and restore
 
-- Snapshot: `VACUUM INTO` (consistent while running) + company secrets.
+- Snapshot: `VACUUM INTO` (consistent while running) + company secrets. The
+  snapshot stays encrypted with this device's database key, so it is
+  re-keyed (`PRAGMA rekey`) to a key derived from the backup password before
+  uploading; a new device can't know the old device's key.
 - Encryption: user backup password or generated 64-char key → Argon2id → AES-256-GCM
   (`cryptography`). Lost password = lost backup (stated in the UI).
 - Destinations: Google Drive `appDataFolder` (Android), iCloud Drive container (iOS).
@@ -369,7 +372,7 @@ xhandler-mobile/
 └── docs/DESIGN.md
 ```
 
-Main packages: flutter_riverpod, go_router, drift, sqlcipher_flutter_libs,
+Main packages: flutter_riverpod, go_router, drift, sqlite3 (hook `source: sqlite3mc`),
 flutter_secure_storage, local_auth, workmanager, connectivity_plus,
 flutter_local_notifications, google_sign_in, googleapis, msal (or equivalent), mailer,
 cryptography, file_picker, share_plus, pdf, printing, excel.

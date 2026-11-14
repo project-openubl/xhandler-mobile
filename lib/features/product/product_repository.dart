@@ -17,7 +17,8 @@ class ProductRepository {
         (p) =>
             p.companyId.equals(companyId) &
             p.deletedAt.isNull() &
-            (p.descripcion.contains(search) | p.codigo.contains(search)),
+            (containsText(p.descripcion, search) |
+                containsText(p.codigo, search)),
       )
       ..orderBy([
         (p) => OrderingTerm.desc(p.favorito),
@@ -26,18 +27,13 @@ class ProductRepository {
     return query.watch();
   }
 
-  Future<void> save(ProductsCompanion product) => _db
-      .into(_db.products)
-      .insertOnConflictUpdate(
-        product.copyWith(updatedAt: Value(DateTime.now())),
-      );
+  Future<void> create(ProductsCompanion product) =>
+      _db.into(_db.products).insert(product);
 
-  Future<void> delete(String id) {
-    final now = DateTime.now();
-    return (_db.update(_db.products)..where((p) => p.id.equals(id))).write(
-      ProductsCompanion(deletedAt: Value(now), updatedAt: Value(now)),
-    );
-  }
+  Future<void> update(String id, ProductsCompanion changes) =>
+      _db.updateRow(_db.products, id, changes);
+
+  Future<void> delete(String id) => _db.softDelete(_db.products, id);
 }
 
 final productRepositoryProvider = Provider(

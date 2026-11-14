@@ -29,7 +29,7 @@ class $CompaniesTable extends Companies
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -41,7 +41,7 @@ class $CompaniesTable extends Companies
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
@@ -1384,7 +1384,7 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -1396,7 +1396,7 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
@@ -1474,6 +1474,19 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1485,6 +1498,7 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
     serie,
     nextNumber,
     isDefault,
+    active,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1558,6 +1572,12 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
         isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
       );
     }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
     return context;
   }
 
@@ -1607,6 +1627,10 @@ class $SeriesTable extends Series with TableInfo<$SeriesTable, Serie> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_default'],
       )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
     );
   }
 
@@ -1632,6 +1656,7 @@ class Serie extends DataClass implements Insertable<Serie> {
 
   /// Suggested series for its document type
   final bool isDefault;
+  final bool active;
   const Serie({
     required this.id,
     required this.createdAt,
@@ -1642,6 +1667,7 @@ class Serie extends DataClass implements Insertable<Serie> {
     required this.serie,
     required this.nextNumber,
     required this.isDefault,
+    required this.active,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1657,6 +1683,7 @@ class Serie extends DataClass implements Insertable<Serie> {
     map['serie'] = Variable<String>(serie);
     map['next_number'] = Variable<int>(nextNumber);
     map['is_default'] = Variable<bool>(isDefault);
+    map['active'] = Variable<bool>(active);
     return map;
   }
 
@@ -1673,6 +1700,7 @@ class Serie extends DataClass implements Insertable<Serie> {
       serie: Value(serie),
       nextNumber: Value(nextNumber),
       isDefault: Value(isDefault),
+      active: Value(active),
     );
   }
 
@@ -1691,6 +1719,7 @@ class Serie extends DataClass implements Insertable<Serie> {
       serie: serializer.fromJson<String>(json['serie']),
       nextNumber: serializer.fromJson<int>(json['nextNumber']),
       isDefault: serializer.fromJson<bool>(json['isDefault']),
+      active: serializer.fromJson<bool>(json['active']),
     );
   }
   @override
@@ -1706,6 +1735,7 @@ class Serie extends DataClass implements Insertable<Serie> {
       'serie': serializer.toJson<String>(serie),
       'nextNumber': serializer.toJson<int>(nextNumber),
       'isDefault': serializer.toJson<bool>(isDefault),
+      'active': serializer.toJson<bool>(active),
     };
   }
 
@@ -1719,6 +1749,7 @@ class Serie extends DataClass implements Insertable<Serie> {
     String? serie,
     int? nextNumber,
     bool? isDefault,
+    bool? active,
   }) => Serie(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1729,6 +1760,7 @@ class Serie extends DataClass implements Insertable<Serie> {
     serie: serie ?? this.serie,
     nextNumber: nextNumber ?? this.nextNumber,
     isDefault: isDefault ?? this.isDefault,
+    active: active ?? this.active,
   );
   Serie copyWithCompanion(SeriesCompanion data) {
     return Serie(
@@ -1745,6 +1777,7 @@ class Serie extends DataClass implements Insertable<Serie> {
           ? data.nextNumber.value
           : this.nextNumber,
       isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      active: data.active.present ? data.active.value : this.active,
     );
   }
 
@@ -1759,7 +1792,8 @@ class Serie extends DataClass implements Insertable<Serie> {
           ..write('tipoComprobante: $tipoComprobante, ')
           ..write('serie: $serie, ')
           ..write('nextNumber: $nextNumber, ')
-          ..write('isDefault: $isDefault')
+          ..write('isDefault: $isDefault, ')
+          ..write('active: $active')
           ..write(')'))
         .toString();
   }
@@ -1775,6 +1809,7 @@ class Serie extends DataClass implements Insertable<Serie> {
     serie,
     nextNumber,
     isDefault,
+    active,
   );
   @override
   bool operator ==(Object other) =>
@@ -1788,7 +1823,8 @@ class Serie extends DataClass implements Insertable<Serie> {
           other.tipoComprobante == this.tipoComprobante &&
           other.serie == this.serie &&
           other.nextNumber == this.nextNumber &&
-          other.isDefault == this.isDefault);
+          other.isDefault == this.isDefault &&
+          other.active == this.active);
 }
 
 class SeriesCompanion extends UpdateCompanion<Serie> {
@@ -1801,6 +1837,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
   final Value<String> serie;
   final Value<int> nextNumber;
   final Value<bool> isDefault;
+  final Value<bool> active;
   final Value<int> rowid;
   const SeriesCompanion({
     this.id = const Value.absent(),
@@ -1812,6 +1849,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
     this.serie = const Value.absent(),
     this.nextNumber = const Value.absent(),
     this.isDefault = const Value.absent(),
+    this.active = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SeriesCompanion.insert({
@@ -1824,6 +1862,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
     required String serie,
     this.nextNumber = const Value.absent(),
     this.isDefault = const Value.absent(),
+    this.active = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : companyId = Value(companyId),
        tipoComprobante = Value(tipoComprobante),
@@ -1838,6 +1877,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
     Expression<String>? serie,
     Expression<int>? nextNumber,
     Expression<bool>? isDefault,
+    Expression<bool>? active,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1850,6 +1890,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
       if (serie != null) 'serie': serie,
       if (nextNumber != null) 'next_number': nextNumber,
       if (isDefault != null) 'is_default': isDefault,
+      if (active != null) 'active': active,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1864,6 +1905,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
     Value<String>? serie,
     Value<int>? nextNumber,
     Value<bool>? isDefault,
+    Value<bool>? active,
     Value<int>? rowid,
   }) {
     return SeriesCompanion(
@@ -1876,6 +1918,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
       serie: serie ?? this.serie,
       nextNumber: nextNumber ?? this.nextNumber,
       isDefault: isDefault ?? this.isDefault,
+      active: active ?? this.active,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1910,6 +1953,9 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
     if (isDefault.present) {
       map['is_default'] = Variable<bool>(isDefault.value);
     }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1928,6 +1974,7 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
           ..write('serie: $serie, ')
           ..write('nextNumber: $nextNumber, ')
           ..write('isDefault: $isDefault, ')
+          ..write('active: $active, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1960,7 +2007,7 @@ class $CustomersTable extends Customers
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -1972,7 +2019,7 @@ class $CustomersTable extends Customers
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
@@ -2646,7 +2693,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -2658,7 +2705,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     false,
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
-    clientDefault: DateTime.now,
+    clientDefault: nowUtc,
   );
   static const VerificationMeta _deletedAtMeta = const VerificationMeta(
     'deletedAt',
@@ -3768,6 +3815,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CustomersTable customers = $CustomersTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $DeviceSettingsTable deviceSettings = $DeviceSettingsTable(this);
+  late final Index companiesRuc = Index(
+    'companies_ruc',
+    'CREATE UNIQUE INDEX companies_ruc ON companies (ruc) WHERE deleted_at IS NULL',
+  );
+  late final Index customersDocument = Index(
+    'customers_document',
+    'CREATE UNIQUE INDEX customers_document ON customers (company_id, tipo_documento_identidad, numero_documento_identidad) WHERE deleted_at IS NULL',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3778,7 +3833,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     customers,
     products,
     deviceSettings,
+    companiesRuc,
+    customersDocument,
   ];
+  @override
+  DriftDatabaseOptions get options =>
+      const DriftDatabaseOptions(storeDateTimeAsText: true);
 }
 
 typedef $$CompaniesTableCreateCompanionBuilder = CompaniesCompanion Function({
@@ -4671,6 +4731,7 @@ typedef $$SeriesTableCreateCompanionBuilder = SeriesCompanion Function({
   required String serie,
   Value<int> nextNumber,
   Value<bool> isDefault,
+  Value<bool> active,
   Value<int> rowid,
 });
 typedef $$SeriesTableUpdateCompanionBuilder = SeriesCompanion Function({
@@ -4683,6 +4744,7 @@ typedef $$SeriesTableUpdateCompanionBuilder = SeriesCompanion Function({
   Value<String> serie,
   Value<int> nextNumber,
   Value<bool> isDefault,
+  Value<bool> active,
   Value<int> rowid,
 });
 
@@ -4754,6 +4816,11 @@ class $$SeriesTableFilterComposer
 
   ColumnFilters<bool> get isDefault => $composableBuilder(
     column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4830,6 +4897,11 @@ class $$SeriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CompaniesTableOrderingComposer get companyId {
     final $$CompaniesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4890,6 +4962,9 @@ class $$SeriesTableAnnotationComposer
 
   GeneratedColumn<bool> get isDefault =>
       $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
 
   $$CompaniesTableAnnotationComposer get companyId {
     final $$CompaniesTableAnnotationComposer composer = $composerBuilder(
@@ -4952,6 +5027,7 @@ class $$SeriesTableTableManager
                 Value<String> serie = const Value.absent(),
                 Value<int> nextNumber = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
+                Value<bool> active = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SeriesCompanion(
                 id: id,
@@ -4963,6 +5039,7 @@ class $$SeriesTableTableManager
                 serie: serie,
                 nextNumber: nextNumber,
                 isDefault: isDefault,
+                active: active,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4976,6 +5053,7 @@ class $$SeriesTableTableManager
                 required String serie,
                 Value<int> nextNumber = const Value.absent(),
                 Value<bool> isDefault = const Value.absent(),
+                Value<bool> active = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SeriesCompanion.insert(
                 id: id,
@@ -4987,6 +5065,7 @@ class $$SeriesTableTableManager
                 serie: serie,
                 nextNumber: nextNumber,
                 isDefault: isDefault,
+                active: active,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
