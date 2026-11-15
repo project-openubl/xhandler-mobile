@@ -57,8 +57,6 @@ class Companies extends Table with SyncColumns {
   /// IGV type of new products (Catalog 7), "10" = gravado
   TextColumn get igvTipo => text().withDefault(const Constant('10'))();
 
-  /// Banco de la Nación account for detracciones
-  TextColumn get cuentaDetracciones => text().nullable()();
   BoolColumn get esAgentePercepcion =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get esAgenteRetencion =>
