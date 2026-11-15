@@ -11,15 +11,16 @@ import '../../peru_date.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../company/company_repository.dart';
+import '../delivery/delivery_service.dart';
+import '../delivery/delivery_sheet.dart';
+import '../despatch/despatch_advice_form_page.dart';
+import '../pdf/document_view.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
-import '../despatch/despatch_advice_form_page.dart';
-import '../pdf/document_view.dart';
-import '../delivery/delivery_service.dart';
-import '../delivery/delivery_sheet.dart';
 import 'note_form_page.dart';
+import 'sunat_answer.dart';
 import 'voiding.dart';
 
 /// A document: its status, SUNAT's answer and history (docs/DESIGN.md §5)
@@ -63,7 +64,7 @@ class DocumentDetailPage extends ConsumerWidget {
         company != null &&
         company.id == document.companyId &&
         company.sunatEnvironment == document.environment;
-    final isAccepted = DocumentService.accepted.contains(document.status);
+    final isAccepted = acceptedStatuses.contains(document.status);
     // Notas modify accepted facturas and boletas
     final canHaveNotes =
         isActive &&

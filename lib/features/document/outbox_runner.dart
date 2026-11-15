@@ -30,8 +30,10 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     _timer = Timer.periodic(const Duration(minutes: 1), (_) => _run());
     _lifecycle = AppLifecycleListener(onResume: _resumed);
     // While closed, the work goes on in the background
-    scheduleBackgroundOutbox().catchError(
-      (Object error) => debugPrint('Background outbox: $error'),
+    unawaited(
+      scheduleBackgroundOutbox().catchError(
+        (Object error) => debugPrint('Background outbox: $error'),
+      ),
     );
   }
 
@@ -55,10 +57,12 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
   }
 
   /// Errors are logged: the next round tries again
-  void _run() => ref
-      .read(documentServiceProvider)
-      .sendDue()
-      .catchError((Object error) => debugPrint('Outbox: $error'));
+  void _run() => unawaited(
+    ref
+        .read(documentServiceProvider)
+        .sendDue()
+        .catchError((Object error) => debugPrint('Outbox: $error')),
+  );
 
   @override
   Widget build(BuildContext context) => widget.child;

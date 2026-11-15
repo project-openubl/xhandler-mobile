@@ -5,9 +5,12 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../data/database.dart';
+import '../../data/providers.dart';
 import '../../data/secure_store.dart';
 
 /// The backup password is wrong, or the file was changed
@@ -251,3 +254,17 @@ Uint8List _random(int length) {
 
 String _hex(List<int> bytes) =>
     bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+
+final backupServiceProvider = Provider(
+  (ref) => BackupService(ref.watch(secureStoreProvider), getTemporaryDirectory),
+);
+
+/// Device setting with when this device last made a backup
+const lastBackupKey = 'last_backup_at';
+
+final lastBackupProvider = StreamProvider.autoDispose<DateTime?>(
+  (ref) => ref
+      .watch(databaseProvider)
+      .watchSetting(lastBackupKey)
+      .map((value) => value == null ? null : DateTime.parse(value)),
+);

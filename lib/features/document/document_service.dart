@@ -15,7 +15,10 @@ import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import 'document_repository.dart';
 import 'document_status.dart';
+import 'document_totals.dart';
+import 'draft_problem.dart';
 import 'invoice_draft.dart';
+import 'sunat_answer.dart';
 import 'sunat_bridge.dart';
 import 'voiding.dart';
 
@@ -23,136 +26,6 @@ import 'voiding.dart';
 class MissingCertificateError implements Exception {
   const MissingCertificateError();
 }
-
-/// Why a draft can't be issued; checked before using a number, since SUNAT
-/// would reject the document and the number would be lost
-enum DraftProblem {
-  noLines,
-
-  /// Facturas are for customers with a RUC
-  facturaWithoutRuc,
-
-  /// Percepciones and retenciones are for customers or suppliers with a RUC
-  customerWithoutRuc,
-
-  /// A percepción or retención is of some amount, up to the factura's total
-  operacionOverTotal,
-
-  /// Guías need where the goods leave from and arrive at
-  missingAddresses,
-
-  /// Guías need the vehicle and driver (privado) or the carrier (público)
-  missingTransport,
-
-  /// Motivo "otros" needs a description
-  missingMotivo,
-
-  /// Guías go to an identified destinatario
-  anonymousDestinatario,
-
-  /// Transfers between the company's establishments need their SUNAT codes
-  missingCodigoLocal,
-
-  /// Boletas over S/ 700 need an identified customer
-  anonymousOver700,
-
-  /// Installments must add up to the total, after the issue date
-  cuotasMismatch,
-
-  /// Notas of facturas use F series, notas of boletas B series
-  noteSerieMismatch,
-
-  /// Notas modify facturas and boletas accepted by SUNAT, in the same
-  /// environment
-  invalidAffectedDocument,
-
-  /// Notas de crédito can't credit more than the invoice's total
-  noteExceedsInvoice,
-
-  /// Only documents SUNAT accepted can be voided
-  notVoidable,
-
-  /// Facturas and boletas are voided after their notas
-  voidNotesFirst,
-
-  /// Voiding is allowed up to [voidingDays] after the issue date
-  voidingTooLate,
-}
-
-class InvalidDraftError implements Exception {
-  const InvalidDraftError(this.problem);
-
-  final DraftProblem problem;
-}
-
-/// Codes of local problems recorded as SUNAT answers
-abstract final class LocalCodes {
-  /// The app couldn't send or read the answer (a bug or corrupt data)
-  static const error = 'LOCAL';
-
-  /// Production without SOL credentials
-  static const noCredentials = 'NO_CREDENTIALS';
-
-  /// Production guías without the GRE API credentials
-  static const noGreCredentials = 'NO_GRE_CREDENTIALS';
-
-  /// A guía in test mode: SUNAT has no beta for guías, so it's signed but
-  /// not sent
-  static const betaGuia = 'BETA_GUIA';
-
-  /// A ticket from SUNAT beta, which can't check tickets: test mode takes
-  /// the comunicación de baja or resumen as accepted
-  static const betaTicket = 'BETA_TICKET';
-}
-
-/// Customer of boletas to people who don't identify themselves (accepted by
-/// SUNAT for sales up to S/ 700)
-const anonymousCustomer = DraftCustomer(
-  tipoDocumentoIdentidad: '0',
-  numeroDocumentoIdentidad: '-',
-  nombre: 'CLIENTES VARIOS',
-);
-
-/// Amounts of a document, as SUNAT shows them
-class DocumentTotals {
-  const DocumentTotals(this._spec);
-
-  /// The enriched document's `spec` (xbuilder JSON)
-  final Map<String, dynamic> _spec;
-
-  String _amount(String group, String field) =>
-      roundAmount('${(_spec[group] as Map?)?[field] ?? 0}');
-
-  String get gravado => _amount('total_impuestos', 'gravado_base_imponible');
-  String get exonerado =>
-      _amount('total_impuestos', 'exonerado_base_imponible');
-  String get inafecto => _amount('total_impuestos', 'inafecto_base_imponible');
-  String get exportacion =>
-      _amount('total_impuestos', 'exportacion_base_imponible');
-  String get igv => _amount('total_impuestos', 'gravado_importe');
-  String get isc => _amount('total_impuestos', 'isc_importe');
-  String get icb => _amount('total_impuestos', 'icb_importe');
-  String get total => _amount('total_importe', 'importe');
-}
-
-/// Boletas over S/ 700 need an identified customer. Only soles are checked:
-/// other currencies need an exchange rate, not supported yet.
-bool exceedsAnonymousLimit(
-  DraftCustomer customer,
-  String moneda,
-  String total,
-) => customer.isAnonymous && moneda == 'PEN' && toCents(total) > toCents('700');
-
-/// What the notas de crédito among [related] (the documents that modify
-/// an invoice) credit, unless SUNAT rejected or voided them
-BigInt creditedCents(Iterable<Document> related) => related
-    .where(
-      (d) =>
-          d.tipoComprobante == '07' &&
-          d.status != DocumentStatus.rejected &&
-          d.status != DocumentStatus.voided,
-    )
-    .fold(BigInt.zero, (sum, d) => sum + toCents(d.total));
 
 /// SUNAT's public demo certificate, used in test mode without a certificate
 Future<Uint8List> loadDemoCertificate() async =>
@@ -199,12 +72,6 @@ class DocumentService {
   /// How often a ticket is checked
   static const ticketCheckDelay = Duration(minutes: 2);
 
-  /// Statuses of documents SUNAT accepted
-  static const accepted = {
-    DocumentStatus.accepted,
-    DocumentStatus.acceptedWithObservations,
-  };
-
   /// Statuses a send can change: waiting ones, and those the user fixes
   static const sendable = {
     DocumentStatus.pendingSend,
@@ -212,6 +79,14 @@ class DocumentService {
     DocumentStatus.exception,
     DocumentStatus.unknown,
   };
+
+  /// What xbuilder fills in documents issued on [fechaEmision]
+  static DocumentDefaults _defaults(String fechaEmision) => DocumentDefaults(
+    igvTasa: TaxRates.igv,
+    icbTasa: TaxRates.icb,
+    ivapTasa: TaxRates.ivap,
+    fechaEmision: fechaEmision,
+  );
 
   /// The amounts [draft] would have, without issuing it
   Future<DocumentTotals> preview({
@@ -226,12 +101,7 @@ class DocumentService {
         serieNumero: '${serie.serie}-${serie.nextNumber}',
         fechaEmision: fechaEmision,
       ),
-      DocumentDefaults(
-        igvTasa: TaxRates.igv,
-        icbTasa: TaxRates.icb,
-        ivapTasa: TaxRates.ivap,
-        fechaEmision: fechaEmision,
-      ),
+      _defaults(fechaEmision),
     );
     final json = jsonDecode(built.enrichedJson) as Map<String, dynamic>;
     return DocumentTotals(json['spec'] as Map<String, dynamic>);
@@ -279,15 +149,7 @@ class DocumentService {
         serieNumero: '${current.serie}-$numero',
         fechaEmision: fechaEmision,
       );
-      final built = await _bridge.build(
-        inputJson,
-        DocumentDefaults(
-          igvTasa: TaxRates.igv,
-          icbTasa: TaxRates.icb,
-          ivapTasa: TaxRates.ivap,
-          fechaEmision: fechaEmision,
-        ),
-      );
+      final built = await _bridge.build(inputJson, _defaults(fechaEmision));
       final spec =
           (jsonDecode(built.enrichedJson) as Map)['spec']
               as Map<String, Object?>;
@@ -393,15 +255,7 @@ class DocumentService {
         numero: numero,
         fechaEmision: fechaEmision,
       );
-      final built = await _bridge.build(
-        inputJson,
-        DocumentDefaults(
-          igvTasa: TaxRates.igv,
-          icbTasa: TaxRates.icb,
-          ivapTasa: TaxRates.ivap,
-          fechaEmision: fechaEmision,
-        ),
-      );
+      final built = await _bridge.build(inputJson, _defaults(fechaEmision));
       final signed = await _bridge.sign(built.xml, certificate, password);
       final voiding = await _store(
         DocumentsCompanion.insert(
@@ -453,7 +307,7 @@ class DocumentService {
     String today,
   ) async {
     if (!voidableTipos.contains(document.tipoComprobante) ||
-        !accepted.contains(document.status) ||
+        !acceptedStatuses.contains(document.status) ||
         document.environment != company.sunatEnvironment) {
       throw const InvalidDraftError(DraftProblem.notVoidable);
     }
@@ -484,7 +338,7 @@ class DocumentService {
     String deviceId,
   ) async {
     final voidedId = voiding.affectedDocumentId;
-    final isVoided = accepted.contains(status);
+    final isVoided = acceptedStatuses.contains(status);
     if (!voidingTipos.contains(voiding.tipoComprobante) ||
         voidedId == null ||
         (!isVoided && status != DocumentStatus.rejected) ||
@@ -528,7 +382,7 @@ class DocumentService {
   ) async {
     final affected = await _documents.find(draft.affected.id);
     if (!const {'01', '03'}.contains(affected.tipoComprobante) ||
-        !accepted.contains(affected.status) ||
+        !acceptedStatuses.contains(affected.status) ||
         affected.companyId != company.id ||
         affected.environment != company.sunatEnvironment) {
       throw const InvalidDraftError(DraftProblem.invalidAffectedDocument);
@@ -898,20 +752,6 @@ class _NoCredentials implements Exception {
   /// [LocalCodes.noCredentials] or [LocalCodes.noGreCredentials]
   final String code;
 }
-
-/// The document status a SUNAT answer leads to (docs/DESIGN.md §5)
-DocumentStatus statusOf(SunatResponse response) => switch (response.status) {
-  SunatStatus.accepted
-      when response.notes.isNotEmpty ||
-          (int.tryParse(response.code ?? '') ?? 0) >= 4000 =>
-    DocumentStatus.acceptedWithObservations,
-  SunatStatus.accepted => DocumentStatus.accepted,
-  SunatStatus.rejected => DocumentStatus.rejected,
-  SunatStatus.exception => DocumentStatus.exception,
-  SunatStatus.inProgress => DocumentStatus.inProgress,
-  SunatStatus.unknown => DocumentStatus.unknown,
-  SunatStatus.notDelivered => DocumentStatus.pendingSend,
-};
 
 final documentServiceProvider = Provider(
   (ref) => DocumentService(

@@ -12,8 +12,8 @@ import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../customer/customer_repository.dart';
 import '../document/document_repository.dart';
-import '../document/document_service.dart';
 import '../document/document_status.dart';
+import '../document/sunat_answer.dart';
 import '../pdf/pdf_templates.dart';
 import '../pdf/share_document.dart';
 import 'email_sender.dart';
@@ -79,7 +79,7 @@ class DeliveryService {
       '',
       'Te enviamos tu $tipo ${serieNumero(document.serie, document.numero)}'
           ' por ${formatMoney(document.moneda, document.total)}, en PDF y XML.',
-      if (!DocumentService.accepted.contains(document.status))
+      if (!acceptedStatuses.contains(document.status))
         'Aún está pendiente de confirmación de SUNAT.',
       if (document.environment == SunatEnvironment.beta)
         Strings.testDocumentNote,

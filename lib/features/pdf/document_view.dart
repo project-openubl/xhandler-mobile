@@ -4,8 +4,9 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../src/rust/api/sunat.dart';
-import '../document/document_service.dart';
 import '../document/document_status.dart';
+import '../document/document_totals.dart';
+import '../document/sunat_answer.dart';
 import 'amount_words.dart';
 
 /// A line as printed: [precio] and [importe] are `null` on guías
@@ -158,7 +159,7 @@ DocumentView documentView(Document document, Company company) {
     qr: const {'01', '03', '07', '08'}.contains(document.tipoComprobante)
         ? _qr(document, company, spec)
         : null,
-    pending: !DocumentService.accepted.contains(document.status),
+    pending: !acceptedStatuses.contains(document.status),
     testMode: document.environment == SunatEnvironment.beta,
     footer:
         'Representación impresa $article ${title.toLowerCase()}. '

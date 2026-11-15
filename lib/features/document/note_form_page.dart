@@ -14,6 +14,8 @@ import '../series/series_repository.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
+import 'document_totals.dart';
+import 'draft_problem.dart';
 import 'emit_flow.dart';
 import 'invoice_draft.dart';
 import 'invoice_form_parts.dart';

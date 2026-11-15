@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -49,7 +51,7 @@ Future<void> deliverDocument(
         if (!await service.canEmail(company)) {
           if (anchor.mounted) {
             showMessage(anchor, Strings.emailNotConfigured);
-            anchor.push(Routes.emailSettings);
+            unawaited(anchor.push(Routes.emailSettings));
           }
           return;
         }
