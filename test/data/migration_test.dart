@@ -4,18 +4,24 @@ import 'package:xhandler_mobile/data/database.dart';
 
 import 'generated/schema.dart';
 
-/// Every schema version upgrades to the current one as if created fresh
-/// (drift_schemas/: `dart run drift_dev schema dump ...` after a change)
+/// Every schema version upgrades to the current one as if created fresh.
+/// After changing the tables: bump `schemaVersion`, add its `onUpgrade`
+/// step, then `dart run drift_dev schema dump lib/data/database.dart
+/// drift_schemas/app/` and `dart run drift_dev schema generate
+/// drift_schemas/app/ test/data/generated/`.
 void main() {
   late SchemaVerifier verifier;
 
   setUpAll(() => verifier = SchemaVerifier(GeneratedHelper()));
 
-  for (var from = 1; from < 3; from++) {
+  // The latest snapshot included: it must match the tables, so a forgotten
+  // dump fails here
+  for (final from in GeneratedHelper.versions) {
     test('upgrades from schema $from', () async {
       final connection = await verifier.startAt(from);
       final database = AppDatabase(connection);
-      await verifier.migrateAndValidate(database, 3);
+      expect(database.schemaVersion, GeneratedHelper.versions.last);
+      await verifier.migrateAndValidate(database, database.schemaVersion);
       await database.close();
     });
   }

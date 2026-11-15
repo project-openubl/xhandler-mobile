@@ -104,31 +104,45 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 
 ## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
+Defined in `lib/data/tables.dart`; schema version 1 (snapshot in `drift_schemas/app/`).
+Decimals are stored as text to keep them exact; timestamps as ISO-8601 UTC text.
+
 ```
-company           id, ruc, razon_social, nombre_comercial, direccion (ubigeo, departamento,
+-- every table except device_settings also has: id (UUIDv7), created_at, updated_at,
+-- deleted_at (see §3.1)
+companies         ruc, razon_social, nombre_comercial, domicilio fiscal (ubigeo, departamento,
                   provincia, distrito, direccion, urbanizacion, codigo_local), telefono, email,
-                  logo (blob), firmante_ruc, firmante_razon_social, sunat_env (beta|production),
-                  default_moneda, igv_tipo_default, cuenta_detracciones, es_agente_percepcion,
-                  es_agente_retencion, pdf_template_a4, pdf_template_ticket, pdf_options (json),
-                  email_provider, email_account, email_subject_tpl, email_body_tpl,
+                  sunat_environment (beta | production), moneda (of new documents),
+                  igv_tipo (of new products), es_agente_percepcion, es_agente_retencion,
                   lookup_provider (none | decolecta)
--- every table also has: id (UUIDv7), created_at, updated_at, deleted_at (see §3.1)
-series            id, company_id, tipo_comprobante, serie, next_number, is_default, active,
+                  UNIQUE(ruc) among the not deleted
+series            company_id, tipo_comprobante, serie, next_number, is_default, active
                   UNIQUE(company_id, tipo_comprobante, serie)
-customer          id, company_id, tipo_documento_identidad, numero, nombre, direccion, email, telefono
-product           id, company_id, codigo, descripcion, unidad_medida, precio, precio_incluye_igv,
-                  igv_tipo, isc_tipo, isc_tasa, es_bolsa, detraccion_codigo, favorito
-vehicle / driver  id, company_id, … (GRE catalogs: placa; chofer documento, licencia, nombre)
-address           id, company_id, label, direccion fields (GRE partida/llegada)
-document          id, company_id, env, tipo_comprobante, serie, numero, fecha_emision,
-                  customer snapshot, moneda, tipo_cambio, total, status,
-                  sunat_code, sunat_description, sunat_notes (json), ticket, digest_value,
-                  attempts, next_retry_at, last_error, input_json, enriched_json,
-                  affected_document_id, voided_by_document_id, archived, created_at, sent_at
-                  UNIQUE(company_id, env, tipo_comprobante, serie, numero)
-document_file     document_id, kind (xml_signed | cdr_zip), bytes, sha256
-document_event    document_id, at, status, code, message           -- timeline / audit
-delivery          document_id, channel, recipient, at, result      -- who received it
+customers         company_id, tipo_documento_identidad, numero_documento_identidad, nombre,
+                  direccion, distrito, provincia, departamento, ubigeo, email, telefono
+                  UNIQUE(company_id, tipo_documento_identidad, numero_documento_identidad)
+                  among the not deleted
+products          company_id, codigo, codigo_sunat, descripcion, unidad_medida, precio,
+                  precio_incluye_igv, igv_tipo, isc_tipo, isc_tasa, es_bolsa,
+                  detraccion_codigo, favorito
+vehicles          company_id, placa, numero_circulacion                -- GRE transporte privado
+drivers           company_id, tipo_documento_identidad, numero_documento_identidad, nombres,
+                  apellidos, licencia                                  -- GRE transporte privado
+addresses         company_id, nombre, ubigeo, direccion, codigo_local  -- GRE partida/llegada
+documents         company_id, environment, tipo_comprobante, serie, numero, fecha_emision
+                  (Peru's date), cliente_tipo_documento, cliente_numero_documento,
+                  cliente_nombre, moneda, total, status (§5), sunat_code, sunat_description,
+                  sunat_notes (json), ticket, digest_value, attempts, next_attempt_at,
+                  input_json (what the user entered), enriched_json (as built, for the PDF),
+                  affected_document_id, voided_by_document_id, device_id
+                  UNIQUE(company_id, environment, tipo_comprobante, serie, numero)
+                  INDEX(company_id, environment, created_at), INDEX(status, next_attempt_at)
+document_files    document_id, kind (signed_xml | cdr_zip), bytes, sha256
+                  UNIQUE(document_id, kind)
+document_events   document_id, status, code, message, device_id      -- timeline / audit
+deliveries        document_id, channel (email | share), recipient, device_id
+device_settings   key, value  -- this device only, not synced: device_id, active_company_id,
+                              -- last_backup_at, notifications_asked
 ```
 
 ### 3.1 Sync readiness
@@ -149,7 +163,7 @@ No sync in v1, but every synced table follows these rules so a later sync backen
 
 Secrets are **not** in the database. They live in `flutter_secure_storage`
 (Android Keystore / iOS Keychain) under `company/{id}/…`: certificate `.pfx`, its password,
-SOL user/password, GRE `client_id`/`client_secret`, SMTP password / OAuth tokens, lookup token.
+SOL user/password, GRE `client_id`/`client_secret`, SMTP host/port/user/password, lookup token.
 The database key is generated once and also kept there.
 
 ---
@@ -411,13 +425,14 @@ xhandler-mobile/
 ├── lib/
 │   ├── main.dart, app.dart, router.dart, strings.dart
 │   ├── src/rust/            generated bindings (do not edit)
-│   ├── data/                database.dart, secure_store.dart, outbox.dart
+│   ├── data/                tables.dart, database.dart, secure_store.dart, providers.dart
 │   └── features/
-│       ├── company/  series/  customer/  product/  catalogs/ (vehicle, driver, address)
-│       ├── document/ (list, quick_sale, form, detail, emit, voiding)
+│       ├── company/  series/  customer/  product/  home/  diagnostics/
+│       ├── document/ (list, quick_sale, form, detail, emit, voiding, outbox)
+│       ├── despatch/ (guías de remisión; vehicles, drivers, addresses)
 │       ├── pdf/ (registry, templates/)
-│       ├── delivery/ (gmail, graph, smtp, share)
-│       ├── backup/  reports/  settings/
+│       ├── delivery/ (smtp, share)
+│       ├── backup/  reports/
 ├── test/  integration_test/
 ├── android/  ios/
 └── docs/DESIGN.md

@@ -122,7 +122,11 @@ void main() {
       );
     }
     await expectLater(
-      service.open(backup, password: 'contraseña larga', schemaVersion: 1),
+      service.open(
+        backup,
+        password: 'contraseña larga',
+        schemaVersion: database.schemaVersion - 1,
+      ),
       throwsA(
         isA<InvalidBackupError>().having(
           (e) => e.newerVersion,
@@ -131,18 +135,5 @@ void main() {
         ),
       ),
     );
-  });
-
-  test('a backup of an older version migrates when opened', () async {
-    // As the app was in schema 2, before deliveries were recorded
-    await database.customStatement('DROP TABLE deliveries');
-    await database.customStatement('PRAGMA user_version = 2');
-    final backup = await service.create(database, 'contraseña larga');
-    final opened = await open(backup);
-
-    await database.close();
-    await service.install(opened, databaseFile);
-    database = await openDatabase();
-    expect(await database.select(database.deliveries).get(), isEmpty);
   });
 }

@@ -31,22 +31,10 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
+  /// Bump it with an `onUpgrade` step, a new snapshot in drift_schemas/app/
+  /// and the generated test helpers (see test/data/migration_test.dart)
   @override
-  int get schemaVersion => 3;
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onUpgrade: (m, from, to) async {
-      // 2: guías de remisión
-      if (from < 2) {
-        await m.createTable(vehicles);
-        await m.createTable(drivers);
-        await m.createTable(addresses);
-      }
-      // 3: deliveries to customers
-      if (from < 3) await m.createTable(deliveries);
-    },
-  );
+  int get schemaVersion => 1;
 
   /// Updates a row that isn't deleted and stamps `updated_at`. `id` and
   /// `deleted_at` in [changes] are ignored.

@@ -216,17 +216,6 @@ class $CompaniesTable extends Companies
     requiredDuringInsert: false,
     defaultValue: const Constant('10'),
   );
-  static const VerificationMeta _cuentaDetraccionesMeta =
-      const VerificationMeta('cuentaDetracciones');
-  @override
-  late final GeneratedColumn<String> cuentaDetracciones =
-      GeneratedColumn<String>(
-        'cuenta_detracciones',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
   static const VerificationMeta _esAgentePercepcionMeta =
       const VerificationMeta('esAgentePercepcion');
   @override
@@ -287,7 +276,6 @@ class $CompaniesTable extends Companies
     sunatEnvironment,
     moneda,
     igvTipo,
-    cuentaDetracciones,
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
@@ -428,15 +416,6 @@ class $CompaniesTable extends Companies
         igvTipo.isAcceptableOrUnknown(data['igv_tipo']!, _igvTipoMeta),
       );
     }
-    if (data.containsKey('cuenta_detracciones')) {
-      context.handle(
-        _cuentaDetraccionesMeta,
-        cuentaDetracciones.isAcceptableOrUnknown(
-          data['cuenta_detracciones']!,
-          _cuentaDetraccionesMeta,
-        ),
-      );
-    }
     if (data.containsKey('es_agente_percepcion')) {
       context.handle(
         _esAgentePercepcionMeta,
@@ -542,10 +521,6 @@ class $CompaniesTable extends Companies
         DriftSqlType.string,
         data['${effectivePrefix}igv_tipo'],
       )!,
-      cuentaDetracciones: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}cuenta_detracciones'],
-      ),
       esAgentePercepcion: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}es_agente_percepcion'],
@@ -602,9 +577,6 @@ class Company extends DataClass implements Insertable<Company> {
 
   /// IGV type of new products (Catalog 7), "10" = gravado
   final String igvTipo;
-
-  /// Banco de la Nación account for detracciones
-  final String? cuentaDetracciones;
   final bool esAgentePercepcion;
   final bool esAgenteRetencion;
 
@@ -630,7 +602,6 @@ class Company extends DataClass implements Insertable<Company> {
     required this.sunatEnvironment,
     required this.moneda,
     required this.igvTipo,
-    this.cuentaDetracciones,
     required this.esAgentePercepcion,
     required this.esAgenteRetencion,
     required this.lookupProvider,
@@ -683,9 +654,6 @@ class Company extends DataClass implements Insertable<Company> {
     }
     map['moneda'] = Variable<String>(moneda);
     map['igv_tipo'] = Variable<String>(igvTipo);
-    if (!nullToAbsent || cuentaDetracciones != null) {
-      map['cuenta_detracciones'] = Variable<String>(cuentaDetracciones);
-    }
     map['es_agente_percepcion'] = Variable<bool>(esAgentePercepcion);
     map['es_agente_retencion'] = Variable<bool>(esAgenteRetencion);
     {
@@ -739,9 +707,6 @@ class Company extends DataClass implements Insertable<Company> {
       sunatEnvironment: Value(sunatEnvironment),
       moneda: Value(moneda),
       igvTipo: Value(igvTipo),
-      cuentaDetracciones: cuentaDetracciones == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cuentaDetracciones),
       esAgentePercepcion: Value(esAgentePercepcion),
       esAgenteRetencion: Value(esAgenteRetencion),
       lookupProvider: Value(lookupProvider),
@@ -775,9 +740,6 @@ class Company extends DataClass implements Insertable<Company> {
       ),
       moneda: serializer.fromJson<String>(json['moneda']),
       igvTipo: serializer.fromJson<String>(json['igvTipo']),
-      cuentaDetracciones: serializer.fromJson<String?>(
-        json['cuentaDetracciones'],
-      ),
       esAgentePercepcion: serializer.fromJson<bool>(json['esAgentePercepcion']),
       esAgenteRetencion: serializer.fromJson<bool>(json['esAgenteRetencion']),
       lookupProvider: $CompaniesTable.$converterlookupProvider.fromJson(
@@ -810,7 +772,6 @@ class Company extends DataClass implements Insertable<Company> {
       ),
       'moneda': serializer.toJson<String>(moneda),
       'igvTipo': serializer.toJson<String>(igvTipo),
-      'cuentaDetracciones': serializer.toJson<String?>(cuentaDetracciones),
       'esAgentePercepcion': serializer.toJson<bool>(esAgentePercepcion),
       'esAgenteRetencion': serializer.toJson<bool>(esAgenteRetencion),
       'lookupProvider': serializer.toJson<String>(
@@ -839,7 +800,6 @@ class Company extends DataClass implements Insertable<Company> {
     SunatEnvironment? sunatEnvironment,
     String? moneda,
     String? igvTipo,
-    Value<String?> cuentaDetracciones = const Value.absent(),
     bool? esAgentePercepcion,
     bool? esAgenteRetencion,
     LookupProvider? lookupProvider,
@@ -865,9 +825,6 @@ class Company extends DataClass implements Insertable<Company> {
     sunatEnvironment: sunatEnvironment ?? this.sunatEnvironment,
     moneda: moneda ?? this.moneda,
     igvTipo: igvTipo ?? this.igvTipo,
-    cuentaDetracciones: cuentaDetracciones.present
-        ? cuentaDetracciones.value
-        : this.cuentaDetracciones,
     esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
     esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
     lookupProvider: lookupProvider ?? this.lookupProvider,
@@ -905,9 +862,6 @@ class Company extends DataClass implements Insertable<Company> {
           : this.sunatEnvironment,
       moneda: data.moneda.present ? data.moneda.value : this.moneda,
       igvTipo: data.igvTipo.present ? data.igvTipo.value : this.igvTipo,
-      cuentaDetracciones: data.cuentaDetracciones.present
-          ? data.cuentaDetracciones.value
-          : this.cuentaDetracciones,
       esAgentePercepcion: data.esAgentePercepcion.present
           ? data.esAgentePercepcion.value
           : this.esAgentePercepcion,
@@ -942,7 +896,6 @@ class Company extends DataClass implements Insertable<Company> {
           ..write('sunatEnvironment: $sunatEnvironment, ')
           ..write('moneda: $moneda, ')
           ..write('igvTipo: $igvTipo, ')
-          ..write('cuentaDetracciones: $cuentaDetracciones, ')
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
           ..write('lookupProvider: $lookupProvider')
@@ -971,7 +924,6 @@ class Company extends DataClass implements Insertable<Company> {
     sunatEnvironment,
     moneda,
     igvTipo,
-    cuentaDetracciones,
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
@@ -999,7 +951,6 @@ class Company extends DataClass implements Insertable<Company> {
           other.sunatEnvironment == this.sunatEnvironment &&
           other.moneda == this.moneda &&
           other.igvTipo == this.igvTipo &&
-          other.cuentaDetracciones == this.cuentaDetracciones &&
           other.esAgentePercepcion == this.esAgentePercepcion &&
           other.esAgenteRetencion == this.esAgenteRetencion &&
           other.lookupProvider == this.lookupProvider);
@@ -1025,7 +976,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
   final Value<SunatEnvironment> sunatEnvironment;
   final Value<String> moneda;
   final Value<String> igvTipo;
-  final Value<String?> cuentaDetracciones;
   final Value<bool> esAgentePercepcion;
   final Value<bool> esAgenteRetencion;
   final Value<LookupProvider> lookupProvider;
@@ -1050,7 +1000,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.sunatEnvironment = const Value.absent(),
     this.moneda = const Value.absent(),
     this.igvTipo = const Value.absent(),
-    this.cuentaDetracciones = const Value.absent(),
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
@@ -1076,7 +1025,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.sunatEnvironment = const Value.absent(),
     this.moneda = const Value.absent(),
     this.igvTipo = const Value.absent(),
-    this.cuentaDetracciones = const Value.absent(),
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
@@ -1103,7 +1051,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Expression<String>? sunatEnvironment,
     Expression<String>? moneda,
     Expression<String>? igvTipo,
-    Expression<String>? cuentaDetracciones,
     Expression<bool>? esAgentePercepcion,
     Expression<bool>? esAgenteRetencion,
     Expression<String>? lookupProvider,
@@ -1129,7 +1076,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       if (sunatEnvironment != null) 'sunat_environment': sunatEnvironment,
       if (moneda != null) 'moneda': moneda,
       if (igvTipo != null) 'igv_tipo': igvTipo,
-      if (cuentaDetracciones != null) 'cuenta_detracciones': cuentaDetracciones,
       if (esAgentePercepcion != null)
         'es_agente_percepcion': esAgentePercepcion,
       if (esAgenteRetencion != null) 'es_agente_retencion': esAgenteRetencion,
@@ -1158,7 +1104,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Value<SunatEnvironment>? sunatEnvironment,
     Value<String>? moneda,
     Value<String>? igvTipo,
-    Value<String?>? cuentaDetracciones,
     Value<bool>? esAgentePercepcion,
     Value<bool>? esAgenteRetencion,
     Value<LookupProvider>? lookupProvider,
@@ -1184,7 +1129,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       sunatEnvironment: sunatEnvironment ?? this.sunatEnvironment,
       moneda: moneda ?? this.moneda,
       igvTipo: igvTipo ?? this.igvTipo,
-      cuentaDetracciones: cuentaDetracciones ?? this.cuentaDetracciones,
       esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
       esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
       lookupProvider: lookupProvider ?? this.lookupProvider,
@@ -1256,9 +1200,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     if (igvTipo.present) {
       map['igv_tipo'] = Variable<String>(igvTipo.value);
     }
-    if (cuentaDetracciones.present) {
-      map['cuenta_detracciones'] = Variable<String>(cuentaDetracciones.value);
-    }
     if (esAgentePercepcion.present) {
       map['es_agente_percepcion'] = Variable<bool>(esAgentePercepcion.value);
     }
@@ -1298,7 +1239,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
           ..write('sunatEnvironment: $sunatEnvironment, ')
           ..write('moneda: $moneda, ')
           ..write('igvTipo: $igvTipo, ')
-          ..write('cuentaDetracciones: $cuentaDetracciones, ')
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
           ..write('lookupProvider: $lookupProvider, ')
@@ -8975,7 +8915,6 @@ typedef $$CompaniesTableCreateCompanionBuilder = CompaniesCompanion Function({
   Value<SunatEnvironment> sunatEnvironment,
   Value<String> moneda,
   Value<String> igvTipo,
-  Value<String?> cuentaDetracciones,
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
@@ -9001,7 +8940,6 @@ typedef $$CompaniesTableUpdateCompanionBuilder = CompaniesCompanion Function({
   Value<SunatEnvironment> sunatEnvironment,
   Value<String> moneda,
   Value<String> igvTipo,
-  Value<String?> cuentaDetracciones,
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
@@ -9245,11 +9183,6 @@ class $$CompaniesTableFilterComposer
 
   ColumnFilters<String> get igvTipo => $composableBuilder(
     column: $table.igvTipo,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get cuentaDetracciones => $composableBuilder(
-    column: $table.cuentaDetracciones,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9549,11 +9482,6 @@ class $$CompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get cuentaDetracciones => $composableBuilder(
-    column: $table.cuentaDetracciones,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get esAgentePercepcion => $composableBuilder(
     column: $table.esAgentePercepcion,
     builder: (column) => ColumnOrderings(column),
@@ -9648,11 +9576,6 @@ class $$CompaniesTableAnnotationComposer
 
   GeneratedColumn<String> get igvTipo =>
       $composableBuilder(column: $table.igvTipo, builder: (column) => column);
-
-  GeneratedColumn<String> get cuentaDetracciones => $composableBuilder(
-    column: $table.cuentaDetracciones,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<bool> get esAgentePercepcion => $composableBuilder(
     column: $table.esAgentePercepcion,
@@ -9901,7 +9824,6 @@ class $$CompaniesTableTableManager
                 Value<SunatEnvironment> sunatEnvironment = const Value.absent(),
                 Value<String> moneda = const Value.absent(),
                 Value<String> igvTipo = const Value.absent(),
-                Value<String?> cuentaDetracciones = const Value.absent(),
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
@@ -9926,7 +9848,6 @@ class $$CompaniesTableTableManager
                 sunatEnvironment: sunatEnvironment,
                 moneda: moneda,
                 igvTipo: igvTipo,
-                cuentaDetracciones: cuentaDetracciones,
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
@@ -9953,7 +9874,6 @@ class $$CompaniesTableTableManager
                 Value<SunatEnvironment> sunatEnvironment = const Value.absent(),
                 Value<String> moneda = const Value.absent(),
                 Value<String> igvTipo = const Value.absent(),
-                Value<String?> cuentaDetracciones = const Value.absent(),
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
@@ -9978,7 +9898,6 @@ class $$CompaniesTableTableManager
                 sunatEnvironment: sunatEnvironment,
                 moneda: moneda,
                 igvTipo: igvTipo,
-                cuentaDetracciones: cuentaDetracciones,
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
