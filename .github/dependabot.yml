@@ -57,3 +57,18 @@ updates:
     groups:
       cargo:
         update-types: ["minor", "patch"]
+
+  # Maintain fastlane (Gemfile and Gemfile.lock), used by the release workflow
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      bundler:
+        update-types: ["minor", "patch"]

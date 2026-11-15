@@ -2,6 +2,8 @@ name: xhandler_mobile
 description: "Create, sign and send SUNAT electronic documents."
 publish_to: 'none'
 
+# Release builds take the version and build number from the release tag
+# (tool/release_version.sh, docs/STORE.md); this one is for local builds.
 version: 1.0.0+1
 
 environment:

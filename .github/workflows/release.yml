@@ -1,32 +1,65 @@
-# Builds signed releases and uploads them to Google Play's internal track and
-# TestFlight. Run by hand (Actions → Release → Run workflow) once the secrets
-# in docs/STORE.md ("Release CI") exist; each job stops with a message when
-# its secrets are missing.
+# Builds the signed app of a release tag and uploads it to the stores (docs/STORE.md, Release
+# CI). Releases are made with release-tools' release-mobile, which tags, publishes the GitHub
+# release and waits for this workflow:
+#
+# - vX.Y.Z-alpha.N, -beta.N, -rc.N: Google Play internal testing and TestFlight.
+# - vX.Y.Z: Google Play production as a staged rollout, and TestFlight plus a submission for
+#   App Store review (released by hand once approved).
+#
+# The version and build number come from the tag (tool/release_version.sh). A store build that
+# exists is skipped, so running it again for a tag is safe: to retry a failed release, dispatch
+# it from main with the tag (a re-run would use the workflow file of the tagged commit).
 name: Release
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
-      android:
-        description: "Upload to Google Play (internal track)"
-        type: boolean
-        default: true
-      ios:
-        description: "Upload to TestFlight"
-        type: boolean
-        default: true
+      tag:
+        description: "Release tag, e.g. v1.1.0-alpha.1"
+        required: true
+        type: string
+
+run-name: Release ${{ inputs.tag || github.event.release.tag_name }}
+
+concurrency:
+  group: release-${{ inputs.tag || github.event.release.tag_name }}
 
 permissions:
   contents: read
 
 env:
   FLUTTER_VERSION: "3.50.0"
+  RUBY_VERSION: "3.4"
+  TAG: ${{ inputs.tag || github.event.release.tag_name }}
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      ios_name: ${{ steps.version.outputs.ios_name }}
+      code: ${{ steps.version.outputs.code }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
+      - id: version
+        run: tool/release_version.sh "$TAG" | tee -a "$GITHUB_OUTPUT"
+
   android:
-    if: inputs.android
+    needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      # Attaches the APK and AAB to the GitHub release
+      contents: write
+    env:
+      NAME: ${{ needs.version.outputs.name }}
+      CODE: ${{ needs.version.outputs.code }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
     steps:
       - name: Check secrets
         env:
@@ -47,6 +80,8 @@ jobs:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/node_modules /opt/ghc /usr/local/share/boost /usr/local/.ghcup
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -56,6 +91,10 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
       - name: Signing key
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -66,25 +105,48 @@ jobs:
           echo "$KEYSTORE" | base64 --decode > android/app/release.jks
           printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
-      # Play needs a new version code on every upload; the first upload is
-      # made by hand (docs/STORE.md), so runs start above it
-      - run: flutter build appbundle --release --build-number=$(( ${{ github.run_number }} + 100 ))
+      - run: flutter build appbundle --release --build-name="$NAME" --build-number="$CODE"
+      # For installing from GitHub: one APK for every ABI
+      - run: flutter build apk --release --build-name="$NAME" --build-number="$CODE"
+      - name: Name the files
+        run: |
+          mkdir dist
+          cp build/app/outputs/bundle/release/app-release.aab "dist/xhandler-$NAME.aab"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/xhandler-$NAME.apk"
+          (cd dist && sha256sum -- * > SHA256SUMS)
       - uses: actions/upload-artifact@v7
         with:
           name: android-release
-          path: build/app/outputs/bundle/release/app-release.aab
-      - uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: io.github.projectopenubl.xhandler
-          releaseFiles: build/app/outputs/bundle/release/app-release.aab
-          track: internal
-          status: completed
+          path: dist/
+      - name: Upload to Google Play
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS }}
+          PLAY_ROLLOUT: ${{ vars.PLAY_ROLLOUT || '0.1' }}
+        run: >
+          bundle exec fastlane android release
+          aab:"$PWD/dist/xhandler-$NAME.aab"
+          code:"$CODE"
+          prerelease:"$PRERELEASE"
+      # The files of the first run stay, like the build Google Play already has
+      - name: Attach to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx SHA256SUMS; then
+            echo "The release $TAG already has its files"
+          else
+            gh release upload "$TAG" dist/*
+          fi
 
   ios:
-    if: inputs.ios
+    needs: version
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      NAME: ${{ needs.version.outputs.ios_name }}
+      CODE: ${{ needs.version.outputs.code }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
     steps:
       - name: Check secrets
         env:
@@ -105,11 +167,17 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/tags/${{ env.TAG }}
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
       - uses: apple-actions/import-codesign-certs@v3
         with:
           p12-file-base64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
@@ -127,9 +195,7 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
-        run: |
-          gem install xcodeproj --no-document
-          ruby tool/ios_release_signing.rb "$TEAM_ID" "$PROFILE"
+        run: bundle exec ruby tool/ios_release_signing.rb "$TEAM_ID" "$PROFILE"
       - name: Export options
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -150,9 +216,11 @@ jobs:
           </dict>
           </plist>
           EOF
+      # Apple only takes X.Y.Z as the version: the build number tells pre-releases apart
       - run: >
           flutter build ipa --release
-          --build-number=$(( ${{ github.run_number }} + 100 ))
+          --build-name="$NAME"
+          --build-number="$CODE"
           --export-options-plist="$RUNNER_TEMP/ExportOptions.plist"
       - uses: actions/upload-artifact@v7
         with:
@@ -160,10 +228,16 @@ jobs:
           path: build/ios/ipa/*.ipa
       # Named after the Xcode product
       - id: ipa
-        run: echo "path=$(ls build/ios/ipa/*.ipa | head -1)" >> "$GITHUB_OUTPUT"
-      - uses: apple-actions/upload-testflight-build@v5
-        with:
-          app-path: ${{ steps.ipa.outputs.path }}
-          issuer-id: ${{ secrets.APPSTORE_API_ISSUER_ID }}
-          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
-          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+        run: echo "path=$(ls "$PWD"/build/ios/ipa/*.ipa | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Upload to the App Store
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+          IPA: ${{ steps.ipa.outputs.path }}
+        run: >
+          bundle exec fastlane ios release
+          ipa:"$IPA"
+          version:"$NAME"
+          code:"$CODE"
+          prerelease:"$PRERELEASE"
