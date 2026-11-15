@@ -24,6 +24,18 @@ flutter test                        # Dart tests
 (cd rust && cargo test -- --ignored)  # also sends to SUNAT beta
 ```
 
+End-to-end walk through the app (company, catalog, quick sale, factura, nota de
+crédito, voiding, PDF, reports) on a device or emulator, against SUNAT beta. It
+starts from the welcome page, so uninstall the app first (`flutter drive`
+reinstalls it but keeps its data). It needs internet and isn't run in CI, since
+it depends on SUNAT beta being up. Screenshots of every step go to
+`build/e2e_screenshots/`:
+
+```shell
+flutter drive --driver test_driver/integration_test.dart \
+  --target integration_test/app_flow_test.dart -d <device>
+```
+
 The Rust code the app calls lives in `rust/src/api/`. After changing it,
 regenerate the Dart bindings (`lib/src/rust/`):
 
