@@ -201,6 +201,7 @@ class _LineDialogState extends State<LineDialog> {
     const decimal = TextInputType.numberWithOptions(decimal: true);
     final editing = widget.line != null;
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.line?.descripcion ?? Strings.freeLine),
       content: Form(
         key: _form,
@@ -278,6 +279,7 @@ class _CuotaDialogState extends State<CuotaDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: const Text(Strings.addCuota),
       content: Form(
         key: _form,

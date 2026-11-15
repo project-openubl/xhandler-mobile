@@ -462,6 +462,7 @@ class _GuiaLineDialogState extends State<_GuiaLineDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: const Text(Strings.bien),
       content: Form(
         key: _form,

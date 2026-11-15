@@ -307,6 +307,7 @@ class _VoidDialogState extends State<_VoidDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: const Text(Strings.voidTitle),
       content: Form(
         key: _form,
