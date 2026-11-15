@@ -214,7 +214,6 @@ class DocumentDetailPage extends ConsumerWidget {
                 dense: true,
                 leading: Icon(switch (delivery.channel) {
                   DeliveryChannel.email => Icons.email,
-                  DeliveryChannel.whatsapp => Icons.chat,
                   DeliveryChannel.share => Icons.share,
                 }),
                 title: Text(delivery.recipient ?? Strings.otherApps),

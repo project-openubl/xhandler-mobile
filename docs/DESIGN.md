@@ -30,7 +30,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §
 | Sales modes | Quick sale (boleta, "Clientes varios") + full form |
 | Catalog | Products + free-text lines ("guardar en catálogo"). No inventory |
 | PDF | Generated on demand. Templates are Dart code shipped with the app (default + registry for more). A4 and ticket (80/58 mm) |
-| Delivery | Email from the company account (Gmail API, Microsoft Graph, SMTP), WhatsApp direct (Android), system share sheet (everything else). Attachments only in v1 |
+| Delivery | Email from the company account (Gmail API, Microsoft Graph, SMTP), system share sheet (WhatsApp and everything else). Attachments only in v1 |
 | Pending PDFs | Allowed, with a "Pendiente de envío a SUNAT" note |
 | Backup | WhatsApp-style, end-to-end encrypted, Google Drive appDataFolder / iCloud. Includes certificate and credentials |
 | Restore | Replace-all from cloud + per-company encrypted export/import file |
@@ -331,19 +331,17 @@ Attachments: PDF + XML (+ CDR optional).
 | Email, Gmail/Workspace | Google Sign-In + Gmail API `gmail.send` (needs Google OAuth verification for public release) |
 | Email, Outlook/M365 | Microsoft login + Graph `Mail.Send` |
 | Email, other | SMTP + app password (`mailer`) |
-| WhatsApp to the customer's number | Android intent with preselected contact; iOS falls back to share sheet |
-| Anything else (Telegram, Signal, Drive, Files…) | System share sheet (`share_plus`) |
+| Anything else (WhatsApp, Telegram, Signal, Drive, Files…) | System share sheet (`share_plus`) |
 
 Email subject/body templates per company (`{tipo} {serie}-{numero} de {razon_social}`).
 Every delivery is logged in `delivery`.
 
 Built so far: SMTP from the company's account (host, port, user and app password in
 secure storage; a Gmail preset, since Outlook/Microsoft 365 no longer take app passwords
-for SMTP; a test email), WhatsApp on Android (a
-`FileProvider` + `ACTION_SEND_MULTIPLE` to `com.whatsapp`/`com.whatsapp.w4b` with the
-`jid` extra, which preselects the chat; iOS has no equivalent), the share sheet, and the
-`deliveries` log shown on the document (a WhatsApp entry means the chat was opened
-with the files; a dismissed share sheet isn't logged). Test-mode documents say "sin
+for SMTP; a test email), the share sheet, and the `deliveries` log shown on the document (a
+dismissed share sheet isn't logged). A direct WhatsApp channel (an Android intent with
+the unofficial `jid` extra to preselect the chat) was dropped: it was unreliable and
+the share sheet already reaches WhatsApp on both platforms. Test-mode documents say "sin
 validez tributaria" in the PDF and the email. The subject and body are fixed for now. Gmail
 API and Graph wait for OAuth apps registered with Google and Microsoft (§14).
 
@@ -418,7 +416,7 @@ xhandler-mobile/
 │       ├── company/  series/  customer/  product/  catalogs/ (vehicle, driver, address)
 │       ├── document/ (list, quick_sale, form, detail, emit, voiding)
 │       ├── pdf/ (registry, templates/)
-│       ├── delivery/ (gmail, graph, smtp, whatsapp, share)
+│       ├── delivery/ (gmail, graph, smtp, share)
 │       ├── backup/  reports/  settings/
 ├── test/  integration_test/
 ├── android/  ios/
@@ -441,7 +439,7 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 | 2 | mobile | Drift schema + encryption (sqlite3mc), company wizard, secure storage, certificate import, series, customers (+ lookup), products |
 | 3 | mobile | Emit & send: invoice/boleta full form + quick sale, numbering, status machine, outbox, 1033 recovery, notifications, timeline |
 | 4 | mobile | Remaining documents: notes, GRE (with vehicle/driver/address catalogs), percepción, retención, voiding (RA/RC/RR) |
-| 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, WhatsApp, share sheet), delivery log |
+| 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, share sheet), delivery log |
 | 6 | mobile | Backup/restore (Drive, iCloud), per-company export/import |
 | 7 | mobile | Reports: summary, CSV, Excel, PLE, SIRE |
 | 8 | mobile | Store readiness: privacy policy, data safety/privacy labels, Gmail OAuth verification, export compliance, release CI (Play internal track, TestFlight) |

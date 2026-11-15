@@ -316,7 +316,7 @@ class Addresses extends Table with SyncColumns {
   TextColumn get codigoLocal => text().nullable()();
 }
 
-enum DeliveryChannel { email, whatsapp, share }
+enum DeliveryChannel { email, share }
 
 /// A document sent to a customer (docs/DESIGN.md §8)
 class Deliveries extends Table with SyncColumns {

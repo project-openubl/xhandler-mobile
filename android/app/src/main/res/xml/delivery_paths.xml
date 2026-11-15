@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Files the app shares with WhatsApp: documents for customers -->
-<paths>
-    <cache-path name="delivery" path="delivery/" />
-</paths>

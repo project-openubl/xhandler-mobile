@@ -18,9 +18,6 @@ import '../pdf/pdf_templates.dart';
 import '../pdf/share_document.dart';
 import 'email_sender.dart';
 
-/// How to reach a document's customer
-typedef CustomerContact = ({String? email, String? phone});
-
 /// The company's email account isn't configured
 class EmailNotConfiguredError implements Exception {
   const EmailNotConfiguredError();
@@ -42,8 +39,8 @@ class DeliveryService {
   final SecureStore _secureStore;
   final EmailSender _emailSender;
 
-  /// The customer's email and phone, from the customer list or the document
-  Future<CustomerContact> contactOf(Document document) async {
+  /// The customer's email, from the customer list or the document
+  Future<String?> emailOf(Document document) async {
     final customer = await _customers.findByDocument(
       document.companyId,
       document.clienteTipoDocumento,
@@ -57,10 +54,7 @@ class DeliveryService {
             as Map<String, Object?>?;
     String? text(Object? value) =>
         value is String && value.trim().isNotEmpty ? value.trim() : null;
-    return (
-      email: text(customer?.email) ?? text(contacto?['email']),
-      phone: text(customer?.telefono) ?? text(contacto?['telefono']),
-    );
+    return text(customer?.email) ?? text(contacto?['email']);
   }
 
   /// How the company signs its emails
