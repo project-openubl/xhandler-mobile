@@ -99,20 +99,18 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            const RequiredFieldsLegend(),
             FormTextField(
               _ruc,
               Strings.ruc,
+              required: true,
               enabled: !editing,
               digitsOnly: true,
               maxLength: 11,
               validator: (ruc) =>
                   isRuc(digits: ruc) ? null : Strings.invalidRuc,
             ),
-            FormTextField(
-              _razonSocial,
-              Strings.razonSocial,
-              validator: _required,
-            ),
+            FormTextField(_razonSocial, Strings.razonSocial, required: true),
             FormTextField(_nombreComercial, Strings.nombreComercial),
             const FormSection(Strings.domicilioFiscal),
             FormTextField(_direccion, Strings.direccion),
@@ -154,7 +152,4 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       ),
     );
   }
-
-  static String? _required(String text) =>
-      text.isEmpty ? Strings.required : null;
 }

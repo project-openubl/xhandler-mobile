@@ -4,13 +4,16 @@ import 'package:material_ui/material_ui.dart';
 import '../strings.dart';
 
 /// Labeled text field of the app's forms; [validator] receives trimmed text.
-/// [obscureText] fields get a show/hide button.
+/// [obscureText] fields get a show/hide button. [required] fields show an
+/// asterisk after the label (pair them with a [RequiredFieldsLegend]) and
+/// reject empty text before running [validator].
 class FormTextField extends StatefulWidget {
   const FormTextField(
     this.controller,
     this.label, {
     super.key,
     this.enabled = true,
+    this.required = false,
     this.obscureText = false,
     this.digitsOnly = false,
     this.maxLength,
@@ -23,6 +26,7 @@ class FormTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final bool enabled;
+  final bool required;
   final bool obscureText;
   final bool digitsOnly;
   final int? maxLength;
@@ -56,7 +60,8 @@ class _FormTextFieldState extends State<FormTextField> {
             : null,
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          labelText: widget.label,
+          labelText: widget.required ? null : widget.label,
+          label: widget.required ? _RequiredLabel(widget.label) : null,
           helperText: widget.helperText,
           prefixText: widget.prefixText,
           counterText: '',
@@ -70,7 +75,66 @@ class _FormTextFieldState extends State<FormTextField> {
                 )
               : null,
         ),
-        validator: validator == null ? null : (text) => validator(text!.trim()),
+        validator: validator == null && !widget.required
+            ? null
+            : (text) {
+                final trimmed = text!.trim();
+                if (widget.required && trimmed.isEmpty) return Strings.required;
+                return validator?.call(trimmed);
+              },
+      ),
+    );
+  }
+}
+
+/// Field label followed by a red asterisk; screen readers announce
+/// "obligatorio" instead of "asterisk"
+class _RequiredLabel extends StatelessWidget {
+  const _RequiredLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        text: label,
+        children: [
+          TextSpan(
+            text: ' *',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+      ),
+      semanticsLabel: '$label, ${Strings.required.toLowerCase()}',
+    );
+  }
+}
+
+/// Explains the asterisk of [FormTextField.required] fields; goes at the top
+/// of the form
+class RequiredFieldsLegend extends StatelessWidget {
+  const RequiredFieldsLegend({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '* ',
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+            const TextSpan(text: Strings.requiredFieldsLegend),
+          ],
+        ),
+        semanticsLabel: Strings.requiredFieldsLegendSemantics,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
