@@ -58,6 +58,13 @@ abstract final class Strings {
   static const contacto = 'Contacto';
   static const telefono = 'Teléfono';
   static const email = 'Correo electrónico';
+  static const agenteSunat = 'Percepción y retención';
+  static const agentePercepcion = 'Agente de percepción';
+  static const agentePercepcionHelp =
+      'Si SUNAT te designó, podrás emitir comprobantes de percepción.';
+  static const agenteRetencion = 'Agente de retención';
+  static const agenteRetencionHelp =
+      'Si SUNAT te designó, podrás emitir comprobantes de retención.';
   static const testModeSwitch = 'Modo prueba';
   static const testModeHelp =
       'Los comprobantes son de prueba y no tienen validez tributaria.';
