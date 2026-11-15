@@ -68,12 +68,9 @@ class Companies extends Table with SyncColumns {
   TextColumn get lookupProvider => textEnum<LookupProvider>().withDefault(
     Constant(LookupProvider.none.name),
   )();
-
-  /// URL of a self-hosted searchpe
-  TextColumn get lookupUrl => text().nullable()();
 }
 
-enum LookupProvider { none, decolecta, searchpe }
+enum LookupProvider { none, decolecta }
 
 /// Document numbering: each series gives `serie-number` to one document type.
 /// Series are never deleted, so their numbers are never reused; they are

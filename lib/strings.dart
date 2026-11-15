@@ -172,14 +172,7 @@ abstract final class Strings {
   static const lookupDecolecta = 'Decolecta';
   static const lookupDecolectaHelp =
       'Servicio con plan gratuito: regístrate en decolecta.com y copia tu token.';
-  static const lookupSearchpe = 'searchpe (servidor propio)';
-  static const lookupSearchpeHelp =
-      'Usa el padrón de SUNAT: encuentra RUC, y DNI solo de personas con RUC.';
-  static const invalidUrl = 'URL no válida (https://...)';
   static const lookupToken = 'Token';
-  static const lookupUrl = 'URL de searchpe';
-  static const lookupUser = 'Usuario de searchpe';
-  static const lookupPassword = 'Contraseña de searchpe';
 
   // Documents
   static const newDocument = 'Nuevo comprobante';

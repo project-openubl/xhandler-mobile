@@ -204,14 +204,6 @@ class Companies extends Table with TableInfo {
     $customConstraints: 'NOT NULL DEFAULT \'none\'',
     defaultValue: const CustomExpression('\'none\''),
   );
-  late final GeneratedColumn<String> lookupUrl = GeneratedColumn<String>(
-    'lookup_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    $customConstraints: 'NULL',
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -237,7 +229,6 @@ class Companies extends Table with TableInfo {
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
-    lookupUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;

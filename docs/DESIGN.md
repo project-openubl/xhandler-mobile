@@ -25,7 +25,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §
 | Environment | Per company. Beta shows a "MODO PRUEBA" banner. Switching to production archives beta documents read-only and resets series |
 | Currency | PEN default, any ISO currency allowed with manual exchange rate |
 | Prices | Per product/line: with or without IGV |
-| Customers | Manual entry + optional RUC/DNI lookup: a free-tier commercial service by default (company-provided token), or a self-hosted `searchpe` instance |
+| Customers | Manual entry + optional RUC/DNI lookup through a free-tier commercial service (Decolecta, company-provided token) |
 | Sync readiness | No sync in v1, but the schema is ready for a later sync backend (`xhandler-ui`): UUID ids, timestamps, soft deletes |
 | Sales modes | Quick sale (boleta, "Clientes varios") + full form |
 | Catalog | Products + free-text lines ("guardar en catálogo"). No inventory |
@@ -111,7 +111,7 @@ company           id, ruc, razon_social, nombre_comercial, direccion (ubigeo, de
                   default_moneda, igv_tipo_default, cuenta_detracciones, es_agente_percepcion,
                   es_agente_retencion, pdf_template_a4, pdf_template_ticket, pdf_options (json),
                   email_provider, email_account, email_subject_tpl, email_body_tpl,
-                  lookup_provider (none | commercial | searchpe), lookup_url
+                  lookup_provider (none | decolecta)
 -- every table also has: id (UUIDv7), created_at, updated_at, deleted_at (see §3.1)
 series            id, company_id, tipo_comprobante, serie, next_number, is_default, active,
                   UNIQUE(company_id, tipo_comprobante, serie)
@@ -456,9 +456,8 @@ the app icon and a manual Release workflow; publishing needs the owner's account
 
 - Confirm SUNAT deadlines (sending, voiding) and the unidentified-customer boleta threshold.
 - Pick the default free-tier RUC/DNI lookup provider in Phase 2 (check current quota and
-  terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, with two
-  implementations: the commercial provider (default, company token) and `searchpe`
-  (OpenUBL, padrón reducido, company-provided URL). Results are cached in `customer`.
+  terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, implemented
+  by Decolecta (company token). Results are cached in `customer`.
 - Notas de crédito type 13 (correcting the amount or cuotas of a factura al crédito) and
   catalog 9 codes 11/12, catalog 10 codes 10/11: xbuilder's `Catalog9`/`Catalog10` stop at
   10/03 and `CreditNote` has no `forma_pago`. Add them upstream, then to the app catalogs.

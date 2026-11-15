@@ -203,32 +203,24 @@ void main() {
     });
   });
 
-  testWidgets('LookupSettingsPage keeps searchpe access as user:password', (
-    tester,
-  ) async {
+  testWidgets('LookupSettingsPage saves the Decolecta token', (tester) async {
     final data = TestData();
     final company = await tester.runAsync(data.createCompany);
     await data.pump(tester, LookupSettingsPage(company!));
 
-    await tester.tap(find.text(Strings.lookupSearchpe));
+    await tester.tap(find.text(Strings.lookupDecolecta));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      _field(Strings.lookupUrl),
-      'https://searchpe.example.com',
-    );
-    await tester.enterText(_field(Strings.lookupUser), 'admin');
-    await tester.enterText(_field(Strings.lookupPassword), 'se:cret');
+    await tester.enterText(_field(Strings.lookupToken), ' t0k ');
     await data.tapAndWait(tester);
 
     final saved = (await tester.runAsync(
       () => data.companies.watchActive().first,
     ))!;
-    expect(saved.lookupProvider, LookupProvider.searchpe);
-    expect(saved.lookupUrl, 'https://searchpe.example.com');
+    expect(saved.lookupProvider, LookupProvider.decolecta);
     final secrets = (await tester.runAsync(
       () => data.companies.readSecrets(company.id),
     ))!;
-    expect(secrets.lookupToken, 'admin:se:cret');
+    expect(secrets.lookupToken, 't0k');
     await data.unmount(tester);
   });
 }
