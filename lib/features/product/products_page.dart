@@ -6,6 +6,7 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
+import '../../widgets/form_widgets.dart';
 import '../../widgets/search_list_page.dart';
 import 'product_form_page.dart';
 import 'product_repository.dart';
@@ -53,9 +54,8 @@ class ProductList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final products = ref.watch(
-      productsProvider((companyId: company.id, search: search)),
-    );
+    final query = productsProvider((companyId: company.id, search: search));
+    final products = ref.watch(query);
     return switch (products) {
       AsyncData(value: []) => const Center(child: Text(Strings.noResults)),
       AsyncData(:final value) => ListView(
@@ -88,7 +88,7 @@ class ProductList extends ConsumerWidget {
             ),
         ],
       ),
-      AsyncError() => const Center(child: Text(Strings.unexpectedError)),
+      AsyncError() => ErrorRetry(onRetry: () => ref.invalidate(query)),
       _ => const Center(child: CircularProgressIndicator()),
     };
   }

@@ -156,166 +156,169 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
         : toCents(received) - toCents(total);
     final errorColor = Theme.of(context).colorScheme.error;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(Strings.quickSale),
-        actions: [
-          IconButton(
-            tooltip: Strings.search,
-            icon: const Icon(Icons.search),
-            onPressed: () async {
-              final product = await pickProduct(context, widget.company);
-              if (product != null) _add(product, 1);
-            },
-          ),
-        ],
-      ),
-      body: CustomScrollView(
-        slivers: [
-          if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-            const SliverToBoxAdapter(child: TestModeBanner()),
-          if (noSerie)
-            SliverToBoxAdapter(
-              child: ListTile(
-                leading: Icon(Icons.warning, color: errorColor),
-                title: Text(Strings.noSerie(Strings.boleta.toLowerCase())),
-              ),
+    return UnsavedChangesGuard(
+      dirty: _cart.isNotEmpty,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(Strings.quickSale),
+          actions: [
+            IconButton(
+              tooltip: Strings.search,
+              icon: const Icon(Icons.search),
+              onPressed: () async {
+                final product = await pickProduct(context, widget.company);
+                if (product != null) _add(product, 1);
+              },
             ),
-          if (favorites.isEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(Strings.noFavorites, textAlign: TextAlign.center),
+          ],
+        ),
+        body: CustomScrollView(
+          slivers: [
+            if (widget.company.sunatEnvironment == SunatEnvironment.beta)
+              const SliverToBoxAdapter(child: TestModeBanner()),
+            if (noSerie)
+              SliverToBoxAdapter(
+                child: ListTile(
+                  leading: Icon(Icons.warning, color: errorColor),
+                  title: Text(Strings.noSerie(Strings.boleta.toLowerCase())),
+                ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(8),
-              sliver: SliverGrid.extent(
-                maxCrossAxisExtent: 160,
-                childAspectRatio: 1.4,
-                children: [
-                  for (final product in favorites)
-                    Card(
-                      child: InkWell(
-                        onTap: () => _add(product, 1),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                product.descripcion,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(formatMoney(_moneda, product.precio)),
-                            ],
+            if (favorites.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(Strings.noFavorites, textAlign: TextAlign.center),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.all(8),
+                sliver: SliverGrid.extent(
+                  maxCrossAxisExtent: 160,
+                  childAspectRatio: 1.4,
+                  children: [
+                    for (final product in favorites)
+                      Card(
+                        child: InkWell(
+                          onTap: () => _add(product, 1),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  product.descripcion,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(formatMoney(_moneda, product.precio)),
+                              ],
+                            ),
                           ),
                         ),
+                      ),
+                  ],
+                ),
+              ),
+            const SliverToBoxAdapter(child: Divider(height: 1)),
+            if (_cart.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(Strings.cartEmpty, textAlign: TextAlign.center),
+                ),
+              )
+            else
+              SliverList.list(
+                children: [
+                  for (final (:product, :cantidad) in _cart.values)
+                    ListTile(
+                      title: Text(product.descripcion),
+                      subtitle: Text(formatMoney(_moneda, product.precio)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: Strings.removeOne,
+                            icon: const Icon(Icons.remove),
+                            onPressed: () => _add(product, -1),
+                          ),
+                          Text('$cantidad'),
+                          IconButton(
+                            tooltip: Strings.add,
+                            icon: const Icon(Icons.add),
+                            onPressed: () => _add(product, 1),
+                          ),
+                        ],
                       ),
                     ),
                 ],
               ),
-            ),
-          const SliverToBoxAdapter(child: Divider(height: 1)),
-          if (_cart.isEmpty)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(Strings.cartEmpty, textAlign: TextAlign.center),
-              ),
-            )
-          else
-            SliverList.list(
-              children: [
-                for (final (:product, :cantidad) in _cart.values)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList.list(
+                children: [
                   ListTile(
-                    title: Text(product.descripcion),
-                    subtitle: Text(formatMoney(_moneda, product.precio)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: Strings.removeOne,
-                          icon: const Icon(Icons.remove),
-                          onPressed: () => _add(product, -1),
-                        ),
-                        Text('$cantidad'),
-                        IconButton(
-                          tooltip: Strings.add,
-                          icon: const Icon(Icons.add),
-                          onPressed: () => _add(product, 1),
-                        ),
-                      ],
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.person),
+                    title: Text(_customer.nombre),
+                    subtitle: needsCustomer
+                        ? ErrorText(
+                            draftProblemMessage(DraftProblem.anonymousOver700),
+                          )
+                        : null,
+                    trailing: TextButton(
+                      onPressed: _identifyCustomer,
+                      child: const Text(Strings.identifyCustomer),
                     ),
                   ),
-              ],
-            ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList.list(
-              children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.person),
-                  title: Text(_customer.nombre),
-                  subtitle: needsCustomer
-                      ? ErrorText(
-                          draftProblemMessage(DraftProblem.anonymousOver700),
-                        )
-                      : null,
-                  trailing: TextButton(
-                    onPressed: _identifyCustomer,
-                    child: const Text(Strings.identifyCustomer),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _received,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: Strings.received,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      if (change != null)
+                        Text(
+                          change.isNegative
+                              ? '${Strings.missing}: '
+                                    '${formatMoney(_moneda, fromCents(-change))}'
+                              : '${Strings.change}: '
+                                    '${formatMoney(_moneda, fromCents(change))}',
+                          style: change.isNegative
+                              ? TextStyle(color: errorColor)
+                              : null,
+                        ),
+                    ],
                   ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _received,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: Strings.received,
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    if (change != null)
-                      Text(
-                        change.isNegative
-                            ? '${Strings.missing}: '
-                                  '${formatMoney(_moneda, fromCents(-change))}'
-                            : '${Strings.change}: '
-                                  '${formatMoney(_moneda, fromCents(change))}',
-                        style: change.isNegative
-                            ? TextStyle(color: errorColor)
-                            : null,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SaveButton(
-            label: total == null
-                ? Strings.charge
-                : '${Strings.charge} ${formatMoney(_moneda, total)}',
-            filled: true,
-            onPressed: total == null || needsCustomer || noSerie
-                ? null
-                : _charge,
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SaveButton(
+              label: total == null
+                  ? Strings.charge
+                  : '${Strings.charge} ${formatMoney(_moneda, total)}',
+              filled: true,
+              onPressed: total == null || needsCustomer || noSerie
+                  ? null
+                  : _charge,
+            ),
           ),
         ),
       ),

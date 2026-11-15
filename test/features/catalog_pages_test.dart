@@ -41,6 +41,37 @@ void main() {
     await data.unmount(tester);
   });
 
+  testWidgets('ProductFormPage asks before losing what was typed', (
+    tester,
+  ) async {
+    final data = TestData();
+    final company = await tester.runAsync(data.createCompany);
+    await data.pump(tester, ProductFormPage(company!));
+
+    // Untouched, back just leaves
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(ProductFormPage), findsNothing);
+
+    await data.pump(tester, ProductFormPage(company));
+    await tester.enterText(_field(Strings.descripcion), 'Café');
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text(Strings.discardChanges), findsOneWidget);
+
+    await tester.tap(find.text(Strings.cancel));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProductFormPage), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(Strings.discard));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProductFormPage), findsNothing);
+    await data.unmount(tester);
+  });
+
   testWidgets('ProductFormPage needs an ISC rate with an ISC type', (
     tester,
   ) async {

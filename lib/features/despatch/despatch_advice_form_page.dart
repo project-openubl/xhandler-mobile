@@ -92,6 +92,20 @@ class _DespatchAdviceFormPageState
     nombre: widget.company.razonSocial,
   );
 
+  /// Whether the user entered something beyond what a related factura
+  /// filled in, to ask before leaving
+  bool get _hasInput =>
+      _peso.text.isNotEmpty ||
+      _bultos.text.isNotEmpty ||
+      _motivoDescripcion.text.isNotEmpty ||
+      _mtc.text.isNotEmpty ||
+      _partida != null ||
+      _llegada != null ||
+      _vehicle != null ||
+      _driver != null ||
+      _transportista != null ||
+      (widget.related == null && (_lines.isNotEmpty || _customer != null));
+
   DespatchAdviceDraft? get _draft {
     final customer = _motivo == '04' ? _company : _customer;
     final peso = parseAmount(_peso.text);
@@ -186,218 +200,226 @@ class _DespatchAdviceFormPageState
     final isPrivado = _modalidad == ModalidadTraslado.privado;
     final customer = _motivo == '04' ? _company : _customer;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text(Strings.guia)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-            const TestModeBanner(),
-          if (seriesValue != null && series.isEmpty)
-            MissingSerieWarning(Strings.noSerie(Strings.guia.toLowerCase())),
-          SerieDropdown(
-            series: series,
-            value: serie?.id,
-            onChanged: (id) => setState(() => _serieId = id),
-          ),
-          if (related != null)
+    // Typing in the text fields doesn't rebuild the page: the guard listens
+    return ListenableBuilder(
+      listenable: Listenable.merge([_peso, _bultos, _motivoDescripcion, _mtc]),
+      builder: (_, child) =>
+          UnsavedChangesGuard(dirty: _hasInput, child: child!),
+      child: Scaffold(
+        appBar: AppBar(title: const Text(Strings.guia)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (widget.company.sunatEnvironment == SunatEnvironment.beta)
+              const TestModeBanner(),
+            if (seriesValue != null && series.isEmpty)
+              MissingSerieWarning(Strings.noSerie(Strings.guia.toLowerCase())),
+            SerieDropdown(
+              series: series,
+              value: serie?.id,
+              onChanged: (id) => setState(() => _serieId = id),
+            ),
+            if (related != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.link),
+                title: Text(
+                  Strings.guiaOf(serieNumero(related.serie, related.numero)),
+                ),
+              ),
+            CatalogDropdown(
+              label: Strings.motivoTraslado,
+              value: _motivo,
+              options: Catalogs.motivosTraslado,
+              onChanged: (motivo) => setState(() => _motivo = motivo!),
+            ),
+            if (_motivo == '13')
+              FormTextField(_motivoDescripcion, Strings.motivoDescripcion),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.link),
-              title: Text(
-                Strings.guiaOf(serieNumero(related.serie, related.numero)),
-              ),
+              leading: const Icon(Icons.person),
+              title: Text(customer?.nombre ?? Strings.selectDestinatario),
+              subtitle: customer == null
+                  ? null
+                  : Text(customer.numeroDocumentoIdentidad),
+              trailing: _motivo == '04'
+                  ? null
+                  : const Icon(Icons.chevron_right),
+              onTap: _motivo == '04'
+                  ? null
+                  : () async {
+                      final picked = await pickCustomer(
+                        context,
+                        company: widget.company,
+                        forFactura: false,
+                        allowAnonymous: false,
+                      );
+                      if (picked != null) setState(() => _customer = picked);
+                    },
             ),
-          CatalogDropdown(
-            label: Strings.motivoTraslado,
-            value: _motivo,
-            options: Catalogs.motivosTraslado,
-            onChanged: (motivo) => setState(() => _motivo = motivo!),
-          ),
-          if (_motivo == '13')
-            FormTextField(_motivoDescripcion, Strings.motivoDescripcion),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.person),
-            title: Text(customer?.nombre ?? Strings.selectDestinatario),
-            subtitle: customer == null
-                ? null
-                : Text(customer.numeroDocumentoIdentidad),
-            trailing: _motivo == '04' ? null : const Icon(Icons.chevron_right),
-            onTap: _motivo == '04'
-                ? null
-                : () async {
-                    final picked = await pickCustomer(
-                      context,
-                      company: widget.company,
-                      forFactura: false,
-                      allowAnonymous: false,
-                    );
-                    if (picked != null) setState(() => _customer = picked);
-                  },
-          ),
-          const FormSection(Strings.traslado),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(Strings.fechaTraslado),
-            subtitle: Text(isoDate(_fechaTraslado)),
-            trailing: const Icon(Icons.calendar_month),
-            onTap: () async {
-              final today = DateTime.parse(peruToday());
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _fechaTraslado,
-                firstDate: today,
-                lastDate: today.add(const Duration(days: 365)),
-              );
-              if (picked != null) setState(() => _fechaTraslado = picked);
-            },
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _peso,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: Strings.pesoTotal,
-                    suffixText: 'kg',
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _bultos,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: Strings.numeroBultos,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          _PointTile(
-            label: Strings.partida,
-            point: _partida,
-            onTap: () async {
-              final point = await pickAddress(
-                context,
-                widget.company,
-                suggested: _suggested(forPartida: true),
-              );
-              if (point != null) setState(() => _partida = point);
-            },
-          ),
-          _PointTile(
-            label: Strings.llegada,
-            point: _llegada,
-            onTap: () async {
-              final point = await pickAddress(
-                context,
-                widget.company,
-                suggested: _suggested(forPartida: false),
-              );
-              if (point != null) setState(() => _llegada = point);
-            },
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(
-                value: ModalidadTraslado.privado,
-                label: Text(Strings.transportePrivado),
-              ),
-              ButtonSegment(
-                value: ModalidadTraslado.publico,
-                label: Text(Strings.transportePublico),
-              ),
-            ],
-            selected: {_modalidad},
-            onSelectionChanged: (selected) =>
-                setState(() => _modalidad = selected.single),
-          ),
-          if (isPrivado) ...[
-            SwitchListTile(
+            const FormSection(Strings.traslado),
+            ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.vehiculoM1L),
-              subtitle: const Text(Strings.vehiculoM1LHelp),
-              value: _vehiculoM1L,
-              onChanged: (value) => setState(() => _vehiculoM1L = value),
+              title: const Text(Strings.fechaTraslado),
+              subtitle: Text(isoDate(_fechaTraslado)),
+              trailing: const Icon(Icons.calendar_month),
+              onTap: () async {
+                final today = DateTime.parse(peruToday());
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _fechaTraslado,
+                  firstDate: today,
+                  lastDate: today.add(const Duration(days: 365)),
+                );
+                if (picked != null) setState(() => _fechaTraslado = picked);
+              },
             ),
-            if (!_vehiculoM1L) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _peso,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: Strings.pesoTotal,
+                      suffixText: 'kg',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _bultos,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: Strings.numeroBultos,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            _PointTile(
+              label: Strings.partida,
+              point: _partida,
+              onTap: () async {
+                final point = await pickAddress(
+                  context,
+                  widget.company,
+                  suggested: _suggested(forPartida: true),
+                );
+                if (point != null) setState(() => _partida = point);
+              },
+            ),
+            _PointTile(
+              label: Strings.llegada,
+              point: _llegada,
+              onTap: () async {
+                final point = await pickAddress(
+                  context,
+                  widget.company,
+                  suggested: _suggested(forPartida: false),
+                );
+                if (point != null) setState(() => _llegada = point);
+              },
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(
+                  value: ModalidadTraslado.privado,
+                  label: Text(Strings.transportePrivado),
+                ),
+                ButtonSegment(
+                  value: ModalidadTraslado.publico,
+                  label: Text(Strings.transportePublico),
+                ),
+              ],
+              selected: {_modalidad},
+              onSelectionChanged: (selected) =>
+                  setState(() => _modalidad = selected.single),
+            ),
+            if (isPrivado) ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(Strings.vehiculoM1L),
+                subtitle: const Text(Strings.vehiculoM1LHelp),
+                value: _vehiculoM1L,
+                onChanged: (value) => setState(() => _vehiculoM1L = value),
+              ),
+              if (!_vehiculoM1L) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.local_shipping),
+                  title: Text(_vehicle?.placa ?? Strings.selectVehicle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    final vehicle = await pickVehicle(context, widget.company);
+                    if (vehicle != null) setState(() => _vehicle = vehicle);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.badge),
+                  title: Text(switch (_driver) {
+                    final driver? => '${driver.nombres} ${driver.apellidos}',
+                    null => Strings.selectDriver,
+                  }),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    final driver = await pickDriver(context, widget.company);
+                    if (driver != null) setState(() => _driver = driver);
+                  },
+                ),
+              ],
+            ] else ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.local_shipping),
-                title: Text(_vehicle?.placa ?? Strings.selectVehicle),
+                title: Text(_transportista?.nombre ?? Strings.selectCarrier),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
-                  final vehicle = await pickVehicle(context, widget.company);
-                  if (vehicle != null) setState(() => _vehicle = vehicle);
+                  final carrier = await pickCustomer(
+                    context,
+                    company: widget.company,
+                    forFactura: true,
+                  );
+                  if (carrier != null) setState(() => _transportista = carrier);
                 },
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.badge),
-                title: Text(switch (_driver) {
-                  final driver? => '${driver.nombres} ${driver.apellidos}',
-                  null => Strings.selectDriver,
-                }),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () async {
-                  final driver = await pickDriver(context, widget.company);
-                  if (driver != null) setState(() => _driver = driver);
-                },
+              FormTextField(
+                _mtc,
+                Strings.registroMtc,
+                helperText: Strings.optional,
               ),
             ],
-          ] else ...[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.local_shipping),
-              title: Text(_transportista?.nombre ?? Strings.selectCarrier),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                final carrier = await pickCustomer(
-                  context,
-                  company: widget.company,
-                  forFactura: true,
-                );
-                if (carrier != null) setState(() => _transportista = carrier);
-              },
+            const FormSection(Strings.bienes),
+            DraftLinesList(
+              lines: _lines,
+              moneda: '',
+              showPrices: false,
+              onEdit: (index) => _editLine(index: index),
+              onRemove: (index) => setState(() => _lines.removeAt(index)),
             ),
-            FormTextField(
-              _mtc,
-              Strings.registroMtc,
-              helperText: Strings.optional,
+            OutlinedButton.icon(
+              onPressed: _editLine,
+              icon: const Icon(Icons.add),
+              label: const Text(Strings.addBien),
+            ),
+            if (problem != null && _lines.isNotEmpty)
+              DraftWarning(draftProblemMessage(problem)),
+            const SizedBox(height: 24),
+            SaveButton(
+              label: Strings.emit,
+              filled: true,
+              onPressed: draft == null || problem != null || serie == null
+                  ? null
+                  : () => _emit(serie),
             ),
           ],
-          const FormSection(Strings.bienes),
-          DraftLinesList(
-            lines: _lines,
-            moneda: '',
-            showPrices: false,
-            onEdit: (index) => _editLine(index: index),
-            onRemove: (index) => setState(() => _lines.removeAt(index)),
-          ),
-          OutlinedButton.icon(
-            onPressed: _editLine,
-            icon: const Icon(Icons.add),
-            label: const Text(Strings.addBien),
-          ),
-          if (problem != null && _lines.isNotEmpty)
-            DraftWarning(draftProblemMessage(problem)),
-          const SizedBox(height: 24),
-          SaveButton(
-            label: Strings.emit,
-            filled: true,
-            onPressed: draft == null || problem != null || serie == null
-                ? null
-                : () => _emit(serie),
-          ),
-        ],
+        ),
       ),
     );
   }

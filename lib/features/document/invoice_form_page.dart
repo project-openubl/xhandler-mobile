@@ -200,111 +200,116 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final moneda = widget.company.moneda;
     final title = _isFactura ? Strings.factura : Strings.boleta;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-            const TestModeBanner(),
-          if (seriesValue != null && series.isEmpty)
-            MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
-          Row(
-            children: [
-              Expanded(
-                child: SerieDropdown(
-                  series: series,
-                  value: _serie?.id,
-                  onChanged: (id) {
-                    _serieId = id;
-                    _changed();
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text('${Strings.fechaEmision}\n${peruToday()}'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.person),
-            title: Text(customer?.nombre ?? Strings.selectCustomer),
-            subtitle: customer == null || customer.isAnonymous
-                ? null
-                : Text(
-                    '${Catalogs.tiposDocumentoIdentidad[customer.tipoDocumentoIdentidad] ?? ''}'
-                    ' ${customer.numeroDocumentoIdentidad}',
+    return UnsavedChangesGuard(
+      dirty: _lines.isNotEmpty,
+      child: Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (widget.company.sunatEnvironment == SunatEnvironment.beta)
+              const TestModeBanner(),
+            if (seriesValue != null && series.isEmpty)
+              MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
+            Row(
+              children: [
+                Expanded(
+                  child: SerieDropdown(
+                    series: series,
+                    value: _serie?.id,
+                    onChanged: (id) {
+                      _serieId = id;
+                      _changed();
+                    },
                   ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _pickCustomer,
-          ),
-          const FormSection(Strings.lines),
-          DraftLinesList(
-            lines: _lines,
-            moneda: moneda,
-            onEdit: (index) => _editLine(index: index),
-            onRemove: (index) {
-              _lines.removeAt(index);
-              _changed();
-            },
-          ),
-          Wrap(
-            spacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: _addProduct,
-                icon: const Icon(Icons.inventory_2),
-                label: const Text(Strings.addProduct),
-              ),
-              OutlinedButton.icon(
-                onPressed: _editLine,
-                icon: const Icon(Icons.edit_note),
-                label: const Text(Strings.freeLine),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  '${Strings.fechaEmision}\n${formatDate(context, peruToday())}',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.person),
+              title: Text(customer?.nombre ?? Strings.selectCustomer),
+              subtitle: customer == null || customer.isAnonymous
+                  ? null
+                  : Text(
+                      '${Catalogs.tiposDocumentoIdentidad[customer.tipoDocumentoIdentidad] ?? ''}'
+                      ' ${customer.numeroDocumentoIdentidad}',
+                    ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _pickCustomer,
+            ),
+            const FormSection(Strings.lines),
+            DraftLinesList(
+              lines: _lines,
+              moneda: moneda,
+              onEdit: (index) => _editLine(index: index),
+              onRemove: (index) {
+                _lines.removeAt(index);
+                _changed();
+              },
+            ),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _addProduct,
+                  icon: const Icon(Icons.inventory_2),
+                  label: const Text(Strings.addProduct),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _editLine,
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text(Strings.freeLine),
+                ),
+              ],
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(Strings.credito),
+              value: _credito,
+              onChanged: (credito) {
+                _credito = credito;
+                _changed();
+              },
+            ),
+            if (_credito) ...[
+              for (final (index, cuota) in _cuotas.indexed)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(formatMoney(moneda, cuota.importe)),
+                  subtitle: Text('${Strings.fechaPago}: ${cuota.fechaPago}'),
+                  trailing: IconButton(
+                    tooltip: Strings.delete,
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _cuotas.removeAt(index);
+                      _changed();
+                    },
+                  ),
+                ),
+              TextButton.icon(
+                onPressed: _addCuota,
+                icon: const Icon(Icons.add),
+                label: const Text(Strings.addCuota),
               ),
             ],
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text(Strings.credito),
-            value: _credito,
-            onChanged: (credito) {
-              _credito = credito;
-              _changed();
-            },
-          ),
-          if (_credito) ...[
-            for (final (index, cuota) in _cuotas.indexed)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(formatMoney(moneda, cuota.importe)),
-                subtitle: Text('${Strings.fechaPago}: ${cuota.fechaPago}'),
-                trailing: IconButton(
-                  tooltip: Strings.delete,
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    _cuotas.removeAt(index);
-                    _changed();
-                  },
-                ),
-              ),
-            TextButton.icon(
-              onPressed: _addCuota,
-              icon: const Icon(Icons.add),
-              label: const Text(Strings.addCuota),
+            TotalsSection(totals: totals, error: _previewError, moneda: moneda),
+            if (warning != null) DraftWarning(warning),
+            const SizedBox(height: 24),
+            SaveButton(
+              label: Strings.emit,
+              filled: true,
+              onPressed: _draft == null || _serie == null || warning != null
+                  ? null
+                  : _emit,
             ),
           ],
-          TotalsSection(totals: totals, error: _previewError, moneda: moneda),
-          if (warning != null) DraftWarning(warning),
-          const SizedBox(height: 24),
-          SaveButton(
-            label: Strings.emit,
-            filled: true,
-            onPressed: _draft == null || _serie == null || warning != null
-                ? null
-                : _emit,
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'data/database.dart';
+import 'strings.dart';
 
 /// Local notifications, e.g. SUNAT answers to documents sent in the
 /// background
@@ -10,8 +11,8 @@ abstract final class Notifications {
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
       'sunat',
-      'Respuestas de SUNAT',
-      channelDescription: 'Cuando SUNAT responde un comprobante',
+      Strings.notificationChannel,
+      channelDescription: Strings.notificationChannelHelp,
     ),
     iOS: DarwinNotificationDetails(),
   );

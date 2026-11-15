@@ -14,6 +14,8 @@ abstract final class Strings {
   static const saved = 'Guardado';
   static const retry = 'Reintentar';
   static const unexpectedError = 'Ocurrió un error inesperado';
+  static const discardChanges = '¿Salir sin guardar? Se perderá lo ingresado.';
+  static const discard = 'Salir';
 
   // Home
   static const welcomeTitle = 'Bienvenido';
@@ -33,6 +35,17 @@ abstract final class Strings {
       'Se borrarán todos los datos de este dispositivo: empresas, '
       'comprobantes y configuración.';
   static const startupErrorTitle = 'No se pudo iniciar la aplicación';
+  static const setupTitle = 'Para emitir comprobantes reales';
+  static String setupProgress(int done, int total) =>
+      '$done de $total pasos listos';
+  static const setupCertificateHelp =
+      'De una entidad acreditada ante Indecopi, y registrado en SUNAT '
+      'Operaciones en Línea (SOL).';
+  static const setupCredentialsHelp =
+      'Un usuario secundario SOL con el perfil de emisor electrónico.';
+  static const setupProduction = 'Desactivar el modo prueba';
+  static const setupProductionHelp =
+      'En Empresa, cuando el certificado y las credenciales estén listos.';
 
   // Company
   static const companySettings = 'Empresa';
@@ -185,6 +198,7 @@ abstract final class Strings {
   // Documents
   static const newDocument = 'Nuevo comprobante';
   static const noDocuments = 'Aún no hay comprobantes';
+  static const searchDocuments = 'Buscar por número o cliente';
   static const filterAll = 'Todos';
   static const filterProblems = 'Con problemas';
   static const factura = 'Factura';
@@ -210,6 +224,7 @@ abstract final class Strings {
   static const opInafecta = 'Op. inafecta';
   static const opExportacion = 'Op. exportación';
   static const igv = 'IGV';
+  static const plusIgv = ' + IGV';
   static const isc = 'ISC';
   static const icbper = 'ICBPER';
   static const total = 'Total';
@@ -432,6 +447,10 @@ abstract final class Strings {
   static const locked = 'XHandler está bloqueado';
   static const unlock = 'Desbloquear';
   static const unlockReason = 'Desbloquea XHandler';
+
+  // Notifications
+  static const notificationChannel = 'Respuestas de SUNAT';
+  static const notificationChannelHelp = 'Cuando SUNAT responde un comprobante';
 
   // Diagnostics
   static const diagnostics = 'Diagnóstico';

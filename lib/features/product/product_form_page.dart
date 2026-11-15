@@ -21,6 +21,9 @@ class ProductFormPage extends ConsumerStatefulWidget {
 }
 
 class _ProductFormPageState extends ConsumerState<ProductFormPage> {
+  /// Whether the user typed something, to ask before leaving
+  bool _edited = false;
+
   final _form = GlobalKey<FormState>();
   final _controllers = <TextEditingController>[];
   late final _descripcion = _controller(widget.product?.descripcion);
@@ -84,120 +87,128 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         contentPadding: EdgeInsets.zero,
         title: Text(title),
         value: value,
-        onChanged: onChanged,
+        // Switches aren't form fields: they mark the form edited themselves
+        onChanged: (value) {
+          _edited = true;
+          onChanged(value);
+        },
       );
 
   @override
   Widget build(BuildContext context) {
     final existing = widget.product;
     final companyIgv = Catalogs.igvTipos[widget.company.igvTipo];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(existing == null ? Strings.newProduct : Strings.product),
-        actions: [
-          if (existing != null)
-            DeleteButton(
-              message: Strings.deleteProductConfirm,
-              onDelete: () =>
-                  ref.read(productRepositoryProvider).delete(existing.id),
-            ),
-          SaveButton(onPressed: _save),
-        ],
-      ),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            FormTextField(
-              _descripcion,
-              Strings.descripcion,
-              validator: (text) => text.isEmpty ? Strings.required : null,
-            ),
-            FormTextField(_codigo, Strings.codigo),
-            CatalogDropdown(
-              label: Strings.unidadMedida,
-              value: _unidadMedida,
-              options: Catalogs.unidadesMedida,
-              onChanged: (unidad) => setState(() => _unidadMedida = unidad!),
-            ),
-            FormTextField(
-              _precio,
-              '${Strings.precio} (${widget.company.moneda})',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+    return UnsavedChangesGuard(
+      dirty: _edited,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(existing == null ? Strings.newProduct : Strings.product),
+          actions: [
+            if (existing != null)
+              DeleteButton(
+                message: Strings.deleteProductConfirm,
+                onDelete: () =>
+                    ref.read(productRepositoryProvider).delete(existing.id),
               ),
-              validator: (precio) =>
-                  parseAmount(precio) == null ? Strings.invalidPrecio : null,
-            ),
-            _switch(
-              Strings.precioIncluyeIgv,
-              _precioIncluyeIgv,
-              (value) => setState(() => _precioIncluyeIgv = value),
-            ),
-            CatalogDropdown(
-              label: Strings.igvTipo,
-              value: _igvTipo,
-              options: Catalogs.igvTipos,
-              noneLabel: '${Strings.igvTipoDefault} (${companyIgv ?? '-'})',
-              onChanged: (tipo) => setState(() => _igvTipo = tipo),
-            ),
-            _switch(
-              Strings.esBolsa,
-              _esBolsa,
-              (value) => setState(() => _esBolsa = value),
-            ),
-            _switch(
-              Strings.favorito,
-              _favorito,
-              (value) => setState(() => _favorito = value),
-            ),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              // Collapsed fields must still be validated
-              maintainState: true,
-              title: const Text(Strings.moreOptions),
-              initiallyExpanded:
-                  _iscTipo != null ||
-                  _detraccionCodigo.text.isNotEmpty ||
-                  _codigoSunat.text.isNotEmpty,
-              children: [
-                FormTextField(
-                  _codigoSunat,
-                  Strings.codigoSunat,
-                  digitsOnly: true,
-                  maxLength: 8,
-                ),
-                CatalogDropdown(
-                  label: Strings.iscTipo,
-                  value: _iscTipo,
-                  options: Catalogs.iscTipos,
-                  noneLabel: '—',
-                  onChanged: (tipo) => setState(() => _iscTipo = tipo),
-                ),
-                if (_iscTipo != null)
-                  FormTextField(
-                    _iscTasa,
-                    Strings.iscTasa,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: (tasa) => parseAmount(tasa) == null
-                        ? Strings.invalidIscTasa
-                        : null,
-                  ),
-                FormTextField(
-                  _detraccionCodigo,
-                  Strings.detraccionCodigo,
-                  digitsOnly: true,
-                  maxLength: 3,
-                  validator: (codigo) => codigo.isEmpty || codigo.length == 3
-                      ? null
-                      : Strings.invalidDetraccionCodigo,
-                ),
-              ],
-            ),
+            SaveButton(onPressed: _save),
           ],
+        ),
+        body: Form(
+          onChanged: _edited ? null : () => setState(() => _edited = true),
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              FormTextField(
+                _descripcion,
+                Strings.descripcion,
+                validator: (text) => text.isEmpty ? Strings.required : null,
+              ),
+              FormTextField(_codigo, Strings.codigo),
+              CatalogDropdown(
+                label: Strings.unidadMedida,
+                value: _unidadMedida,
+                options: Catalogs.unidadesMedida,
+                onChanged: (unidad) => setState(() => _unidadMedida = unidad!),
+              ),
+              FormTextField(
+                _precio,
+                '${Strings.precio} (${widget.company.moneda})',
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (precio) =>
+                    parseAmount(precio) == null ? Strings.invalidPrecio : null,
+              ),
+              _switch(
+                Strings.precioIncluyeIgv,
+                _precioIncluyeIgv,
+                (value) => setState(() => _precioIncluyeIgv = value),
+              ),
+              CatalogDropdown(
+                label: Strings.igvTipo,
+                value: _igvTipo,
+                options: Catalogs.igvTipos,
+                noneLabel: '${Strings.igvTipoDefault} (${companyIgv ?? '-'})',
+                onChanged: (tipo) => setState(() => _igvTipo = tipo),
+              ),
+              _switch(
+                Strings.esBolsa,
+                _esBolsa,
+                (value) => setState(() => _esBolsa = value),
+              ),
+              _switch(
+                Strings.favorito,
+                _favorito,
+                (value) => setState(() => _favorito = value),
+              ),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                // Collapsed fields must still be validated
+                maintainState: true,
+                title: const Text(Strings.moreOptions),
+                initiallyExpanded:
+                    _iscTipo != null ||
+                    _detraccionCodigo.text.isNotEmpty ||
+                    _codigoSunat.text.isNotEmpty,
+                children: [
+                  FormTextField(
+                    _codigoSunat,
+                    Strings.codigoSunat,
+                    digitsOnly: true,
+                    maxLength: 8,
+                  ),
+                  CatalogDropdown(
+                    label: Strings.iscTipo,
+                    value: _iscTipo,
+                    options: Catalogs.iscTipos,
+                    noneLabel: '—',
+                    onChanged: (tipo) => setState(() => _iscTipo = tipo),
+                  ),
+                  if (_iscTipo != null)
+                    FormTextField(
+                      _iscTasa,
+                      Strings.iscTasa,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (tasa) => parseAmount(tasa) == null
+                          ? Strings.invalidIscTasa
+                          : null,
+                    ),
+                  FormTextField(
+                    _detraccionCodigo,
+                    Strings.detraccionCodigo,
+                    digitsOnly: true,
+                    maxLength: 3,
+                    validator: (codigo) => codigo.isEmpty || codigo.length == 3
+                        ? null
+                        : Strings.invalidDetraccionCodigo,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

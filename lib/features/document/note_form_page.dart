@@ -43,6 +43,9 @@ class NoteFormPage extends ConsumerStatefulWidget {
 const _wholeInvoiceTipos = {'01', '02', '06'};
 
 class _NoteFormPageState extends ConsumerState<NoteFormPage> {
+  /// Whether the user changed the copy of the affected document
+  bool _edited = false;
+
   late final _spec =
       (jsonDecode(widget.affected.inputJson) as Map<String, Object?>)['spec']
           as Map<String, Object?>;
@@ -104,7 +107,9 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _changed());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _changed(edited: false),
+    );
   }
 
   @override
@@ -127,8 +132,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     );
   }
 
-  void _changed() {
-    setState(() {});
+  void _changed({bool edited = true}) {
+    setState(() => _edited |= edited);
     final draft = _draft;
     final serie = _serie;
     _preview.request(
@@ -200,7 +205,10 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   @override
   Widget build(BuildContext context) {
     // Series loaded after the first frame recompute the preview
-    ref.listen(seriesProvider(widget.company.id), (_, _) => _changed());
+    ref.listen(
+      seriesProvider(widget.company.id),
+      (_, _) => _changed(edited: false),
+    );
     final seriesValue = ref.watch(seriesProvider(widget.company.id)).value;
     final series = _series(seriesValue ?? const []);
     final serie = _serie;
@@ -209,77 +217,84 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     final warning = _warning;
     final editable = !_wholeInvoice;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-            const TestModeBanner(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              Strings.affectedDocument(
-                serieNumero(widget.affected.serie, widget.affected.numero),
+    return UnsavedChangesGuard(
+      dirty: _edited,
+      child: Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (widget.company.sunatEnvironment == SunatEnvironment.beta)
+              const TestModeBanner(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                Strings.affectedDocument(
+                  serieNumero(widget.affected.serie, widget.affected.numero),
+                ),
               ),
+              subtitle: Text(_customer.nombre),
             ),
-            subtitle: Text(_customer.nombre),
-          ),
-          if (seriesValue != null && series.isEmpty)
-            MissingSerieWarning(
-              Strings.noNoteSerie(
-                title.toLowerCase(),
-                '$_letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
+            if (seriesValue != null && series.isEmpty)
+              MissingSerieWarning(
+                Strings.noNoteSerie(
+                  title.toLowerCase(),
+                  '$_letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
+                ),
               ),
+            SerieDropdown(
+              series: series,
+              value: serie?.id,
+              onChanged: (id) {
+                _serieId = id;
+                _changed();
+              },
             ),
-          SerieDropdown(
-            series: series,
-            value: serie?.id,
-            onChanged: (id) {
-              _serieId = id;
-              _changed();
-            },
-          ),
-          CatalogDropdown(
-            label: Strings.tipoNota,
-            value: _tipoNota,
-            options: _tiposNota,
-            onChanged: (tipo) => _changeTipo(tipo!),
-          ),
-          TextField(
-            controller: _sustento,
-            decoration: const InputDecoration(labelText: Strings.sustento),
-            onChanged: (_) => _changed(),
-          ),
-          const FormSection(Strings.lines),
-          DraftLinesList(
-            lines: _lines,
-            moneda: moneda,
-            onEdit: editable ? (index) => _editLine(index: index) : null,
-            onRemove: editable
-                ? (index) {
-                    _lines.removeAt(index);
-                    _changed();
-                  }
-                : null,
-          ),
-          if (editable)
-            OutlinedButton.icon(
-              onPressed: _editLine,
-              icon: const Icon(Icons.edit_note),
-              label: const Text(Strings.freeLine),
+            CatalogDropdown(
+              label: Strings.tipoNota,
+              value: _tipoNota,
+              options: _tiposNota,
+              onChanged: (tipo) => _changeTipo(tipo!),
             ),
-          TotalsSection(totals: _totals, error: _previewError, moneda: moneda),
-          if (warning != null) DraftWarning(warning),
-          const SizedBox(height: 24),
-          SaveButton(
-            label: Strings.emit,
-            filled: true,
-            onPressed: _draft == null || serie == null || warning != null
-                ? null
-                : _emit,
-          ),
-        ],
+            TextField(
+              controller: _sustento,
+              decoration: const InputDecoration(labelText: Strings.sustento),
+              onChanged: (_) => _changed(),
+            ),
+            const FormSection(Strings.lines),
+            DraftLinesList(
+              lines: _lines,
+              moneda: moneda,
+              onEdit: editable ? (index) => _editLine(index: index) : null,
+              onRemove: editable
+                  ? (index) {
+                      _lines.removeAt(index);
+                      _changed();
+                    }
+                  : null,
+            ),
+            if (editable)
+              OutlinedButton.icon(
+                onPressed: _editLine,
+                icon: const Icon(Icons.edit_note),
+                label: const Text(Strings.freeLine),
+              ),
+            TotalsSection(
+              totals: _totals,
+              error: _previewError,
+              moneda: moneda,
+            ),
+            if (warning != null) DraftWarning(warning),
+            const SizedBox(height: 24),
+            SaveButton(
+              label: Strings.emit,
+              filled: true,
+              onPressed: _draft == null || serie == null || warning != null
+                  ? null
+                  : _emit,
+            ),
+          ],
+        ),
       ),
     );
   }

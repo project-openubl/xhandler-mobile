@@ -431,7 +431,7 @@ class DraftLinesList extends StatelessWidget {
             subtitle: Text(
               showPrices
                   ? '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
-                        '${line.precioIncluyeIgv ? '' : ' + IGV'}'
+                        '${line.precioIncluyeIgv ? '' : Strings.plusIgv}'
                   : '${line.cantidad} '
                         '${Catalogs.unidadesMedida[line.unidadMedida] ?? line.unidadMedida}',
             ),

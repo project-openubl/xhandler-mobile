@@ -78,9 +78,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sales = ref.watch(
-      _salesProvider((company: widget.company, month: _month)),
-    );
+    final query = _salesProvider((company: widget.company, month: _month));
+    final sales = ref.watch(query);
     final rows = sales.value;
     final localizations = MaterialLocalizations.of(context);
     final thisMonth = DateTime.parse(peruToday());
@@ -121,7 +120,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           ),
           const SizedBox(height: 8),
           if (sales.hasError)
-            const Text(Strings.unexpectedError)
+            ErrorRetry(onRetry: () => ref.invalidate(query))
           else if (rows == null)
             const Center(child: CircularProgressIndicator())
           else if (rows.isEmpty)

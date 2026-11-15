@@ -22,6 +22,15 @@ final savedCertificateProvider = FutureProvider.autoDispose
           .inspect(certificate, secrets.certificatePassword ?? '');
     });
 
+/// Whether the company has its SOL user and password
+final hasSolCredentialsProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, companyId) async {
+      final secrets = await ref
+          .watch(companyRepositoryProvider)
+          .readSecrets(companyId);
+      return secrets.solUsername != null && secrets.solPassword != null;
+    });
+
 /// Why a certificate valid until [validUntil] needs attention: it expired, or
 /// expires within 30 days (DESIGN §11)
 String? certificateWarning(DateTime validUntil, {DateTime? now}) {
