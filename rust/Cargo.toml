@@ -12,7 +12,7 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 flutter_rust_bridge = { version = "=2.13.0", features = ["chrono"] }
 xhandler = "=6.0.0-alpha.1"
 anyhow = "1.0"
-base64 = "0.22"
+base64 = "0.23"
 chrono = "0.4"
 serde_json = "1"
 x509-cert = "0.3"
