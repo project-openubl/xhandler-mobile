@@ -161,7 +161,7 @@ jobs:
       # Named after the Xcode product
       - id: ipa
         run: echo "path=$(ls build/ios/ipa/*.ipa | head -1)" >> "$GITHUB_OUTPUT"
-      - uses: apple-actions/upload-testflight-build@v3
+      - uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: ${{ steps.ipa.outputs.path }}
           issuer-id: ${{ secrets.APPSTORE_API_ISSUER_ID }}
