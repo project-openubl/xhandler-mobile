@@ -181,6 +181,7 @@ lookup symbol", set the Runner's Strip Style to Non-Global Symbols.
 
 ## App icon
 
-`tool/app_icon.py` draws the icon (a document with a check on OpenUBL blue) and writes
-every Android (legacy and adaptive) and iOS size and Play's 512×512 icon:
+The icon is Project OpenUBL's logo (`tool/openubl-logo.png`, the ghost of the website and
+the GitHub organization) on OpenUBL blue. `tool/app_icon.py` writes every Android (legacy,
+adaptive and the white notification glyph) and iOS size and Play's 512×512 icon from it:
 `python3 tool/app_icon.py .` (needs Pillow).
