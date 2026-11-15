@@ -35,6 +35,8 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   late final _codigoLocal = _controller(widget.company?.codigoLocal ?? '0000');
   late final _telefono = _controller(widget.company?.telefono);
   late final _email = _controller(widget.company?.email);
+  late bool _agentePercepcion = widget.company?.esAgentePercepcion ?? false;
+  late bool _agenteRetencion = widget.company?.esAgenteRetencion ?? false;
 
   TextEditingController _controller(String? text) {
     final controller = TextEditingController(text: text);
@@ -66,6 +68,8 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       codigoLocal: Value(optionalText(_codigoLocal) ?? '0000'),
       telefono: optional(_telefono),
       email: optional(_email),
+      esAgentePercepcion: Value(_agentePercepcion),
+      esAgenteRetencion: Value(_agenteRetencion),
     );
     final repository = ref.read(companyRepositoryProvider);
     final existing = widget.company;
@@ -107,8 +111,10 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
               enabled: !editing,
               digitsOnly: true,
               maxLength: 11,
-              validator: (ruc) =>
-                  isRuc(digits: ruc) ? null : Strings.invalidRuc,
+              // The RUC can't change once created
+              validator: editing
+                  ? null
+                  : (ruc) => isRuc(digits: ruc) ? null : Strings.invalidRuc,
             ),
             FormTextField(_razonSocial, Strings.razonSocial, required: true),
             FormTextField(_nombreComercial, Strings.nombreComercial),
@@ -146,6 +152,21 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
               _email,
               Strings.email,
               keyboardType: TextInputType.emailAddress,
+            ),
+            const FormSection(Strings.agenteSunat),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(Strings.agentePercepcion),
+              subtitle: const Text(Strings.agentePercepcionHelp),
+              value: _agentePercepcion,
+              onChanged: (value) => setState(() => _agentePercepcion = value),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(Strings.agenteRetencion),
+              subtitle: const Text(Strings.agenteRetencionHelp),
+              value: _agenteRetencion,
+              onChanged: (value) => setState(() => _agenteRetencion = value),
             ),
           ],
         ),

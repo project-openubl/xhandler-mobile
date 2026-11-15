@@ -31,6 +31,30 @@ void main() {
       expect(find.text(Strings.required), findsNWidgets(2));
       await data.unmount(tester);
     });
+
+    testWidgets('saves whether SUNAT made it a percepción/retención agent', (
+      tester,
+    ) async {
+      final data = TestData();
+      final company = await tester.runAsync(data.createCompany);
+      expect(company!.esAgentePercepcion, isFalse);
+      expect(company.esAgenteRetencion, isFalse);
+      await data.pump(tester, CompanyFormPage(company: company));
+
+      for (final label in [Strings.agentePercepcion, Strings.agenteRetencion]) {
+        await tester.ensureVisible(find.text(label));
+        await tester.tap(find.text(label));
+        await tester.pumpAndSettle();
+      }
+      await data.tapAndWait(tester);
+
+      final saved = (await tester.runAsync(
+        () => data.companies.watchActive().first,
+      ))!;
+      expect(saved.esAgentePercepcion, isTrue);
+      expect(saved.esAgenteRetencion, isTrue);
+      await data.unmount(tester);
+    });
   });
 
   group('CredentialsPage', () {
