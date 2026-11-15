@@ -13,12 +13,11 @@ import '../pdf/share_document.dart';
 import 'delivery_service.dart';
 import 'email_sender.dart';
 import 'email_settings_page.dart';
-import 'whatsapp.dart';
 
 /// A delivery being prepared; a second tap meanwhile does nothing
 bool _delivering = false;
 
-/// Sends [document] to its customer: by email, WhatsApp or any other app
+/// Sends [document] to its customer: by email or any other app
 /// (docs/DESIGN.md §8). [anchor] places the share sheet on iPads.
 Future<void> deliverDocument(
   BuildContext anchor,
@@ -37,7 +36,7 @@ Future<void> deliverDocument(
     final company = await ref
         .read(companyRepositoryProvider)
         .find(document.companyId);
-    final contact = await service.contactOf(document);
+    final email = await service.emailOf(document);
     Future<List<DeliveryFile>> files() => deliveryFiles(
       company: company,
       document: document,
@@ -59,7 +58,7 @@ Future<void> deliverDocument(
           anchor,
           title: Strings.sendByEmail,
           label: Strings.email,
-          initial: contact.email,
+          initial: email,
           keyboardType: TextInputType.emailAddress,
           valid: isEmail,
         );
@@ -72,31 +71,6 @@ Future<void> deliverDocument(
           template: template,
         );
         if (anchor.mounted) showMessage(anchor, Strings.emailSent(to));
-      case DeliveryChannel.whatsapp:
-        final phone =
-            whatsappNumber(contact.phone) ??
-            whatsappNumber(
-              await _ask(
-                anchor,
-                title: Strings.sendByWhatsapp,
-                label: Strings.telefono,
-                initial: contact.phone,
-                keyboardType: TextInputType.phone,
-                valid: (text) => whatsappNumber(text) != null,
-              ),
-            );
-        if (phone == null || !anchor.mounted) return;
-        final sent = await sendToWhatsApp(
-          phone: phone,
-          files: await files(),
-          text: DeliveryService.subject(company, document),
-        );
-        if (!sent) {
-          if (anchor.mounted) showMessage(anchor, Strings.whatsappMissing);
-          return;
-        }
-        // Opened in the chat; WhatsApp doesn't tell whether it was sent
-        await service.record(document, DeliveryChannel.whatsapp, phone);
       case DeliveryChannel.share:
         final ready = await files();
         if (!anchor.mounted) return;
@@ -234,12 +208,6 @@ class _DeliverySheetState extends State<_DeliverySheet> {
             title: const Text(Strings.sendByEmail),
             onTap: () => choose(DeliveryChannel.email),
           ),
-          if (canSendToWhatsApp)
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text(Strings.sendByWhatsapp),
-              onTap: () => choose(DeliveryChannel.whatsapp),
-            ),
           ListTile(
             leading: const Icon(Icons.share),
             title: const Text(Strings.otherApps),

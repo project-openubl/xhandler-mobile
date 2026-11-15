@@ -323,12 +323,10 @@ abstract final class Strings {
   static const deliver = 'Enviar al cliente';
   static const deliveries = 'Envíos al cliente';
   static const sendByEmail = 'Correo';
-  static const sendByWhatsapp = 'WhatsApp';
   static const otherApps = 'Otras aplicaciones';
   static const send = 'Enviar';
   static const sending = 'Enviando…';
   static String emailSent(String to) => 'Enviado a $to';
-  static const whatsappMissing = 'WhatsApp no está instalado.';
   static const invalidValue = 'Revisa este dato';
   static const emailNotConfigured =
       'Configura el correo de la empresa para enviar comprobantes.';

@@ -15,7 +15,7 @@ val keyProperties = Properties().apply {
 
 android {
     namespace = "io.github.projectopenubl.xhandler"
-    // flutter_local_notifications and androidx.core need API 37 to compile
+    // flutter_local_notifications needs API 37 to compile
     compileSdk = maxOf(37, flutter.compileSdkVersion)
     ndkVersion = flutter.ndkVersion
 
@@ -69,6 +69,4 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    // FileProvider, to share documents with WhatsApp
-    implementation("androidx.core:core:1.18.0")
 }

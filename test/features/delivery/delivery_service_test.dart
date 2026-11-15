@@ -13,7 +13,6 @@ import 'package:xhandler_mobile/features/company/company_repository.dart';
 import 'package:xhandler_mobile/features/customer/customer_repository.dart';
 import 'package:xhandler_mobile/features/delivery/delivery_service.dart';
 import 'package:xhandler_mobile/features/delivery/email_sender.dart';
-import 'package:xhandler_mobile/features/delivery/whatsapp.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/pdf/pdf_templates.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
@@ -96,11 +95,8 @@ void main() {
         CompanySecret.smtpPassword: 'app password',
       });
 
-  test('the contact comes from the customer list, else the document', () async {
-    expect(await service.contactOf(document), (
-      email: 'compras@example.com',
-      phone: null,
-    ));
+  test('the email comes from the customer list, else the document', () async {
+    expect(await service.emailOf(document), 'compras@example.com');
 
     await database
         .into(database.customers)
@@ -111,13 +107,9 @@ void main() {
             numeroDocumentoIdentidad: '20100070970',
             nombre: 'SUPERMERCADOS PERUANOS S.A.',
             email: const Value('facturas@spsa.pe'),
-            telefono: const Value('+51987654321'),
           ),
         );
-    expect(await service.contactOf(document), (
-      email: 'facturas@spsa.pe',
-      phone: '+51987654321',
-    ));
+    expect(await service.emailOf(document), 'facturas@spsa.pe');
   });
 
   test('emails the PDF and XML, and records it', () async {
@@ -197,14 +189,6 @@ void main() {
       ),
       contains('pendiente de confirmación de SUNAT'),
     );
-  });
-
-  test('WhatsApp numbers carry the country code', () {
-    expect(whatsappNumber('987 654 321'), '51987654321');
-    expect(whatsappNumber('+51 987-654-321'), '51987654321');
-    expect(whatsappNumber('+1 415 555 0100'), '14155550100');
-    expect(whatsappNumber('01 4567890'), isNull); // a landline
-    expect(whatsappNumber(null), isNull);
   });
 
   test('mail failures say what the user can do', () {
