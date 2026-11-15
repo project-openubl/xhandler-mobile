@@ -6,6 +6,9 @@ abstract final class Strings {
   static const cancel = 'Cancelar';
   static const delete = 'Eliminar';
   static const required = 'Obligatorio';
+  static const requiredFieldsLegend = 'Campos obligatorios';
+  static const requiredFieldsLegendSemantics =
+      'Los campos marcados con asterisco son obligatorios';
   static const show = 'Mostrar';
   static const hide = 'Ocultar';
   static const saved = 'Guardado';

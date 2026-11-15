@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/data/providers.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/company/active_company_page.dart';
+import 'package:xhandler_mobile/features/company/company_form_page.dart';
 import 'package:xhandler_mobile/features/company/credentials_page.dart';
 import 'package:xhandler_mobile/features/series/series_page.dart';
 import 'package:xhandler_mobile/strings.dart';
@@ -12,6 +13,26 @@ import 'package:xhandler_mobile/strings.dart';
 import '../helpers.dart';
 
 void main() {
+  group('CompanyFormPage', () {
+    testWidgets('marks the required fields and rejects them empty', (
+      tester,
+    ) async {
+      final data = TestData();
+      await data.pump(tester, const CompanyFormPage());
+
+      expect(find.text('* ${Strings.requiredFieldsLegend}'), findsOneWidget);
+      expect(find.text('${Strings.ruc} *'), findsOneWidget);
+      expect(find.text('${Strings.razonSocial} *'), findsOneWidget);
+      expect(find.text(Strings.nombreComercial), findsOneWidget);
+      expect(find.text('${Strings.nombreComercial} *'), findsNothing);
+
+      await tester.tap(find.text(Strings.save));
+      await tester.pumpAndSettle();
+      expect(find.text(Strings.required), findsNWidgets(2));
+      await data.unmount(tester);
+    });
+  });
+
   group('CredentialsPage', () {
     testWidgets('shows the saved credentials without the RUC prefix', (
       tester,
