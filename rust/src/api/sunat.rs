@@ -145,6 +145,7 @@ impl From<SunatCredentials> for Credentials {
             password: credentials.password,
             client_id: credentials.client_id,
             client_secret: credentials.client_secret,
+            token: None,
         }
     }
 }
@@ -166,9 +167,9 @@ fn into_response<T>(
 /// (e.g. 401 for wrong credentials) won't change by retrying.
 fn from_client_error(error: SunatClientError) -> Result<SunatResponse, BridgeError> {
     let (status, code) = match &error {
-        SunatClientError::Response(http_status) => {
-            let code = http_status.as_u16();
-            let transient = http_status.is_server_error() || code == 408 || code == 429;
+        SunatClientError::Response(code) => {
+            let code = *code;
+            let transient = (500..600).contains(&code) || code == 408 || code == 429;
             let status = if transient {
                 SunatStatus::NotDelivered
             } else {
@@ -176,10 +177,13 @@ fn from_client_error(error: SunatClientError) -> Result<SunatResponse, BridgeErr
             };
             (status, Some(format!("HTTP {code}")))
         }
+        // SUNAT's proxy refused it (HTTP 401) before the service saw it: retry later
+        SunatClientError::RateLimited => (SunatStatus::NotDelivered, Some("HTTP 401".to_string())),
         SunatClientError::HttpClient(_) | SunatClientError::Any(_) => {
             (SunatStatus::NotDelivered, None)
         }
-        SunatClientError::Templating(_) => return Err(BridgeError::other(error)),
+        // Not an HTTP problem (SunatClientError is non_exhaustive)
+        _ => return Err(BridgeError::other(error)),
     };
     let description = format!("{:#}", anyhow::Error::from(error));
     Ok(response(status, code, Some(description)))
