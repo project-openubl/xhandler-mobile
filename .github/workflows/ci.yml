@@ -52,7 +52,12 @@ jobs:
       - run: flutter_rust_bridge_codegen generate && git diff --exit-code
       - run: dart format --output=none --set-exit-if-changed $(find lib test integration_test -name '*.dart' -not -path 'lib/src/rust/*' -not -name '*.g.dart')
       - run: flutter analyze
-      - run: flutter test
+      - run: flutter test --coverage
+      # Reported, not enforced: download it from the run's artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
 
   android:
     runs-on: ubuntu-latest

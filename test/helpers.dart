@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,8 +39,13 @@ class TestData {
   }
 
   /// Shows [page] pushed over an empty page, as the app does (forms pop
-  /// themselves when saved)
-  Future<void> pump(WidgetTester tester, Widget page) async {
+  /// themselves when saved). Pages that wait for a database stream show a
+  /// spinner that never settles: pass `settle: false` and [waitFor] them.
+  Future<void> pump(
+    WidgetTester tester,
+    Widget page, {
+    bool settle = true,
+  }) async {
     // A tall phone, so whole forms fit on screen
     tester.view.physicalSize = const Size(1080, 3000);
     tester.view.devicePixelRatio = 2;
@@ -50,8 +57,29 @@ class TestData {
         child: MaterialApp(navigatorKey: navigator, home: const Scaffold()),
       ),
     );
-    navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => page));
-    await tester.pumpAndSettle();
+    unawaited(
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(builder: (_) => page),
+      ),
+    );
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump(const Duration(milliseconds: 500)); // the transition
+    }
+  }
+
+  /// Pumps until [finder] finds something. Database work needs real time,
+  /// which the tester's fake clock lacks, so real time and frames alternate.
+  Future<void> waitFor(WidgetTester tester, Finder finder) async {
+    for (var wait = 0; wait < 100; wait++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      if (finder.evaluate().isNotEmpty) return;
+    }
+    fail('Never found $finder');
   }
 
   /// Taps [label] (by default "Guardar") and waits until the save button

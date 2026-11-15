@@ -31,13 +31,8 @@ abstract final class Notifications {
   /// the background outbox), once per install
   static Future<void> requestPermissionOnce(AppDatabase database) async {
     const asked = 'notifications_asked';
-    final row = await (database.select(
-      database.deviceSettings,
-    )..where((s) => s.key.equals(asked))).getSingleOrNull();
-    if (row != null) return;
-    await database
-        .into(database.deviceSettings)
-        .insert(DeviceSettingsCompanion.insert(key: asked, value: 'true'));
+    if (await database.setting(asked) != null) return;
+    await database.setSetting(asked, 'true');
     await initialize();
     await _requestPermission();
   }

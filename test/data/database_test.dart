@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
@@ -100,6 +100,18 @@ void main() {
 
     expect(company.createdAt.isUtc, isTrue);
     expect(stored.read<String>('created_at'), matches(r'\.\d+Z$'));
+  });
+
+  test('device settings are read, replaced and deleted by key', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    expect(await database.setting('k'), isNull);
+    await database.setSetting('k', 'a');
+    await database.setSetting('k', 'b');
+    expect(await database.setting('k'), 'b');
+    await database.deleteSetting('k');
+    expect(await database.setting('k'), isNull);
   });
 
   test('stored SUNAT environments keep their names', () {

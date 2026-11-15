@@ -52,16 +52,32 @@ class AppDatabase extends _$AppDatabase {
     return query.write(RawValuesInsertable(columns));
   }
 
+  /// A setting of this device (`device_settings`), `null` if not set
+  Future<String?> setting(String key) async =>
+      (await _setting(key).getSingleOrNull())?.value;
+
+  Stream<String?> watchSetting(String key) =>
+      _setting(key).watchSingleOrNull().map((row) => row?.value);
+
+  Future<void> setSetting(String key, String value) => into(deviceSettings)
+      .insertOnConflictUpdate(
+        DeviceSettingsCompanion.insert(key: key, value: value),
+      );
+
+  Future<void> deleteSetting(String key) =>
+      (delete(deviceSettings)..where((s) => s.key.equals(key))).go();
+
+  SimpleSelectStatement<$DeviceSettingsTable, DeviceSetting> _setting(
+    String key,
+  ) => select(deviceSettings)..where((s) => s.key.equals(key));
+
   /// Id of this installation, generated once (DESIGN §3.1)
   Future<String> deviceId() => transaction(() async {
     const key = 'device_id';
-    final existing = await (select(
-      deviceSettings,
-    )..where((s) => s.key.equals(key))).getSingleOrNull();
-    if (existing != null) return existing.value;
+    final existing = await setting(key);
+    if (existing != null) return existing;
     final id = newId();
-    await into(deviceSettings)
-        .insert(DeviceSettingsCompanion.insert(key: key, value: id));
+    await setSetting(key, id);
     return id;
   });
 

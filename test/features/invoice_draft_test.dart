@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/features/despatch/despatch_advice_draft.dart';
-import 'package:xhandler_mobile/features/document/document_service.dart';
+import 'package:xhandler_mobile/features/document/draft_problem.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/perception_retention_draft.dart';
 import 'package:xhandler_mobile/features/document/voiding.dart';
@@ -452,7 +452,8 @@ void main() {
         fechaEmision: '2026-11-13',
       ),
     );
-    final operacion = (json as Map)['spec']['operacion'] as Map;
+    final spec = (json as Map)['spec'] as Map;
+    final operacion = spec['operacion'] as Map;
     expect(operacion['importe_operacion'], '100.56');
     expect(
       (operacion['comprobante_afectado'] as Map)['importe_total'],
@@ -496,7 +497,8 @@ void main() {
           fechaEmision: '2026-11-13',
         ),
       );
-      final partida = (json as Map)['spec']['envio']['partida'] as Map;
+      final envio = ((json as Map)['spec'] as Map)['envio'] as Map;
+      final partida = envio['partida'] as Map;
       expect(partida['codigo_local'], '0001');
       expect(partida['ruc'], _company.ruc);
     });

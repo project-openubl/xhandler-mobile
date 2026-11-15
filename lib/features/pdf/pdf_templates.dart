@@ -96,7 +96,7 @@ class A4Template implements PdfTemplate {
   @override
   Future<Uint8List> render(DocumentView view, pw.ThemeData theme) {
     const small = pw.TextStyle(fontSize: 9);
-    final bold = pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
+    const bold = pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold);
     final document = pw.Document(
       title: '${view.title} ${view.serieNumero}',
       theme: theme,
@@ -115,7 +115,7 @@ class A4Template implements PdfTemplate {
                 children: [
                   pw.Text(
                     view.companyCommercialName ?? view.companyName,
-                    style: pw.TextStyle(
+                    style: const pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
                     ),
@@ -259,7 +259,7 @@ class TicketTemplate implements PdfTemplate {
     final size = widthMm >= 80 ? 8.0 : 7.0;
     final small = pw.TextStyle(fontSize: size);
     final bold = small.copyWith(fontWeight: pw.FontWeight.bold);
-    final center = pw.CrossAxisAlignment.center;
+    const center = pw.CrossAxisAlignment.center;
     final document = pw.Document(
       title: '${view.title} ${view.serieNumero}',
       theme: theme,

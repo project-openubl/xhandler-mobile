@@ -12,6 +12,7 @@ import '../../widgets/form_widgets.dart';
 import 'document_detail_page.dart';
 import 'document_service.dart';
 import 'document_status.dart';
+import 'draft_problem.dart';
 import 'invoice_draft.dart';
 
 /// Why a document couldn't be issued, in Spanish

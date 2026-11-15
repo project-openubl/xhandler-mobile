@@ -6,8 +6,9 @@ import 'package:archive/archive.dart';
 import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
-import '../document/document_service.dart';
 import '../document/document_status.dart';
+import '../document/document_totals.dart';
+import '../document/sunat_answer.dart';
 
 /// Document types in the sales register (registro de ventas)
 const salesTipos = {'01', '03', '07', '08'};
@@ -99,7 +100,7 @@ class SalesRow {
   bool get voided => status == DocumentStatus.voided;
 
   /// SUNAT hasn't confirmed it yet (or its voiding)
-  bool get unconfirmed => !voided && !DocumentService.accepted.contains(status);
+  bool get unconfirmed => !voided && !acceptedStatuses.contains(status);
 
   /// The document a nota modifies: "01 F001-1"
   final String? modifica;

@@ -6,15 +6,15 @@ import '../../amount_text.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../peru_date.dart';
+import '../../src/rust/api/error.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../customer/customer_form_page.dart';
 import '../customer/customers_page.dart';
 import '../product/products_page.dart';
-import '../../src/rust/api/error.dart';
 import '../series/series_repository.dart';
 import 'document_status.dart';
-import 'document_service.dart';
+import 'document_totals.dart';
 import 'invoice_draft.dart';
 
 /// Totals of a draft computed by xbuilder shortly after the last change.

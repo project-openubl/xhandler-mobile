@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../../amount_text.dart';
 import '../../data/database.dart';
-import 'document_service.dart';
+import 'draft_problem.dart';
 
 /// Tax rates the enrichment uses when a line doesn't set them
 abstract final class TaxRates {
@@ -188,6 +188,22 @@ class DraftCustomer {
     };
   }
 }
+
+/// Customer of boletas to people who don't identify themselves (accepted by
+/// SUNAT for sales up to S/ 700)
+const anonymousCustomer = DraftCustomer(
+  tipoDocumentoIdentidad: '0',
+  numeroDocumentoIdentidad: '-',
+  nombre: 'CLIENTES VARIOS',
+);
+
+/// Boletas over S/ 700 need an identified customer. Only soles are checked:
+/// other currencies need an exchange rate, not supported yet.
+bool exceedsAnonymousLimit(
+  DraftCustomer customer,
+  String moneda,
+  String total,
+) => customer.isAnonymous && moneda == 'PEN' && toCents(total) > toCents('700');
 
 /// Payment in installments ("crédito")
 class DraftCuota {
@@ -380,3 +396,14 @@ class NoteDraft implements DocumentDraft {
     },
   });
 }
+
+/// What the notas de crédito among [related] (the documents that modify
+/// an invoice) credit, unless SUNAT rejected or voided them
+BigInt creditedCents(Iterable<Document> related) => related
+    .where(
+      (d) =>
+          d.tipoComprobante == '07' &&
+          d.status != DocumentStatus.rejected &&
+          d.status != DocumentStatus.voided,
+    )
+    .fold(BigInt.zero, (sum, d) => sum + toCents(d.total));

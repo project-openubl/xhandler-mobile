@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -17,21 +16,6 @@ import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
 import '../document/background_outbox.dart';
 import 'backup_service.dart';
-
-final backupServiceProvider = Provider(
-  (ref) => BackupService(ref.watch(secureStoreProvider), getTemporaryDirectory),
-);
-
-/// When this device last made a backup
-const _lastBackupKey = 'last_backup_at';
-
-final _lastBackupProvider = StreamProvider.autoDispose<DateTime?>((ref) {
-  final db = ref.watch(databaseProvider);
-  return (db.select(db.deviceSettings)
-        ..where((s) => s.key.equals(_lastBackupKey)))
-      .watchSingleOrNull()
-      .map((row) => row == null ? null : DateTime.parse(row.value));
-});
 
 /// Backups of everything in a file protected by a password, to keep in a
 /// safe place and restore on a new phone (docs/DESIGN.md §9)
@@ -73,14 +57,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
         ),
       );
       if (result.status == ShareResultStatus.dismissed) return;
-      await db
-          .into(db.deviceSettings)
-          .insertOnConflictUpdate(
-            DeviceSettingsCompanion(
-              key: const Value(_lastBackupKey),
-              value: Value(DateTime.now().toUtc().toIso8601String()),
-            ),
-          );
+      await db.setSetting(lastBackupKey, nowUtc().toIso8601String());
       _password.clear();
       _confirmation.clear();
       if (anchor.mounted) showMessage(anchor, Strings.backupCreated);
@@ -94,7 +71,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final last = ref.watch(_lastBackupProvider).value;
+    final last = ref.watch(lastBackupProvider).value;
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.backupTitle)),
       body: Form(

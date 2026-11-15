@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -39,7 +40,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
   @override
   void initState() {
     super.initState();
-    _loadSaved();
+    unawaited(_loadSaved());
   }
 
   @override

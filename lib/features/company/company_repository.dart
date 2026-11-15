@@ -56,15 +56,10 @@ class CompanyRepository {
   Future<void> delete(String id) async {
     await _db.transaction(() async {
       await _db.softDelete(_db.companies, id);
-      final active = await (_db.select(
-        _db.deviceSettings,
-      )..where((s) => s.key.equals(_activeCompanyKey))).getSingleOrNull();
-      if (active?.value != id) return;
+      if (await _db.setting(_activeCompanyKey) != id) return;
       final remaining = await _companies().get();
       if (remaining.isEmpty) {
-        await (_db.delete(
-          _db.deviceSettings,
-        )..where((s) => s.key.equals(_activeCompanyKey))).go();
+        await _db.deleteSetting(_activeCompanyKey);
       } else {
         await setActive(remaining.first.id);
       }
@@ -84,11 +79,7 @@ class CompanyRepository {
     return query.map((row) => row.readTable(_db.companies)).watchSingleOrNull();
   }
 
-  Future<void> setActive(String id) => _db
-      .into(_db.deviceSettings)
-      .insertOnConflictUpdate(
-        DeviceSettingsCompanion.insert(key: _activeCompanyKey, value: id),
-      );
+  Future<void> setActive(String id) => _db.setSetting(_activeCompanyKey, id);
 
   Future<CompanySecrets> readSecrets(String id) =>
       _secureStore.readCompanySecrets(id);

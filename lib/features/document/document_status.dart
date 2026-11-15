@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
-import 'document_service.dart';
+import 'draft_problem.dart';
+import 'sunat_answer.dart';
 import 'voiding.dart';
 
 /// How each document status looks (docs/DESIGN.md §5)

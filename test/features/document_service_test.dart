@@ -4,21 +4,22 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../fake_bridge.dart';
-
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/company/company_repository.dart';
 import 'package:xhandler_mobile/features/despatch/despatch_advice_draft.dart';
 import 'package:xhandler_mobile/features/document/document_repository.dart';
 import 'package:xhandler_mobile/features/document/document_service.dart';
+import 'package:xhandler_mobile/features/document/draft_problem.dart';
 import 'package:xhandler_mobile/features/document/invoice_draft.dart';
 import 'package:xhandler_mobile/features/document/perception_retention_draft.dart';
+import 'package:xhandler_mobile/features/document/sunat_answer.dart';
 import 'package:xhandler_mobile/features/series/series_repository.dart';
 import 'package:xhandler_mobile/peru_date.dart';
 import 'package:xhandler_mobile/src/rust/api/error.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
+
+import '../fake_bridge.dart';
 
 const _draft = InvoiceDraft(
   tipoComprobante: '01',

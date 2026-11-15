@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -200,7 +202,7 @@ class _CompanyDrawer extends ConsumerWidget {
     final router = GoRouter.of(context);
     void open(String route) {
       Scaffold.of(context).closeDrawer();
-      router.push(route);
+      unawaited(router.push(route));
     }
 
     return NavigationDrawer(
@@ -211,9 +213,9 @@ class _CompanyDrawer extends ConsumerWidget {
             title: Text(company.razonSocial),
             subtitle: Text(company.ruc),
             selected: company.id == activeId,
-            onTap: () {
-              ref.read(companyRepositoryProvider).setActive(company.id);
+            onTap: () async {
               Scaffold.of(context).closeDrawer();
+              await ref.read(companyRepositoryProvider).setActive(company.id);
             },
           ),
         ListTile(
