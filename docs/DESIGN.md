@@ -413,6 +413,20 @@ itself (inline strings, numeric amounts; checked with LibreOffice).
   30 days before expiry.
 - Encrypted database (SQLite3MultipleCiphers); secrets in Keystore/Keychain; no secrets in logs.
 
+Built so far:
+- **App lock ("Seguridad"):** off by default. When on, the app asks for the phone's own lock
+  (`local_auth`: fingerprint, face, PIN or pattern) at start and after it was in the background
+  for the chosen time (on leaving, or 1, 5 or 15 minutes). There is no app PIN to forget. A
+  phone whose screen lock was removed opens without asking.
+- **Hidden screens:** while the lock is on, the app's screens are hidden from recent apps and
+  screenshots on Android (`FLAG_SECURE`) and covered in the iOS app switcher.
+- **Expired certificates:** the app won't sign with an expired company certificate, so no
+  number is lost to a rejection. The company home warns 30 days before expiry and links to
+  the certificate page.
+- **Error log:** errors the app couldn't show (uncaught errors and the background outbox
+  included) go to a small file, without secrets. Diagnostics shares it with support. There is
+  no crash-reporting service.
+
 ---
 
 ## 12. Project layout

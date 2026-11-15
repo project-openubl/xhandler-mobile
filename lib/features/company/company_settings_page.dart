@@ -63,12 +63,11 @@ class CompanySettingsPage extends ConsumerWidget {
             value: testMode,
             onChanged: (beta) => _setTestMode(context, ref, beta),
           ),
-          if (testMode)
-            ListTile(
-              leading: const Icon(Icons.health_and_safety),
-              title: const Text(Strings.sunatBetaCheckTitle),
-              onTap: () => context.push(Routes.diagnostics),
-            ),
+          ListTile(
+            leading: const Icon(Icons.health_and_safety),
+            title: const Text(Strings.diagnostics),
+            onTap: () => context.push(Routes.diagnostics),
+          ),
           const Divider(),
           ListTile(
             leading: Icon(Icons.delete, color: error),

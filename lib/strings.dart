@@ -98,6 +98,7 @@ abstract final class Strings {
   static const certificateExpired = 'El certificado está vencido';
   static const certificateExpiresSoon =
       'El certificado vence en menos de 30 días';
+  static const viewCertificate = 'Ver certificado';
   static const certificateTestModeHelp =
       'En modo prueba, sin certificado propio se usa el certificado de '
       'demostración de SUNAT.';
@@ -221,7 +222,11 @@ abstract final class Strings {
   static const acceptedDocuments = 'Aceptados';
   static const missingCertificate =
       'Registra el certificado digital de la empresa para emitir comprobantes reales.';
+  static const expiredCertificate =
+      'El certificado digital venció. Importa el renovado en Empresa → '
+      'Certificado digital para seguir emitiendo.';
   static const viewDocument = 'Ver comprobante';
+  static const documentNotFound = 'El comprobante no está en este teléfono';
   static const done = 'Listo';
   static const timeline = 'Historial';
   static const sunatAnswer = 'Respuesta de SUNAT';
@@ -410,7 +415,26 @@ abstract final class Strings {
   static const noFavorites =
       'Marca productos como favoritos para verlos aquí, o búscalos.';
 
+  // Security
+  static const security = 'Seguridad';
+  static const appLock = 'Bloqueo de la app';
+  static const appLockHelp =
+      'Pide la huella, el rostro o el PIN del teléfono para abrir la app. '
+      'Mientras está activo, la app no se ve en las apps recientes ni en '
+      'capturas de pantalla.';
+  static const lockOff = 'Desactivado';
+  static const lockImmediately = 'Al salir de la app';
+  static String lockAfter(int minutes) => minutes == 1
+      ? 'Tras 1 minuto fuera de la app'
+      : 'Tras $minutes minutos fuera de la app';
+  static const lockNeedsScreenLock =
+      'Configura primero un bloqueo de pantalla en el teléfono.';
+  static const locked = 'XHandler está bloqueado';
+  static const unlock = 'Desbloquear';
+  static const unlockReason = 'Desbloquea XHandler';
+
   // Diagnostics
+  static const diagnostics = 'Diagnóstico';
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';
   static const sunatBetaCheckHelp =
       'Crea, firma y envía una factura de prueba a SUNAT beta con el '
@@ -418,4 +442,9 @@ abstract final class Strings {
   static const sunatBetaCheckRun = 'Probar';
   static const sunatBetaCheckBuilding = 'Creando y firmando…';
   static const sunatBetaCheckSending = 'Enviando a SUNAT beta…';
+  static const shareErrorLog = 'Compartir registro de errores';
+  static const shareErrorLogHelp =
+      'Errores que la app no pudo mostrar, para enviarlos a soporte. No '
+      'incluye contraseñas ni certificados.';
+  static const noErrorLog = 'No hay errores registrados';
 }

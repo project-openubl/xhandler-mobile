@@ -27,6 +27,12 @@ class MissingCertificateError implements Exception {
   const MissingCertificateError();
 }
 
+/// The company's certificate expired: SUNAT would reject what it signs, and
+/// the number would be lost
+class ExpiredCertificateError implements Exception {
+  const ExpiredCertificateError();
+}
+
 /// SUNAT's public demo certificate, used in test mode without a certificate
 Future<Uint8List> loadDemoCertificate() async =>
     (await rootBundle.load('assets/demo/certificado_demo.pfx')).buffer
@@ -712,7 +718,12 @@ class DocumentService {
   ) async {
     final certificate = secrets.certificate;
     if (certificate != null) {
-      return (certificate, secrets.certificatePassword ?? '');
+      final password = secrets.certificatePassword ?? '';
+      final info = await _bridge.inspect(certificate, password);
+      if (info.validUntil.isBefore(DateTime.now())) {
+        throw const ExpiredCertificateError();
+      }
+      return (certificate, password);
     }
     if (company.sunatEnvironment == SunatEnvironment.beta) {
       return (await _loadDemoCertificate(), 'password');

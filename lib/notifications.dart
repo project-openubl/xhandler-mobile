@@ -16,7 +16,14 @@ abstract final class Notifications {
     iOS: DarwinNotificationDetails(),
   );
 
+  /// Opens the document of a tapped notification; set by the app
+  static void Function(String documentId)? onOpenDocument;
+
   static Future<void> initialize() => _plugin.initialize(
+    onDidReceiveNotificationResponse: (response) {
+      final documentId = response.payload;
+      if (documentId != null) onOpenDocument?.call(documentId);
+    },
     settings: const InitializationSettings(
       android: AndroidInitializationSettings('@drawable/ic_notification'),
       iOS: DarwinInitializationSettings(
@@ -50,10 +57,31 @@ abstract final class Notifications {
         ?.requestPermissions(alert: true);
   }
 
-  static Future<void> show(int id, String title, String body) => _plugin.show(
+  /// Shows a notification about the document [documentId], which opens it
+  static Future<void> show(
+    int id,
+    String title,
+    String body, {
+    required String documentId,
+  }) => _plugin.show(
     id: id,
     title: title,
     body: body,
     notificationDetails: _details,
+    payload: documentId,
   );
+
+  static var _launchHandled = false;
+
+  /// The document whose notification was tapped to start the app, if any.
+  /// Only the first call answers: a restarted app (e.g. after restoring a
+  /// backup) wasn't launched by it again.
+  static Future<String?> launchDocument() async {
+    if (_launchHandled) return null;
+    _launchHandled = true;
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    return launch?.didNotificationLaunchApp ?? false
+        ? launch?.notificationResponse?.payload
+        : null;
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app_log.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../notifications.dart';
@@ -19,6 +20,7 @@ import 'invoice_draft.dart';
 String issueErrorMessage(Object error) => switch (error) {
   InvalidDraftError(:final problem) => draftProblemMessage(problem),
   MissingCertificateError() => Strings.missingCertificate,
+  ExpiredCertificateError() => Strings.expiredCertificate,
   BridgeError(:final message) => documentErrorMessage(message),
   _ => Strings.unexpectedError,
 };
@@ -33,6 +35,8 @@ Future<({String id, DocumentStatus status})?> issueDocument(
   required DocumentDraft draft,
 }) async {
   final service = ref.read(documentServiceProvider);
+  // Read now: the form may be closed by the time SUNAT answers
+  final database = ref.read(databaseProvider);
   final String id;
   try {
     id = await service.emit(company: company, serie: serie, draft: draft);
@@ -50,8 +54,8 @@ Future<({String id, DocumentStatus status})?> issueDocument(
       status == DocumentStatus.inProgress) {
     // SUNAT's answer may come in the background: ask to notify it
     unawaited(
-      Notifications.requestPermissionOnce(ref.read(databaseProvider))
-          .catchError((Object error) => debugPrint('Notifications: $error')),
+      Notifications.requestPermissionOnce(database)
+          .catchError((Object error) => AppLog.error('Notifications', error)),
     );
   }
   return (id: id, status: status);

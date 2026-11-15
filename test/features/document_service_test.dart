@@ -129,6 +129,19 @@ void main() {
       company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
       await expectLater(emit(), throwsA(isA<MissingCertificateError>()));
     });
+
+    test(
+      "doesn't sign with an expired certificate, nor use a number",
+      () async {
+        await SecureStore().writeCompanySecrets(company.id, {
+          CompanySecret.certificate: base64Encode([1, 2, 3]),
+        });
+        bridge.certificateValidUntil = DateTime.utc(2020);
+
+        await expectLater(emit(), throwsA(isA<ExpiredCertificateError>()));
+        expect(await database.select(database.documents).get(), isEmpty);
+      },
+    );
   });
 
   group('send', () {

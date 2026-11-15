@@ -29,7 +29,8 @@ android {
     defaultConfig {
         applicationId = "io.github.projectopenubl.xhandler"
         minSdk = 26
-        targetSdk = flutter.targetSdkVersion
+        // Google Play requires 36 for new apps and updates from August 2026
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
@@ -69,4 +70,6 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Theme.AppCompat for local_auth's unlock dialog (res/values/styles.xml)
+    implementation("androidx.appcompat:appcompat:1.7.1")
 }

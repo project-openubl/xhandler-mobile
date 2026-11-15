@@ -134,6 +134,7 @@ developer.
 | Internet (Android) | Send documents to SUNAT, look up customers, send emails |
 | Notifications (Android 13+, iOS) | Tell when SUNAT answers documents sent in the background; asked the first time a document stays pending |
 | Background fetch / BGTaskScheduler (iOS), WorkManager (Android) | Send pending documents when the app is closed |
+| Biometrics (`USE_BIOMETRIC` on Android, Face ID usage text on iOS) | Optional app lock with the phone's fingerprint, face or PIN; nothing biometric leaves the system |
 
 No location, camera, contacts or storage permissions: files are picked and shared
 through the system pickers and share sheet.

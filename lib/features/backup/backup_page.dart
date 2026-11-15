@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../../app_log.dart';
 import '../../app_restart.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
@@ -61,8 +62,8 @@ class _BackupPageState extends ConsumerState<BackupPage> {
       _password.clear();
       _confirmation.clear();
       if (anchor.mounted) showMessage(anchor, Strings.backupCreated);
-    } on Object catch (error) {
-      debugPrint('Backup: $error');
+    } on Object catch (error, stack) {
+      AppLog.error('Backup', error, stack);
       if (anchor.mounted) showMessage(anchor, Strings.unexpectedError);
     } finally {
       if (backup != null && backup.existsSync()) await backup.delete();
@@ -183,7 +184,7 @@ Future<void> restoreBackup(BuildContext context, WidgetRef ref) async {
       // The restored database, or the old one if installing failed
       await restartApp();
     }
-  } on Object catch (error) {
+  } on Object catch (error, stack) {
     if (progress) navigator.pop();
     final message = switch (error) {
       WrongPasswordError() => Strings.wrongBackupPassword,
@@ -191,7 +192,9 @@ Future<void> restoreBackup(BuildContext context, WidgetRef ref) async {
       InvalidBackupError() => Strings.notABackup,
       _ => Strings.unexpectedError,
     };
-    if (message == Strings.unexpectedError) debugPrint('Restore: $error');
+    if (message == Strings.unexpectedError) {
+      AppLog.error('Restore', error, stack);
+    }
     if (context.mounted) showMessage(context, message);
   } finally {
     if (picked != null && picked.existsSync()) await picked.delete();

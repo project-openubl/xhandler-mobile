@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../../app_log.dart';
 import '../../data/database.dart';
 import '../../data/secure_store.dart';
 import '../../notifications.dart';
@@ -62,34 +63,46 @@ void backgroundDispatcher() {
   Workmanager().executeTask((_, _) async {
     WidgetsFlutterBinding.ensureInitialized();
     DartPluginRegistrant.ensureInitialized();
-    final file = await databaseFile();
-    if (!file.existsSync()) return true;
-    // The isolate may be reused for another run
-    if (!RustLib.instance.initialized) await RustLib.init();
-    final secureStore = SecureStore();
-    final database = AppDatabase(
-      openEncryptedDatabase(
-        file,
-        await secureStore.databaseKey(databaseExists: true),
+    await AppLog.init();
+    try {
+      return await _sendInBackground();
+    } on Object catch (error, stack) {
+      // Workmanager would only say the task failed
+      AppLog.error('Background outbox', error, stack);
+      return false;
+    }
+  });
+}
+
+Future<bool> _sendInBackground() async {
+  final file = await databaseFile();
+  if (!file.existsSync()) return true;
+  // The isolate may be reused for another run
+  if (!RustLib.instance.initialized) await RustLib.init();
+  final secureStore = SecureStore();
+  final database = AppDatabase(
+    openEncryptedDatabase(
+      file,
+      await secureStore.databaseKey(databaseExists: true),
+    ),
+  );
+  try {
+    final documents = DocumentRepository(database);
+    await Notifications.initialize();
+    await runBackgroundOutbox(
+      documents,
+      DocumentService(database, documents, secureStore, const SunatBridge()),
+      (document) => Notifications.show(
+        // Stable enough: it only groups notifications of one document
+        document.id.hashCode,
+        '${serieNumero(document.serie, document.numero)} · '
+        '${document.status.label}',
+        [document.clienteNombre, ?document.sunatCode].join(' · '),
+        documentId: document.id,
       ),
     );
-    try {
-      final documents = DocumentRepository(database);
-      await Notifications.initialize();
-      await runBackgroundOutbox(
-        documents,
-        DocumentService(database, documents, secureStore, const SunatBridge()),
-        (document) => Notifications.show(
-          // Stable enough: it only groups notifications of one document
-          document.id.hashCode,
-          '${serieNumero(document.serie, document.numero)} · '
-          '${document.status.label}',
-          [document.clienteNombre, ?document.sunatCode].join(' · '),
-        ),
-      );
-    } finally {
-      await database.close();
-    }
-    return true;
-  });
+  } finally {
+    await database.close();
+  }
+  return true;
 }

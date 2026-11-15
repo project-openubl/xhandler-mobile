@@ -10,6 +10,7 @@ import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../backup/backup_page.dart';
+import '../company/certificate_status.dart';
 import '../company/company_repository.dart';
 import '../despatch/despatch_advice_form_page.dart';
 import '../document/documents_list.dart';
@@ -183,6 +184,7 @@ class _CompanyHome extends StatelessWidget {
         children: [
           if (company.sunatEnvironment == SunatEnvironment.beta)
             const TestModeBanner(),
+          CertificateWarningBanner(company.id),
           Expanded(child: DocumentsList(company)),
         ],
       ),
@@ -253,6 +255,11 @@ class _CompanyDrawer extends ConsumerWidget {
           leading: const Icon(Icons.backup),
           title: const Text(Strings.backupTitle),
           onTap: () => open(Routes.backup),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lock),
+          title: const Text(Strings.security),
+          onTap: () => open(Routes.security),
         ),
       ],
     );

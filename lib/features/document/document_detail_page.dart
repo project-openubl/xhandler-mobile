@@ -31,9 +31,21 @@ class DocumentDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final document = ref.watch(documentProvider(documentId)).value;
-    if (document == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final Document document;
+    switch (ref.watch(documentProvider(documentId))) {
+      case AsyncData(:final value):
+        document = value;
+      // e.g. a notification of a document no longer on this phone
+      case AsyncError():
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text(Strings.documentNotFound)),
+        );
+      default:
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: CircularProgressIndicator()),
+        );
     }
     final events =
         ref.watch(documentEventsProvider(documentId)).value ?? const [];
