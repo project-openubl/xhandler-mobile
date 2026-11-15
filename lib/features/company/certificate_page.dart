@@ -145,10 +145,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                child: ErrorText(_error!),
               ),
             SaveButton(onPressed: _save, filled: true),
           ],

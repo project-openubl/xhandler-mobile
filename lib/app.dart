@@ -8,6 +8,7 @@ import 'features/lock/app_lock.dart';
 import 'notifications.dart';
 import 'router.dart';
 import 'strings.dart';
+import 'theme/status_colors.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -55,7 +56,12 @@ class _AppState extends State<App> {
       locale: const Locale('es', 'PE'),
       supportedLocales: const [Locale('es', 'PE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(colorSchemeSeed: Colors.indigo),
+      // Material's own colors; the dark theme follows the phone's setting
+      theme: ThemeData(extensions: const [StatusColors.light]),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        extensions: const [StatusColors.dark],
+      ),
       routerConfig: _router,
       builder: (_, child) => AppLock(child: child!),
     );

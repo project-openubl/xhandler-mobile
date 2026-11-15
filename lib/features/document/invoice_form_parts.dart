@@ -522,10 +522,7 @@ class DraftWarning extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Text(
-        message,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      ),
+      child: ErrorText(message),
     );
   }
 }

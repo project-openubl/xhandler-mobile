@@ -87,6 +87,19 @@ class _FormTextFieldState extends State<FormTextField> {
   }
 }
 
+/// A message about something wrong, in the theme's error color
+class ErrorText extends StatelessWidget {
+  const ErrorText(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    message,
+    style: TextStyle(color: Theme.of(context).colorScheme.error),
+  );
+}
+
 /// Field label followed by a red asterisk; screen readers announce
 /// "obligatorio" instead of "asterisk"
 class _RequiredLabel extends StatelessWidget {

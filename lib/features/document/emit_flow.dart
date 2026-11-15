@@ -111,7 +111,7 @@ class EmitResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = status.color(Theme.of(context).colorScheme);
+    final color = status.color(context);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(

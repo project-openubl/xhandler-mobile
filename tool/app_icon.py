@@ -1,6 +1,6 @@
-"""Writes every size of the app icon Android and iOS need, from Project
-OpenUBL's logo (tool/openubl-logo.png, the ghost of the website and of the
-GitHub organization).
+"""Writes every size of the app icon and launch screen logo Android and iOS
+need, from Project OpenUBL's logo (tool/openubl-logo.png, the ghost of the
+website and of the GitHub organization).
 
 Run from the repo root: python3 tool/app_icon.py .  (needs Pillow)
 """
@@ -89,6 +89,18 @@ for image in json.loads((ios / "Contents.json").read_text())["images"]:
     points = float(image["size"].split("x")[0])
     size = round(points * int(image["scale"][0]))
     icon.resize((size, size), Image.Resampling.LANCZOS).save(ios / image["filename"])
+
+# Launch screens: the logo, 128 dp/pt, centred on the icon's blue
+# (res/drawable/launch_background.xml and LaunchScreen.storyboard).
+# Android 12+ draws its own splash with the launcher icon.
+splash = centered(logo, S, S)
+for density, scale in {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}.items():
+    splash.resize((round(128 * scale),) * 2, Image.Resampling.LANCZOS).save(
+        res / f"drawable-{density}/splash_logo.png"
+    )
+launch = repo / "ios/Runner/Assets.xcassets/LaunchImage.imageset"
+for suffix, scale in {"": 1, "@2x": 2, "@3x": 3}.items():
+    splash.resize((128 * scale,) * 2, Image.Resampling.LANCZOS).save(launch / f"LaunchImage{suffix}.png")
 
 # Google Play's high-resolution icon
 (repo / "docs/store").mkdir(exist_ok=True)

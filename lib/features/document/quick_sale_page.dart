@@ -262,9 +262,8 @@ class _QuickSalePageState extends ConsumerState<QuickSalePage> {
                   leading: const Icon(Icons.person),
                   title: Text(_customer.nombre),
                   subtitle: needsCustomer
-                      ? Text(
+                      ? ErrorText(
                           draftProblemMessage(DraftProblem.anonymousOver700),
-                          style: TextStyle(color: errorColor),
                         )
                       : null,
                   trailing: TextButton(

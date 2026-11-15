@@ -13,3 +13,6 @@ key.properties
 **/*.keystore
 **/*.jks
 /build/
+
+# Kotlin Gradle plugin cache
+.kotlin/

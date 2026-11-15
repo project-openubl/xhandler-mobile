@@ -53,7 +53,6 @@ class DocumentDetailPage extends ConsumerWidget {
         ref.watch(relatedDocumentsProvider(documentId)).value ?? const [];
     final deliveries =
         ref.watch(deliveriesProvider(documentId)).value ?? const [];
-    final colors = Theme.of(context).colorScheme;
     final notes = document.sunatNotes == null
         ? const <String>[]
         : (jsonDecode(document.sunatNotes!) as List).cast<String>();
@@ -112,11 +111,11 @@ class DocumentDetailPage extends ConsumerWidget {
             leading: Icon(
               document.status.icon,
               size: 40,
-              color: document.status.color(colors),
+              color: document.status.color(context),
             ),
             title: Text(
               document.status.label,
-              style: TextStyle(color: document.status.color(colors)),
+              style: TextStyle(color: document.status.color(context)),
             ),
             subtitle: Text(document.status.help),
           ),
@@ -243,7 +242,7 @@ class DocumentDetailPage extends ConsumerWidget {
               dense: true,
               leading: Icon(
                 event.status.icon,
-                color: event.status.color(colors),
+                color: event.status.color(context),
               ),
               title: Text(event.status.label),
               subtitle: Text(

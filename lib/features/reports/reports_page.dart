@@ -6,6 +6,7 @@ import '../../data/database.dart';
 import '../../peru_date.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import '../../theme/status_colors.dart';
 import '../../widgets/form_widgets.dart';
 import '../document/document_repository.dart';
 import '../pdf/share_document.dart';
@@ -143,7 +144,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         Text(
                           Strings.unconfirmedCount(summary.unconfirmed),
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                            color: StatusColors.of(context).warning,
                           ),
                         ),
                       for (final (label, amount) in [
