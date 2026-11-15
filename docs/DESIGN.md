@@ -459,8 +459,7 @@ the app icon and a manual Release workflow; publishing needs the owner's account
 - Confirm SUNAT deadlines (sending, voiding) and the unidentified-customer boleta threshold.
 - Pick the default free-tier RUC/DNI lookup provider in Phase 2 (check current quota and
   terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, implemented
-  by Decolecta (company token). Results are cached in `customer`. A self-hosted `searchpe`
-  provider was dropped (schema v4 resets it to no lookup and removes `lookup_url`).
+  by Decolecta (company token). Results are cached in `customer`.
 - Notas de crédito type 13 (correcting the amount or cuotas of a factura al crédito) and
   catalog 9 codes 11/12, catalog 10 codes 10/11: xbuilder's `Catalog9`/`Catalog10` stop at
   10/03 and `CreditNote` has no `forma_pago`. Add them upstream, then to the app catalogs.

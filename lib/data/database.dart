@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,14 +45,6 @@ class AppDatabase extends _$AppDatabase {
       }
       // 3: deliveries to customers
       if (from < 3) await m.createTable(deliveries);
-      // 4: searchpe lookups removed, with its URL column
-      if (from < 4) {
-        await customStatement(
-          "UPDATE companies SET lookup_provider = 'none' "
-          "WHERE lookup_provider = 'searchpe'",
-        );
-        await m.alterTable(TableMigration(companies));
-      }
     },
   );
 
