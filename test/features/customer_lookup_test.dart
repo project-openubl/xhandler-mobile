@@ -8,7 +8,7 @@ import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/customer/customer_lookup.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
-Company _company(LookupProvider provider, [String? url]) => Company(
+Company _company(LookupProvider provider) => Company(
   id: '1',
   createdAt: DateTime.utc(2026),
   updatedAt: DateTime.utc(2026),
@@ -20,7 +20,6 @@ Company _company(LookupProvider provider, [String? url]) => Company(
   esAgentePercepcion: false,
   esAgenteRetencion: false,
   lookupProvider: provider,
-  lookupUrl: url,
 );
 
 void main() {
@@ -40,9 +39,8 @@ void main() {
     String tipo = '6',
     String numero = '20601030013',
     String? token,
-    String? url,
   }) => lookup.lookup(
-    company: _company(provider, url),
+    company: _company(provider),
     secrets: CompanySecrets({CompanySecret.lookupToken: ?token}),
     tipoDocumentoIdentidad: tipo,
     numero: numero,
@@ -100,37 +98,6 @@ void main() {
     );
     expect(lookUp(answering(200, '[1, 2]')), kind(LookupErrorKind.other));
     expect(lookUp(answering(200, 'not json')), kind(LookupErrorKind.other));
-  });
-
-  test('searchpe: basic authentication and the padrón address', () async {
-    final result = await lookUp(
-      answering(200, {
-        'nombre': 'EMPRESA S.A.C.',
-        'tipoVia': 'AV.',
-        'nombreVia': 'LARCO',
-        'numero': '123',
-        'departamento': '401',
-        'interior': '-',
-        'tipoZona': 'URB.',
-        'codigoZona': 'SAN ANTONIO',
-        'ubigeo': '150122',
-      }),
-      provider: LookupProvider.searchpe,
-      url: 'https://searchpe.example.com',
-      token: 'user:pass',
-    );
-
-    expect(
-      request.url.toString(),
-      'https://searchpe.example.com/api/contribuyentes/20601030013',
-    );
-    expect(
-      request.headers['Authorization'],
-      'Basic ${base64Encode(utf8.encode('user:pass'))}',
-    );
-    expect(result?.nombre, 'EMPRESA S.A.C.');
-    expect(result?.direccion, 'AV. LARCO NRO. 123 DPTO. 401 URB. SAN ANTONIO');
-    expect(result?.ubigeo, '150122');
   });
 
   test('no service, no lookup', () async {

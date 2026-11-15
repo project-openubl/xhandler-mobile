@@ -266,17 +266,6 @@ class $CompaniesTable extends Companies
     requiredDuringInsert: false,
     defaultValue: Constant(LookupProvider.none.name),
   ).withConverter<LookupProvider>($CompaniesTable.$converterlookupProvider);
-  static const VerificationMeta _lookupUrlMeta = const VerificationMeta(
-    'lookupUrl',
-  );
-  @override
-  late final GeneratedColumn<String> lookupUrl = GeneratedColumn<String>(
-    'lookup_url',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -302,7 +291,6 @@ class $CompaniesTable extends Companies
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
-    lookupUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -467,12 +455,6 @@ class $CompaniesTable extends Companies
         ),
       );
     }
-    if (data.containsKey('lookup_url')) {
-      context.handle(
-        _lookupUrlMeta,
-        lookupUrl.isAcceptableOrUnknown(data['lookup_url']!, _lookupUrlMeta),
-      );
-    }
     return context;
   }
 
@@ -578,10 +560,6 @@ class $CompaniesTable extends Companies
           data['${effectivePrefix}lookup_provider'],
         )!,
       ),
-      lookupUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}lookup_url'],
-      ),
     );
   }
 
@@ -632,9 +610,6 @@ class Company extends DataClass implements Insertable<Company> {
 
   /// RUC/DNI lookup service, see [LookupProvider]
   final LookupProvider lookupProvider;
-
-  /// URL of a self-hosted searchpe
-  final String? lookupUrl;
   const Company({
     required this.id,
     required this.createdAt,
@@ -659,7 +634,6 @@ class Company extends DataClass implements Insertable<Company> {
     required this.esAgentePercepcion,
     required this.esAgenteRetencion,
     required this.lookupProvider,
-    this.lookupUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -719,9 +693,6 @@ class Company extends DataClass implements Insertable<Company> {
         $CompaniesTable.$converterlookupProvider.toSql(lookupProvider),
       );
     }
-    if (!nullToAbsent || lookupUrl != null) {
-      map['lookup_url'] = Variable<String>(lookupUrl);
-    }
     return map;
   }
 
@@ -774,9 +745,6 @@ class Company extends DataClass implements Insertable<Company> {
       esAgentePercepcion: Value(esAgentePercepcion),
       esAgenteRetencion: Value(esAgenteRetencion),
       lookupProvider: Value(lookupProvider),
-      lookupUrl: lookupUrl == null && nullToAbsent
-          ? const Value.absent()
-          : Value(lookupUrl),
     );
   }
 
@@ -815,7 +783,6 @@ class Company extends DataClass implements Insertable<Company> {
       lookupProvider: $CompaniesTable.$converterlookupProvider.fromJson(
         serializer.fromJson<String>(json['lookupProvider']),
       ),
-      lookupUrl: serializer.fromJson<String?>(json['lookupUrl']),
     );
   }
   @override
@@ -849,7 +816,6 @@ class Company extends DataClass implements Insertable<Company> {
       'lookupProvider': serializer.toJson<String>(
         $CompaniesTable.$converterlookupProvider.toJson(lookupProvider),
       ),
-      'lookupUrl': serializer.toJson<String?>(lookupUrl),
     };
   }
 
@@ -877,7 +843,6 @@ class Company extends DataClass implements Insertable<Company> {
     bool? esAgentePercepcion,
     bool? esAgenteRetencion,
     LookupProvider? lookupProvider,
-    Value<String?> lookupUrl = const Value.absent(),
   }) => Company(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -906,7 +871,6 @@ class Company extends DataClass implements Insertable<Company> {
     esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
     esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
     lookupProvider: lookupProvider ?? this.lookupProvider,
-    lookupUrl: lookupUrl.present ? lookupUrl.value : this.lookupUrl,
   );
   Company copyWithCompanion(CompaniesCompanion data) {
     return Company(
@@ -953,7 +917,6 @@ class Company extends DataClass implements Insertable<Company> {
       lookupProvider: data.lookupProvider.present
           ? data.lookupProvider.value
           : this.lookupProvider,
-      lookupUrl: data.lookupUrl.present ? data.lookupUrl.value : this.lookupUrl,
     );
   }
 
@@ -982,8 +945,7 @@ class Company extends DataClass implements Insertable<Company> {
           ..write('cuentaDetracciones: $cuentaDetracciones, ')
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
-          ..write('lookupProvider: $lookupProvider, ')
-          ..write('lookupUrl: $lookupUrl')
+          ..write('lookupProvider: $lookupProvider')
           ..write(')'))
         .toString();
   }
@@ -1013,7 +975,6 @@ class Company extends DataClass implements Insertable<Company> {
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
-    lookupUrl,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1041,8 +1002,7 @@ class Company extends DataClass implements Insertable<Company> {
           other.cuentaDetracciones == this.cuentaDetracciones &&
           other.esAgentePercepcion == this.esAgentePercepcion &&
           other.esAgenteRetencion == this.esAgenteRetencion &&
-          other.lookupProvider == this.lookupProvider &&
-          other.lookupUrl == this.lookupUrl);
+          other.lookupProvider == this.lookupProvider);
 }
 
 class CompaniesCompanion extends UpdateCompanion<Company> {
@@ -1069,7 +1029,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
   final Value<bool> esAgentePercepcion;
   final Value<bool> esAgenteRetencion;
   final Value<LookupProvider> lookupProvider;
-  final Value<String?> lookupUrl;
   final Value<int> rowid;
   const CompaniesCompanion({
     this.id = const Value.absent(),
@@ -1095,7 +1054,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
-    this.lookupUrl = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CompaniesCompanion.insert({
@@ -1122,7 +1080,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
-    this.lookupUrl = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : ruc = Value(ruc),
        razonSocial = Value(razonSocial);
@@ -1150,7 +1107,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Expression<bool>? esAgentePercepcion,
     Expression<bool>? esAgenteRetencion,
     Expression<String>? lookupProvider,
-    Expression<String>? lookupUrl,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1178,7 +1134,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
         'es_agente_percepcion': esAgentePercepcion,
       if (esAgenteRetencion != null) 'es_agente_retencion': esAgenteRetencion,
       if (lookupProvider != null) 'lookup_provider': lookupProvider,
-      if (lookupUrl != null) 'lookup_url': lookupUrl,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1207,7 +1162,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Value<bool>? esAgentePercepcion,
     Value<bool>? esAgenteRetencion,
     Value<LookupProvider>? lookupProvider,
-    Value<String?>? lookupUrl,
     Value<int>? rowid,
   }) {
     return CompaniesCompanion(
@@ -1234,7 +1188,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
       esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
       lookupProvider: lookupProvider ?? this.lookupProvider,
-      lookupUrl: lookupUrl ?? this.lookupUrl,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1317,9 +1270,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
         $CompaniesTable.$converterlookupProvider.toSql(lookupProvider.value),
       );
     }
-    if (lookupUrl.present) {
-      map['lookup_url'] = Variable<String>(lookupUrl.value);
-    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1352,7 +1302,6 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
           ..write('lookupProvider: $lookupProvider, ')
-          ..write('lookupUrl: $lookupUrl, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9030,7 +8979,6 @@ typedef $$CompaniesTableCreateCompanionBuilder = CompaniesCompanion Function({
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
-  Value<String?> lookupUrl,
   Value<int> rowid,
 });
 typedef $$CompaniesTableUpdateCompanionBuilder = CompaniesCompanion Function({
@@ -9057,7 +9005,6 @@ typedef $$CompaniesTableUpdateCompanionBuilder = CompaniesCompanion Function({
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
-  Value<String?> lookupUrl,
   Value<int> rowid,
 });
 
@@ -9320,11 +9267,6 @@ class $$CompaniesTableFilterComposer
   get lookupProvider => $composableBuilder(
     column: $table.lookupProvider,
     builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get lookupUrl => $composableBuilder(
-    column: $table.lookupUrl,
-    builder: (column) => ColumnFilters(column),
   );
 
   Expression<bool> seriesRefs(
@@ -9626,11 +9568,6 @@ class $$CompaniesTableOrderingComposer
     column: $table.lookupProvider,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<String> get lookupUrl => $composableBuilder(
-    column: $table.lookupUrl,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$CompaniesTableAnnotationComposer
@@ -9732,9 +9669,6 @@ class $$CompaniesTableAnnotationComposer
         column: $table.lookupProvider,
         builder: (column) => column,
       );
-
-  GeneratedColumn<String> get lookupUrl =>
-      $composableBuilder(column: $table.lookupUrl, builder: (column) => column);
 
   Expression<T> seriesRefs<T extends Object>(
     Expression<T> Function($$SeriesTableAnnotationComposer a) f,
@@ -9971,7 +9905,6 @@ class $$CompaniesTableTableManager
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
-                Value<String?> lookupUrl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CompaniesCompanion(
                 id: id,
@@ -9997,7 +9930,6 @@ class $$CompaniesTableTableManager
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
-                lookupUrl: lookupUrl,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10025,7 +9957,6 @@ class $$CompaniesTableTableManager
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
-                Value<String?> lookupUrl = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CompaniesCompanion.insert(
                 id: id,
@@ -10051,7 +9982,6 @@ class $$CompaniesTableTableManager
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
-                lookupUrl: lookupUrl,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

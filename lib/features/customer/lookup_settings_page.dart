@@ -21,10 +21,7 @@ class LookupSettingsPage extends ConsumerStatefulWidget {
 class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
   final _form = GlobalKey<FormState>();
   late LookupProvider _provider = widget.company.lookupProvider;
-  late final _url = TextEditingController(text: widget.company.lookupUrl);
   final _token = TextEditingController();
-  final _user = TextEditingController();
-  final _password = TextEditingController();
   bool _loaded = false;
 
   @override
@@ -35,33 +32,17 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
 
   @override
   void dispose() {
-    for (final controller in [_url, _token, _user, _password]) {
-      controller.dispose();
-    }
+    _token.dispose();
     super.dispose();
   }
 
-  /// searchpe's token is "user:password" (basic authentication)
   Future<void> _load() async {
     final secrets = await ref
         .read(companyRepositoryProvider)
         .readSecrets(widget.company.id);
     if (!mounted) return;
-    final token = secrets.lookupToken ?? '';
     setState(() {
-      if (_provider == LookupProvider.searchpe) {
-        final (user, password) = switch (token.indexOf(':')) {
-          -1 => (token, ''),
-          final colon => (
-            token.substring(0, colon),
-            token.substring(colon + 1),
-          ),
-        };
-        _user.text = user;
-        _password.text = password;
-      } else {
-        _token.text = token;
-      }
+      _token.text = secrets.lookupToken ?? '';
       _loaded = true;
     });
   }
@@ -72,19 +53,10 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
     final token = switch (_provider) {
       LookupProvider.none => null,
       LookupProvider.decolecta => optionalText(_token),
-      LookupProvider.searchpe =>
-        _user.text.trim().isEmpty && _password.text.isEmpty
-            ? null
-            : '${_user.text.trim()}:${_password.text}',
     };
     await repository.update(
       widget.company.id,
-      CompaniesCompanion(
-        lookupProvider: Value(_provider),
-        lookupUrl: Value(
-          _provider == LookupProvider.searchpe ? optionalText(_url) : null,
-        ),
-      ),
+      CompaniesCompanion(lookupProvider: Value(_provider)),
     );
     await repository.writeSecrets(widget.company.id, {
       CompanySecret.lookupToken: token,
@@ -121,11 +93,6 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
                     title: Text(Strings.lookupDecolecta),
                     subtitle: Text(Strings.lookupDecolectaHelp),
                   ),
-                  RadioListTile(
-                    value: LookupProvider.searchpe,
-                    title: Text(Strings.lookupSearchpe),
-                    subtitle: Text(Strings.lookupSearchpeHelp),
-                  ),
                 ],
               ),
             ),
@@ -137,27 +104,6 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
                 obscureText: true,
                 validator: (token) => token.isEmpty ? Strings.required : null,
               ),
-            if (_provider == LookupProvider.searchpe) ...[
-              FormTextField(
-                _url,
-                Strings.lookupUrl,
-                keyboardType: TextInputType.url,
-                validator: (url) {
-                  final uri = Uri.tryParse(url);
-                  final valid =
-                      uri != null &&
-                      (uri.scheme == 'https' || uri.scheme == 'http') &&
-                      uri.host.isNotEmpty;
-                  return valid ? null : Strings.invalidUrl;
-                },
-              ),
-              FormTextField(_user, Strings.lookupUser),
-              FormTextField(
-                _password,
-                Strings.lookupPassword,
-                obscureText: true,
-              ),
-            ],
           ],
         ),
       ),
