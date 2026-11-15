@@ -241,6 +241,7 @@ class _RestoreDialogState extends State<_RestoreDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: const Text(Strings.restoreBackup),
       content: Column(
         mainAxisSize: MainAxisSize.min,

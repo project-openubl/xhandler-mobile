@@ -127,6 +127,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
   Widget build(BuildContext context) {
     final editing = widget.serie != null;
     return AlertDialog(
+      scrollable: true,
       title: Text(editing ? widget.serie!.serie : Strings.addSerie),
       content: Form(
         key: _form,

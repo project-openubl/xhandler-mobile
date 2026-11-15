@@ -168,6 +168,7 @@ class _AskDialogState extends State<_AskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.title),
       content: Form(
         key: _form,

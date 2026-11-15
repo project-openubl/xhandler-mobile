@@ -275,6 +275,7 @@ Future<bool> confirm(
   final accepted = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
+      scrollable: true,
       title: title == null ? null : Text(title),
       content: Text(message),
       actions: [
