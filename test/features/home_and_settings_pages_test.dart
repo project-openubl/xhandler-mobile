@@ -84,6 +84,20 @@ void main() {
   });
 
   group('BackupPage', () {
+    testWidgets('exports the active company alone, and imports companies', (
+      tester,
+    ) async {
+      final data = TestData();
+      await tester.runAsync(data.createCompany);
+      await data.pump(tester, const BackupPage(), settle: false);
+      await data.waitFor(
+        tester,
+        find.text(Strings.exportCompany('Empresa 20123456789')),
+      );
+      expect(find.text(Strings.importCompanies), findsOneWidget);
+      await data.unmount(tester);
+    });
+
     testWidgets('says no backup was made yet', (tester) async {
       final data = TestData();
       await data.pump(tester, const BackupPage(), settle: false);
