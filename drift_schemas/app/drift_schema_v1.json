@@ -217,6 +217,16 @@
             "dsl_features": []
           },
           {
+            "name": "cuenta_detracciones",
+            "getter_name": "cuentaDetracciones",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
             "name": "es_agente_percepcion",
             "getter_name": "esAgentePercepcion",
             "moor_type": "bool",
@@ -804,6 +814,16 @@
             "dsl_features": []
           },
           {
+            "name": "detraccion_porcentaje",
+            "getter_name": "detraccionPorcentaje",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
             "name": "favorito",
             "getter_name": "favorito",
             "moor_type": "bool",
@@ -991,6 +1011,16 @@
             "getter_name": "moneda",
             "moor_type": "string",
             "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "tipo_cambio",
+            "getter_name": "tipoCambio",
+            "moor_type": "string",
+            "nullable": true,
             "customConstraints": null,
             "default_dart": null,
             "default_client_dart": null,
@@ -2047,7 +2077,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"companies\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"ruc\" TEXT NOT NULL, \"razon_social\" TEXT NOT NULL, \"nombre_comercial\" TEXT NULL, \"ubigeo\" TEXT NULL, \"departamento\" TEXT NULL, \"provincia\" TEXT NULL, \"distrito\" TEXT NULL, \"direccion\" TEXT NULL, \"urbanizacion\" TEXT NULL, \"codigo_local\" TEXT NULL, \"telefono\" TEXT NULL, \"email\" TEXT NULL, \"sunat_environment\" TEXT NOT NULL DEFAULT 'beta', \"moneda\" TEXT NOT NULL DEFAULT 'PEN', \"igv_tipo\" TEXT NOT NULL DEFAULT '10', \"es_agente_percepcion\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_agente_percepcion\" IN (0, 1)), \"es_agente_retencion\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_agente_retencion\" IN (0, 1)), \"lookup_provider\" TEXT NOT NULL DEFAULT 'none', PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"companies\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"ruc\" TEXT NOT NULL, \"razon_social\" TEXT NOT NULL, \"nombre_comercial\" TEXT NULL, \"ubigeo\" TEXT NULL, \"departamento\" TEXT NULL, \"provincia\" TEXT NULL, \"distrito\" TEXT NULL, \"direccion\" TEXT NULL, \"urbanizacion\" TEXT NULL, \"codigo_local\" TEXT NULL, \"telefono\" TEXT NULL, \"email\" TEXT NULL, \"sunat_environment\" TEXT NOT NULL DEFAULT 'beta', \"moneda\" TEXT NOT NULL DEFAULT 'PEN', \"igv_tipo\" TEXT NOT NULL DEFAULT '10', \"cuenta_detracciones\" TEXT NULL, \"es_agente_percepcion\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_agente_percepcion\" IN (0, 1)), \"es_agente_retencion\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_agente_retencion\" IN (0, 1)), \"lookup_provider\" TEXT NOT NULL DEFAULT 'none', PRIMARY KEY (\"id\"));"
         }
       ]
     },
@@ -2074,7 +2104,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"products\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"codigo\" TEXT NULL, \"codigo_sunat\" TEXT NULL, \"descripcion\" TEXT NOT NULL, \"unidad_medida\" TEXT NOT NULL DEFAULT 'NIU', \"precio\" TEXT NOT NULL, \"precio_incluye_igv\" INTEGER NOT NULL DEFAULT 1 CHECK (\"precio_incluye_igv\" IN (0, 1)), \"igv_tipo\" TEXT NULL, \"isc_tipo\" TEXT NULL, \"isc_tasa\" TEXT NULL, \"es_bolsa\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_bolsa\" IN (0, 1)), \"detraccion_codigo\" TEXT NULL, \"favorito\" INTEGER NOT NULL DEFAULT 0 CHECK (\"favorito\" IN (0, 1)), PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"products\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"codigo\" TEXT NULL, \"codigo_sunat\" TEXT NULL, \"descripcion\" TEXT NOT NULL, \"unidad_medida\" TEXT NOT NULL DEFAULT 'NIU', \"precio\" TEXT NOT NULL, \"precio_incluye_igv\" INTEGER NOT NULL DEFAULT 1 CHECK (\"precio_incluye_igv\" IN (0, 1)), \"igv_tipo\" TEXT NULL, \"isc_tipo\" TEXT NULL, \"isc_tasa\" TEXT NULL, \"es_bolsa\" INTEGER NOT NULL DEFAULT 0 CHECK (\"es_bolsa\" IN (0, 1)), \"detraccion_codigo\" TEXT NULL, \"detraccion_porcentaje\" TEXT NULL, \"favorito\" INTEGER NOT NULL DEFAULT 0 CHECK (\"favorito\" IN (0, 1)), PRIMARY KEY (\"id\"));"
         }
       ]
     },
@@ -2083,7 +2113,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"documents\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"environment\" TEXT NOT NULL, \"tipo_comprobante\" TEXT NOT NULL, \"serie\" TEXT NOT NULL, \"numero\" INTEGER NOT NULL, \"fecha_emision\" TEXT NOT NULL, \"cliente_tipo_documento\" TEXT NOT NULL, \"cliente_numero_documento\" TEXT NOT NULL, \"cliente_nombre\" TEXT NOT NULL, \"moneda\" TEXT NOT NULL, \"total\" TEXT NOT NULL, \"status\" TEXT NOT NULL, \"sunat_code\" TEXT NULL, \"sunat_description\" TEXT NULL, \"sunat_notes\" TEXT NULL, \"ticket\" TEXT NULL, \"digest_value\" TEXT NOT NULL, \"attempts\" INTEGER NOT NULL DEFAULT 0, \"next_attempt_at\" TEXT NULL, \"input_json\" TEXT NOT NULL, \"enriched_json\" TEXT NOT NULL, \"affected_document_id\" TEXT NULL REFERENCES documents (id), \"voided_by_document_id\" TEXT NULL REFERENCES documents (id), \"device_id\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"documents\" (\"id\" TEXT NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, \"deleted_at\" TEXT NULL, \"company_id\" TEXT NOT NULL REFERENCES companies (id), \"environment\" TEXT NOT NULL, \"tipo_comprobante\" TEXT NOT NULL, \"serie\" TEXT NOT NULL, \"numero\" INTEGER NOT NULL, \"fecha_emision\" TEXT NOT NULL, \"cliente_tipo_documento\" TEXT NOT NULL, \"cliente_numero_documento\" TEXT NOT NULL, \"cliente_nombre\" TEXT NOT NULL, \"moneda\" TEXT NOT NULL, \"tipo_cambio\" TEXT NULL, \"total\" TEXT NOT NULL, \"status\" TEXT NOT NULL, \"sunat_code\" TEXT NULL, \"sunat_description\" TEXT NULL, \"sunat_notes\" TEXT NULL, \"ticket\" TEXT NULL, \"digest_value\" TEXT NOT NULL, \"attempts\" INTEGER NOT NULL DEFAULT 0, \"next_attempt_at\" TEXT NULL, \"input_json\" TEXT NOT NULL, \"enriched_json\" TEXT NOT NULL, \"affected_document_id\" TEXT NULL REFERENCES documents (id), \"voided_by_document_id\" TEXT NULL REFERENCES documents (id), \"device_id\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },

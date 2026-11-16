@@ -5,10 +5,11 @@ import 'package:xhandler_mobile/data/database.dart';
 import 'generated/schema.dart';
 
 /// Every schema version upgrades to the current one as if created fresh.
-/// After changing the tables: bump `schemaVersion`, add its `onUpgrade`
-/// step, then `dart run drift_dev schema dump lib/data/database.dart
-/// drift_schemas/app/` and `dart run drift_dev schema generate
-/// drift_schemas/app/ test/data/generated/`.
+/// After changing the tables, if the current version is still unpublished
+/// (see `AppDatabase.schemaVersion`): `dart run drift_dev schema dump
+/// lib/data/database.dart drift_schemas/app/` and `dart run drift_dev schema
+/// generate drift_schemas/app/ test/data/generated/`. If it's published:
+/// bump `schemaVersion` and add its `onUpgrade` step first.
 void main() {
   late SchemaVerifier verifier;
 

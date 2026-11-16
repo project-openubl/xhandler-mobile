@@ -166,6 +166,15 @@ class Companies extends Table with TableInfo {
     $customConstraints: 'NOT NULL DEFAULT \'10\'',
     defaultValue: const CustomExpression('\'10\''),
   );
+  late final GeneratedColumn<String> cuentaDetracciones =
+      GeneratedColumn<String>(
+        'cuenta_detracciones',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints: 'NULL',
+      );
   late final GeneratedColumn<int> esAgentePercepcion = GeneratedColumn<int>(
     'es_agente_percepcion',
     aliasedName,
@@ -216,6 +225,7 @@ class Companies extends Table with TableInfo {
     sunatEnvironment,
     moneda,
     igvTipo,
+    cuentaDetracciones,
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
@@ -679,6 +689,15 @@ class Products extends Table with TableInfo {
     requiredDuringInsert: false,
     $customConstraints: 'NULL',
   );
+  late final GeneratedColumn<String> detraccionPorcentaje =
+      GeneratedColumn<String>(
+        'detraccion_porcentaje',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints: 'NULL',
+      );
   late final GeneratedColumn<int> favorito = GeneratedColumn<int>(
     'favorito',
     aliasedName,
@@ -706,6 +725,7 @@ class Products extends Table with TableInfo {
     iscTasa,
     esBolsa,
     detraccionCodigo,
+    detraccionPorcentaje,
     favorito,
   ];
   @override
@@ -850,6 +870,14 @@ class Documents extends Table with TableInfo {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  late final GeneratedColumn<String> tipoCambio = GeneratedColumn<String>(
+    'tipo_cambio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NULL',
+  );
   late final GeneratedColumn<String> total = GeneratedColumn<String>(
     'total',
     aliasedName,
@@ -981,6 +1009,7 @@ class Documents extends Table with TableInfo {
     clienteNumeroDocumento,
     clienteNombre,
     moneda,
+    tipoCambio,
     total,
     status,
     sunatCode,

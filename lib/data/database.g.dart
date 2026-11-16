@@ -603,8 +603,7 @@ class Company extends DataClass implements Insertable<Company> {
   /// IGV type of new products (Catalog 7), "10" = gravado
   final String igvTipo;
 
-  /// Banco de la Nación account where customers deposit detracciones.
-  /// Schema 2.
+  /// Banco de la Nación account where customers deposit detracciones
   final String? cuentaDetracciones;
   final bool esAgentePercepcion;
   final bool esAgenteRetencion;
@@ -3318,7 +3317,7 @@ class Product extends DataClass implements Insertable<Product> {
   final String? detraccionCodigo;
 
   /// Detracción rate of [detraccionCodigo] as a percentage, e.g. "12" (from
-  /// SUNAT's annex; rates change, so the user enters it). Schema 2.
+  /// SUNAT's annex; rates change, so the user enters it)
   final String? detraccionPorcentaje;
 
   /// Shown in the quick sale grid
@@ -4623,7 +4622,7 @@ class Document extends DataClass implements Insertable<Document> {
   final String moneda;
 
   /// Soles per unit of [moneda] (SBS selling rate of the issue date, typed
-  /// by the user); `null` for documents in soles. Schema 3.
+  /// by the user); `null` for documents in soles
   final String? tipoCambio;
 
   /// Decimal as text
