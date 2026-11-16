@@ -246,6 +246,8 @@ abstract final class Strings {
   static const timeline = 'Historial';
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';
+  static String sendingDeadline(String date) =>
+      'SUNAT debe recibirlo hasta el $date';
 
   // Notes
   static const notaCredito = 'Nota de crédito';
@@ -263,6 +265,9 @@ abstract final class Strings {
   static const voidHelp =
       'Solo anula comprobantes que el cliente aún no recibió. Si ya lo '
       'recibió, emite una nota de crédito.';
+  static const voidDelivered =
+      'Ya compartiste este comprobante con el cliente. Si lo recibió, SUNAT '
+      'no permite anularlo: emite una nota de crédito.';
   static const motivo = 'Motivo';
   static const motivoHelp = 'Para tu historial y para SUNAT';
   static const voidingRejected = 'SUNAT rechazó la anulación';
@@ -375,7 +380,9 @@ abstract final class Strings {
   static const backupHelp =
       'Guarda todo (empresas, comprobantes, certificados y credenciales) en '
       'un archivo protegido con una contraseña. Guárdalo en un lugar seguro, '
-      'como Google Drive o tu correo, para restaurarlo en otro teléfono.';
+      'como Google Drive o tu correo, para restaurarlo en otro teléfono. '
+      'Los comprobantes (XML y CDR) se deben conservar por varios años: '
+      'haz copias seguido.';
   static const noBackupYet = 'Aún no has hecho una copia de seguridad.';
   static String lastBackup(String date) => 'Última copia: $date';
   static const backupPassword = 'Contraseña de la copia';

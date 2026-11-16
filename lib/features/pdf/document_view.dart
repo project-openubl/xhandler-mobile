@@ -161,9 +161,12 @@ DocumentView documentView(Document document, Company company) {
         : null,
     pending: !acceptedStatuses.contains(document.status),
     testMode: document.environment == SunatEnvironment.beta,
-    footer:
-        'Representación impresa $article ${title.toLowerCase()}. '
-        'Consulte su validez en $consultaUrl',
+    footer: [
+      // The signature's digest, also inside the QR
+      'Valor resumen: ${document.digestValue}',
+      'Representación impresa $article ${title.toLowerCase()}. '
+          'Consulte su validez en $consultaUrl',
+    ].join('\n'),
   );
 }
 

@@ -19,6 +19,10 @@ abstract final class LocalCodes {
   /// A ticket from SUNAT beta, which can't check tickets: test mode takes
   /// the comunicación de baja or resumen as accepted
   static const betaTicket = 'BETA_TICKET';
+
+  /// Never answered and past SUNAT's deadline (deadlines.dart): the outbox
+  /// stops sending it
+  static const pastDeadline = 'PAST_DEADLINE';
 }
 
 /// Statuses of documents SUNAT accepted

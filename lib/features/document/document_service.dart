@@ -13,6 +13,7 @@ import '../../peru_date.dart';
 import '../../src/rust/api/document.dart';
 import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
+import 'deadlines.dart';
 import 'document_repository.dart';
 import 'document_status.dart';
 import 'document_totals.dart';
@@ -450,6 +451,23 @@ class DocumentService {
     final now = nowUtc();
     if (!manual && nextAttemptAt != null && nextAttemptAt.isAfter(now)) {
       return found.status;
+    }
+    // Past SUNAT's deadline the outbox stops and says why; the user can
+    // still send it. A document sent before may be at SUNAT already: a
+    // resend recovers its CDR (1033), so those keep going.
+    if (!manual &&
+        found.status == DocumentStatus.pendingSend &&
+        found.attempts == 0 &&
+        pastSendingDeadline(found, peruToday())) {
+      return _record(
+        found,
+        const SunatResponse(
+          status: SunatStatus.exception,
+          code: LocalCodes.pastDeadline,
+          notes: [],
+        ),
+        manual,
+      );
     }
     // Claims it: the app and the background outbox use separate database
     // connections, and only one of them must send it

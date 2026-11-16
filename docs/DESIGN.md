@@ -34,7 +34,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §
 | Pending PDFs | Allowed, with a "Pendiente de envío a SUNAT" note |
 | Backup | WhatsApp-style, end-to-end encrypted, Google Drive appDataFolder / iCloud. Includes certificate and credentials |
 | Restore | Replace-all from cloud + per-company encrypted export/import file |
-| Reports | Sales summary + CSV + Excel + PLE 14.1 + SIRE RVIE |
+| Reports | Sales summary + CSV + Excel (SIRE builds the sales register from SUNAT's data) |
 | Distribution | Google Play + App Store under the OpenUBL organization |
 | Min OS | Android 8 (API 26), iOS 15 |
 | Signer | xsigner rewritten in pure Rust (Phase 0), no OpenSSL/libxml2 |
@@ -234,8 +234,15 @@ Rules:
   taken as accepted (local code `BETA_TICKET`, explained to the user).
 - HTTP 401 may be SUNAT throttling: every SUNAT request waits 3 s after the previous
   one, and a 401 is asked again twice before it's taken as wrong credentials.
-- Sending and voiding deadlines per document type live in one table; documents close to
-  the deadline show a countdown. *(Values to confirm against current SUNAT rules.)*
+- Sending deadlines live in one table (`deadlines.dart`): facturas and their notas 3
+  calendar days after issue (RS 000003-2023), boletas and their notas 7 (SUNAT's
+  orientation on resumen diario, to confirm). While SUNAT hasn't answered, the document page says until when SUNAT must
+  receive it. Past the deadline the outbox stops sending a document it never sent (local
+  code `PAST_DEADLINE`, explained to the user); one sent before keeps going, since SUNAT
+  may have it and a resend recovers the CDR (1033). A manual "send now" still tries. Guías, percepciones,
+  retenciones and voiding documents have no deadline in the app until confirmed.
+- Voiding a document that was already delivered warns that SUNAT only voids documents
+  the customer didn't receive (a nota de crédito is the way then).
 - If a document that was already delivered becomes rejected, the app warns and lists the
   deliveries so the user can notify the customer.
 - Every attempt is recorded in `document_event` and shown as a timeline.
@@ -394,7 +401,7 @@ risk) and starts the app over with a new provider scope. The restored phone gets
 ## 10. Reports
 
 - Sales summary by date range, document type, status, currency.
-- Exports: CSV, Excel (`excel`), PLE 14.1 Registro de Ventas, SIRE RVIE replacement file.
+- Exports: CSV, Excel (`excel`). No PLE (replaced by SIRE, §14).
   One generator producing rows, several output formats.
 - Exports are shared through the delivery module.
 
@@ -470,7 +477,7 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 | 4 | mobile | Remaining documents: notes, GRE (with vehicle/driver/address catalogs), percepción, retención, voiding (RA/RC/RR) |
 | 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, share sheet), delivery log |
 | 6 | mobile | Backup/restore (Drive, iCloud), per-company export/import |
-| 7 | mobile | Reports: summary, CSV, Excel, PLE, SIRE |
+| 7 | mobile | Reports: summary, CSV, Excel |
 | 8 | mobile | Store readiness: privacy policy, data safety/privacy labels, Gmail OAuth verification, export compliance, release CI (Play internal track, TestFlight) |
 
 One PR per phase, each followed by a senior-engineer review.
@@ -483,7 +490,14 @@ the app icon and a manual Release workflow; publishing needs the owner's account
 
 ## 14. Open items
 
-- Confirm SUNAT deadlines (sending, voiding) and the unidentified-customer boleta threshold.
+- Confirm the boletas' 7 days against a resolution, and the deadlines not in
+  `deadlines.dart` yet (guías, percepciones, retenciones, reversiones) and whether the voiding window counts from the issue date or the CDR's.
+- Boletas in other currencies aren't checked against the S/ 700 limit for unidentified
+  customers (needs the exchange rate).
+- Detracción (SPOT): xbuilder computes it; the app needs the company's Banco de la Nación
+  account (schema v2), the form and the PDF legend. Next.
+- Reduced IGV for small restaurants and hotels (Ley 31556: 10.5 % in 2026, 15 % in 2027):
+  needs a company flag and confirming how SUNAT expects the rate in the XML.
 - Pick the default free-tier RUC/DNI lookup provider in Phase 2 (check current quota and
   terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, implemented
   by Decolecta (company token). Results are cached in `customer`.
@@ -501,9 +515,9 @@ the app icon and a manual Release workflow; publishing needs the owner's account
   Per-company export/import is also pending.
 - Sales in other currencies in soles (SBS exchange rate of the issue date), as the
   register and the IGV declaration need them.
-- PLE 14.1 and the SIRE RVIE replacement file: SIRE replaced PLE (RS 000125-2026) and
-  builds the sales proposal from the electronic documents SUNAT already has, so a file is
-  rarely needed; both layouts must be checked field by field against SUNAT's current
-  specifications before shipping.
+- PLE 14.1 isn't planned: SIRE replaced it (RS 000125-2026, from the October 2026
+  period; new registrants from June 2026, RS 000075-2026) and builds the sales proposal
+  from the electronic documents SUNAT already has. CSV/Excel stay for the user's own
+  checks; a SIRE RVIE replacement file only if users ask for it.
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).

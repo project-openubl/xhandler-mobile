@@ -145,6 +145,56 @@ void main() {
   });
 
   group('send', () {
+    test(
+      'the outbox stops past the deadline; the user can still send',
+      () async {
+        final id = await emit();
+        // Issued days ago and never answered (e.g. the phone was offline)
+        await (database.update(database.documents)
+              ..where((d) => d.id.equals(id)))
+            .write(const DocumentsCompanion(fechaEmision: Value('2020-01-01')));
+
+        expect(await service.send(id), DocumentStatus.exception);
+        expect(bridge.calls, isEmpty);
+        expect((await document(id)).sunatCode, LocalCodes.pastDeadline);
+
+        bridge.responses.add(
+          const SunatResponse(
+            status: SunatStatus.accepted,
+            code: '0',
+            notes: [],
+          ),
+        );
+        expect(await service.send(id, manual: true), DocumentStatus.accepted);
+      },
+    );
+
+    test('documents within the deadline, or sent before, keep going', () async {
+      // Issued today
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.notDelivered, notes: []),
+      );
+      expect(await service.send(id), DocumentStatus.pendingSend);
+      expect(bridge.calls, hasLength(1));
+
+      // Sent once without an answer, then the deadline passed: SUNAT may
+      // have it, and a resend would recover its CDR
+      await (database.update(
+        database.documents,
+      )..where((d) => d.id.equals(id))).write(
+        const DocumentsCompanion(
+          fechaEmision: Value('2020-01-01'),
+          nextAttemptAt: Value(null),
+        ),
+      );
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+      expect(await service.send(id), DocumentStatus.accepted);
+      expect(bridge.calls, hasLength(2));
+    });
+
     test('records an accepted document with its CDR', () async {
       final id = await emit();
       bridge.responses.add(

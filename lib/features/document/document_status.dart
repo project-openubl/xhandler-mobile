@@ -131,6 +131,10 @@ String? localCodeMessage(String? code) => switch (code) {
   LocalCodes.betaTicket =>
     'SUNAT recibió la anulación. En modo prueba se da por aceptada: '
         'SUNAT beta no permite consultar su respuesta.',
+  LocalCodes.pastDeadline =>
+    'Venció el plazo para enviarlo a SUNAT y la app dejó de enviarlo. '
+        'Puedes intentar enviarlo ahora; si SUNAT lo rechaza, emite el '
+        'comprobante de nuevo.',
   'HTTP 401' =>
     'SUNAT no aceptó el usuario o la clave SOL (Empresa → Credenciales).',
   _ => null,

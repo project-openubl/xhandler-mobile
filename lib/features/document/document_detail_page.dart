@@ -15,6 +15,7 @@ import '../delivery/delivery_service.dart';
 import '../delivery/delivery_sheet.dart';
 import '../despatch/despatch_advice_form_page.dart';
 import '../pdf/document_view.dart';
+import 'deadlines.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
@@ -177,7 +178,12 @@ class DocumentDetailPage extends ConsumerWidget {
                   ),
                 if (canVoid)
                   OutlinedButton(
-                    onPressed: () => _void(context, ref, document),
+                    onPressed: () => _void(
+                      context,
+                      ref,
+                      document,
+                      delivered: deliveries.isNotEmpty,
+                    ),
                     child: const Text(Strings.voidDocument),
                   ),
               ],
@@ -185,8 +191,15 @@ class DocumentDetailPage extends ConsumerWidget {
           ListTile(
             title: Text(tipoComprobanteLabel(document.tipoComprobante)),
             subtitle: Text(
-              '${Strings.fechaEmision}: '
-              '${formatDate(context, document.fechaEmision)}',
+              [
+                '${Strings.fechaEmision}: '
+                    '${formatDate(context, document.fechaEmision)}',
+                // Not at SUNAT yet: by when it must be
+                if (document.status == DocumentStatus.pendingSend ||
+                    document.status == DocumentStatus.exception)
+                  if (sendingDeadline(document) case final deadline?)
+                    Strings.sendingDeadline(formatDate(context, deadline)),
+              ].join('\n'),
             ),
           ),
           if (affectedId != null)
@@ -282,11 +295,12 @@ class DocumentDetailPage extends ConsumerWidget {
   Future<void> _void(
     BuildContext context,
     WidgetRef ref,
-    Document document,
-  ) async {
+    Document document, {
+    required bool delivered,
+  }) async {
     final motivo = await showDialog<String>(
       context: context,
-      builder: (_) => const _VoidDialog(),
+      builder: (_) => _VoidDialog(delivered: delivered),
     );
     if (motivo == null || !context.mounted) return;
     final service = ref.read(documentServiceProvider);
@@ -315,7 +329,11 @@ class DocumentDetailPage extends ConsumerWidget {
 
 /// The reason for voiding, which SUNAT asks for
 class _VoidDialog extends StatefulWidget {
-  const _VoidDialog();
+  const _VoidDialog({required this.delivered});
+
+  /// Sent to the customer already: SUNAT only voids documents the customer
+  /// didn't receive
+  final bool delivered;
 
   @override
   State<_VoidDialog> createState() => _VoidDialogState();
@@ -341,7 +359,10 @@ class _VoidDialogState extends State<_VoidDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(Strings.voidHelp),
+            if (widget.delivered)
+              const ErrorText(Strings.voidDelivered)
+            else
+              const Text(Strings.voidHelp),
             FormTextField(
               _motivo,
               Strings.motivo,

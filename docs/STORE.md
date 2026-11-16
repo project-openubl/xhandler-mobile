@@ -72,6 +72,12 @@ project owner's accounts, keys or legal review; nothing here was submitted.
 > comprobantes electrónicos de SUNAT. No tiene cuentas de usuario ni servidores propios:
 > los desarrolladores no reciben ninguno de tus datos.
 >
+> **Quién es responsable.** Cada empresa que usa XHandler es la responsable de los
+> datos personales de sus clientes (Ley 29733, Ley de Protección de Datos Personales) y
+> los trata para emitir comprobantes, como exige la ley tributaria. Tus clientes pueden
+> pedirte acceder a sus datos, corregirlos o suprimirlos; los comprobantes ya emitidos no
+> se pueden modificar y se deben conservar.
+>
 > **Qué datos maneja y dónde quedan.** Los datos de tus empresas, clientes, productos
 > y comprobantes, tu certificado digital y tus credenciales (clave SOL, credenciales de
 > guías, contraseña de correo) se guardan solo en tu teléfono, en una base de datos
@@ -79,19 +85,21 @@ project owner's accounts, keys or legal review; nothing here was submitted.
 >
 > **A quién se envían, solo cuando tú lo pides o lo exige la ley:**
 > - **SUNAT**, para enviar tus comprobantes y consultar su estado, con tus credenciales.
-> - **El servicio de consulta de RUC/DNI** que configures (opcional), que recibe el
->   número consultado.
+> - **El servicio de consulta de RUC/DNI** que configures (opcional, por ejemplo
+>   Decolecta), que recibe el número de RUC o DNI consultado.
 > - **Tu servidor de correo**, cuando envías un comprobante por correo desde tu cuenta.
 > - **WhatsApp u otra aplicación** que elijas al compartir un comprobante.
 > - **El lugar donde guardes tus copias de seguridad** (por ejemplo, Google Drive o tu
->   correo). Las copias están cifradas con una contraseña que solo tú conoces.
+>   correo), que puede estar fuera del Perú. Las copias están cifradas con una contraseña
+>   que solo tú conoces.
 >
 > **Qué no hacemos.** No usamos publicidad, analítica ni rastreo, y no vendemos ni
 > compartimos datos.
 >
 > **Conservación y eliminación.** Los datos permanecen en tu teléfono hasta que elimines
-> una empresa o desinstales la aplicación. La ley tributaria puede obligarte a conservar
-> tus comprobantes por un tiempo; haz copias de seguridad.
+> una empresa o desinstales la aplicación. La ley tributaria te obliga a conservar tus
+> comprobantes (XML y constancias de SUNAT) por varios años y a entregarlos a tus
+> clientes si los piden; haz copias de seguridad seguido.
 >
 > **Contacto:** _(correo del proyecto OpenUBL)_
 >

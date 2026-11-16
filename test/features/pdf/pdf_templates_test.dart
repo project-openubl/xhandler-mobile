@@ -233,7 +233,8 @@ void main() {
         _company,
       );
       expect(view.title, 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICO');
-      expect(view.footer, startsWith('Representación impresa del comprobante'));
+      expect(view.footer, startsWith('Valor resumen: '));
+      expect(view.footer, contains('Representación impresa del comprobante'));
       expect(view.total, isNull);
       expect(view.totals, contains(('Total cobrado', 'S/ 1203.60')));
     });
