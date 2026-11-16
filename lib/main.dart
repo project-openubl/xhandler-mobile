@@ -10,6 +10,7 @@ import 'app_restart.dart';
 import 'data/database.dart';
 import 'data/providers.dart';
 import 'data/secure_store.dart';
+import 'features/appearance/theme_mode.dart';
 import 'features/document/outbox_runner.dart';
 import 'src/rust/frb_generated.dart';
 import 'strings.dart';
@@ -31,17 +32,15 @@ Future<void> _start() async {
       databaseExists: file.existsSync(),
     );
     checkKeyOpens(file, key);
+    final database = AppDatabase(openEncryptedDatabase(file, key));
+    final themeMode = await _storedThemeMode(database);
     runApp(
       ProviderScope(
         // A new scope on every start (e.g. after a restore): providers,
         // the router and the outbox start over with the database
         key: UniqueKey(),
-        overrides: [
-          databaseProvider.overrideWithValue(
-            AppDatabase(openEncryptedDatabase(file, key)),
-          ),
-        ],
-        child: const OutboxRunner(child: App()),
+        overrides: [databaseProvider.overrideWithValue(database)],
+        child: OutboxRunner(child: App(initialThemeMode: themeMode)),
       ),
     );
   } on Object catch (error) {
@@ -62,6 +61,17 @@ Future<void> _start() async {
         },
       ),
     );
+  }
+}
+
+/// The theme mode, read before the first frame so the app doesn't flash the
+/// phone's mode. Failing here mustn't stop the app: it follows the phone.
+Future<ThemeMode> _storedThemeMode(AppDatabase database) async {
+  try {
+    return themeModeFrom(await database.setting(themeModeKey));
+  } on Object catch (error, stack) {
+    AppLog.error('Theme mode', error, stack);
+    return ThemeMode.system;
   }
 }
 

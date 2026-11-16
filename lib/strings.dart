@@ -473,6 +473,15 @@ abstract final class Strings {
   static const noFavorites =
       'Marca productos como favoritos para verlos aquí, o búscalos.';
 
+  // Appearance
+  static const appearance = 'Apariencia';
+  static const themeMode = 'Tema';
+  static const themeSystem = 'Según el teléfono';
+  static const themeSystemHelp =
+      'Claro u oscuro, como esté configurado el teléfono';
+  static const themeLight = 'Claro';
+  static const themeDark = 'Oscuro';
+
   // Security
   static const security = 'Seguridad';
   static const appLock = 'Bloqueo de la app';
