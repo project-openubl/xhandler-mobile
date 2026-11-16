@@ -27,6 +27,8 @@ class DraftLine {
     this.iscTipo,
     this.iscTasa,
     this.esBolsa = false,
+    this.detraccionCodigo,
+    this.detraccionPorcentaje,
   });
 
   factory DraftLine.fromProduct(Product product, {required String igvTipo}) =>
@@ -42,6 +44,8 @@ class DraftLine {
         iscTipo: product.iscTipo,
         iscTasa: product.iscTasa,
         esBolsa: product.esBolsa,
+        detraccionCodigo: product.detraccionCodigo,
+        detraccionPorcentaje: product.detraccionPorcentaje,
       );
 
   /// A line of a stored document's input (xbuilder `detalles`), e.g. to
@@ -81,6 +85,11 @@ class DraftLine {
   final String? iscTasa;
   final bool esBolsa;
 
+  /// Catalog 54 code and rate (a percentage) of a product subject to
+  /// detracción; they go in the invoice's `detraccion`, not the line
+  final String? detraccionCodigo;
+  final String? detraccionPorcentaje;
+
   DraftLine copyWith({
     String? descripcion,
     String? cantidad,
@@ -98,6 +107,8 @@ class DraftLine {
     iscTipo: iscTipo,
     iscTasa: iscTasa,
     esBolsa: esBolsa,
+    detraccionCodigo: detraccionCodigo,
+    detraccionPorcentaje: detraccionPorcentaje,
   );
 
   Map<String, Object?> toJson() => {
@@ -277,6 +288,7 @@ class InvoiceDraft implements DocumentDraft {
     required this.lines,
     required this.moneda,
     this.cuotas = const [],
+    this.detraccionMonto,
   });
 
   /// Catalog 1: "01" factura, "03" boleta
@@ -290,6 +302,54 @@ class InvoiceDraft implements DocumentDraft {
 
   /// Empty for payment in full ("contado")
   final List<DraftCuota> cuotas;
+
+  /// The detracción it carries, of [detraccionLine]. Only facturas in soles
+  /// over [detraccionThreshold] do, and the total is known once built, so
+  /// the document service sets it ([withDetraccionOn]).
+  final String? detraccionMonto;
+
+  /// The line whose detracción the factura carries: SUNAT takes one per
+  /// factura, and with several the highest rate is used (DESIGN §5)
+  DraftLine? get detraccionLine {
+    DraftLine? highest;
+    for (final line in lines) {
+      final rate = line.detraccionPorcentaje;
+      if (line.detraccionCodigo == null || rate == null) continue;
+      if (highest == null ||
+          toCents(rate) > toCents(highest.detraccionPorcentaje!)) {
+        highest = line;
+      }
+    }
+    return highest;
+  }
+
+  /// Whether a detracción applies once the total is over
+  /// [detraccionThreshold]
+  bool get subjectToDetraccion =>
+      tipoComprobante == '01' && moneda == 'PEN' && detraccionLine != null;
+
+  /// Total from which the detracción applies: S/ 400 for transporte de bienes
+  /// (027), S/ 700 for the rest (DESIGN §14 lists what to confirm)
+  String get detraccionThreshold =>
+      detraccionLine?.detraccionCodigo == '027' ? '400' : '700';
+
+  /// This draft with the detracción on [total] (with taxes), half up to
+  /// cents. xbuilder keeps the given amount, so the XML, the installments
+  /// and the printed document all use this one.
+  InvoiceDraft withDetraccionOn(String total) {
+    final rate = toCents(detraccionLine!.detraccionPorcentaje!); // in 1/100 %
+    final monto =
+        (toCents(total) * rate + BigInt.from(5000)) ~/ BigInt.from(10000);
+    // Every field: one added to InvoiceDraft must be copied here too
+    return InvoiceDraft(
+      tipoComprobante: tipoComprobante,
+      customer: customer,
+      lines: lines,
+      moneda: moneda,
+      cuotas: cuotas,
+      detraccionMonto: fromCents(monto),
+    );
+  }
 
   @override
   String? get affectedDocumentId => null;
@@ -322,6 +382,16 @@ class InvoiceDraft implements DocumentDraft {
       'proveedor': proveedorJson(company),
       'cliente': customer.toJson(),
       'detalles': [for (final line in lines) line.toJson()],
+      if (detraccionMonto case final monto?)
+        if (detraccionLine case final line?)
+          'detraccion': {
+            // Catalog 59: deposit in the Banco de la Nación account
+            'medio_pago': '001',
+            'cuenta_bancaria': company.cuentaDetracciones,
+            'tipo_bien_detraido': line.detraccionCodigo,
+            'porcentaje': percentToFraction(line.detraccionPorcentaje!),
+            'monto': monto,
+          },
       'forma_pago': cuotas.isEmpty
           ? {'tipo': 'Contado'}
           : {

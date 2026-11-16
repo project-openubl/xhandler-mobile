@@ -157,7 +157,10 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
       BigInt.zero,
       (sum, c) => sum + toCents(c.importe),
     );
-    final remaining = total == null ? null : toCents(total) - paid;
+    // What's owed: the total less the detracción the customer deposits
+    final remaining = total == null
+        ? null
+        : toCents(total) - toCents(_totals!.detraccion) - paid;
     final cuota = await showDialog<DraftCuota>(
       context: context,
       builder: (_) => CuotaDialog(

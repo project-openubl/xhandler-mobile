@@ -57,6 +57,10 @@ class Companies extends Table with SyncColumns {
   /// IGV type of new products (Catalog 7), "10" = gravado
   TextColumn get igvTipo => text().withDefault(const Constant('10'))();
 
+  /// Banco de la Nación account where customers deposit detracciones.
+  /// Schema 2.
+  TextColumn get cuentaDetracciones => text().nullable()();
+
   BoolColumn get esAgentePercepcion =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get esAgenteRetencion =>
@@ -148,6 +152,10 @@ class Products extends Table with SyncColumns {
 
   /// Catalog 54, when the good or service is subject to detracción
   TextColumn get detraccionCodigo => text().nullable()();
+
+  /// Detracción rate of [detraccionCodigo] as a percentage, e.g. "12" (from
+  /// SUNAT's annex; rates change, so the user enters it). Schema 2.
+  TextColumn get detraccionPorcentaje => text().nullable()();
 
   /// Shown in the quick sale grid
   BoolColumn get favorito => boolean().withDefault(const Constant(false))();

@@ -104,7 +104,7 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 
 ## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
-Defined in `lib/data/tables.dart`; schema version 1 (snapshot in `drift_schemas/app/`).
+Defined in `lib/data/tables.dart`; schema version 2 (snapshots in `drift_schemas/app/`).
 Decimals are stored as text to keep them exact; timestamps as ISO-8601 UTC text.
 
 ```
@@ -114,7 +114,7 @@ companies         ruc, razon_social, nombre_comercial, domicilio fiscal (ubigeo,
                   provincia, distrito, direccion, urbanizacion, codigo_local), telefono, email,
                   sunat_environment (beta | production), moneda (of new documents),
                   igv_tipo (of new products), es_agente_percepcion, es_agente_retencion,
-                  lookup_provider (none | decolecta)
+                  lookup_provider (none | decolecta), cuenta_detracciones (v2)
                   UNIQUE(ruc) among the not deleted
 series            company_id, tipo_comprobante, serie, next_number, is_default, active
                   UNIQUE(company_id, tipo_comprobante, serie)
@@ -124,7 +124,7 @@ customers         company_id, tipo_documento_identidad, numero_documento_identid
                   among the not deleted
 products          company_id, codigo, codigo_sunat, descripcion, unidad_medida, precio,
                   precio_incluye_igv, igv_tipo, isc_tipo, isc_tasa, es_bolsa,
-                  detraccion_codigo, favorito
+                  detraccion_codigo, detraccion_porcentaje (v2), favorito
 vehicles          company_id, placa, numero_circulacion                -- GRE transporte privado
 drivers           company_id, tipo_documento_identidad, numero_documento_identidad, nombres,
                   apellidos, licencia                                  -- GRE transporte privado
@@ -285,7 +285,7 @@ Progressive disclosure for taxes:
 |---|---|---|
 | IGV type | Product (company default) | Per line chip if not default |
 | ISC, ICB | Product | Automatic |
-| Detracción | Company account + product code | Suggested when a line is subject and total exceeds threshold |
+| Detracción | Company account + product code and rate | Automatic on facturas in soles over S/ 700 with a subject line (built: the highest rate applies, deposit in the Banco de la Nación; installments add up to the total less it) |
 | Percepción | Company flag | Only for agentes de percepción |
 | Exportación | Tipo de operación | Switches IGV to export, foreign customer fields |
 | Anticipos | "Más opciones" | Pick an earlier advance invoice |
@@ -494,8 +494,12 @@ the app icon and a manual Release workflow; publishing needs the owner's account
   `deadlines.dart` yet (guías, percepciones, retenciones, reversiones) and whether the voiding window counts from the issue date or the CDR's.
 - Boletas in other currencies aren't checked against the S/ 700 limit for unidentified
   customers (needs the exchange rate).
-- Detracción (SPOT): xbuilder computes it; the app needs the company's Banco de la Nación
-  account (schema v2), the form and the PDF legend. Next.
+- Detracción: confirm the thresholds (the app uses S/ 400 for transporte de bienes, 027,
+  and S/ 700 otherwise; Annex 1 goods may have none), whether the amount should be
+  rounded to whole soles (deposits are; the app rounds half up to cents and gives that
+  amount to xbuilder, so XML, installments and PDF agree), and the rule for facturas
+  mixing goods with different rates (the app applies the highest). Facturas in other
+  currencies get none (their amount must be in soles).
 - Reduced IGV for small restaurants and hotels (Ley 31556: 10.5 % in 2026, 15 % in 2027):
   needs a company flag and confirming how SUNAT expects the rate in the XML.
 - Pick the default free-tier RUC/DNI lookup provider in Phase 2 (check current quota and

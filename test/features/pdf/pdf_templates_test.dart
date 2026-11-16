@@ -86,6 +86,33 @@ void main() {
     );
   });
 
+  test('a factura with detracción prints its data and account', () {
+    final json = jsonDecode(factura.enrichedJson) as Map<String, Object?>;
+    (json['spec']! as Map<String, Object?>)['detraccion'] = {
+      'medio_pago': '001',
+      'cuenta_bancaria': '00-123-456789',
+      'tipo_bien_detraido': '020',
+      'porcentaje': '0.12',
+      'monto': '141.6',
+    };
+    final view = documentView(
+      factura.copyWith(enrichedJson: jsonEncode(json)),
+      _company,
+    );
+
+    expect(
+      view.notes,
+      contains(
+        allOf(
+          contains('Sistema de Pago de Obligaciones Tributarias'),
+          contains('código 020, 12 %'),
+          contains('S/ 141.60'),
+          contains('00-123-456789'),
+        ),
+      ),
+    );
+  });
+
   test('every template renders every printable document', () async {
     final theme = await loadPdfTheme();
     String draft(String name) =>

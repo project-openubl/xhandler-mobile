@@ -71,6 +71,11 @@ abstract final class Strings {
   static const contacto = 'Contacto';
   static const telefono = 'Teléfono';
   static const email = 'Correo electrónico';
+  static const detracciones = 'Detracciones';
+  static const cuentaDetracciones =
+      'Cuenta de detracciones (Banco de la Nación)';
+  static const cuentaDetraccionesHelp =
+      'Si vendes bienes o servicios sujetos a detracción';
   static const agenteSunat = 'Percepción y retención';
   static const agentePercepcion = 'Agente de percepción';
   static const agentePercepcionHelp =
@@ -185,6 +190,11 @@ abstract final class Strings {
   static const codigoSunat = 'Código SUNAT del producto';
   static const invalidDetraccionCodigo = 'El código tiene 3 dígitos';
   static const detraccionCodigo = 'Código de detracción';
+  static const detraccionPorcentaje = 'Porcentaje de detracción (%)';
+  static const detraccionPorcentajeHelp =
+      'El que SUNAT fija para este código, ej. 12';
+  static const invalidDetraccionPorcentaje = 'Entre 0 y 100, ej. 12';
+  static const detraccion = 'Detracción';
   static const deleteProductConfirm = '¿Eliminar este producto?';
 
   // Lookup settings

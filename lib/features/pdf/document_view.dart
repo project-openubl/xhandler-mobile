@@ -232,6 +232,20 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
       );
     }
   }
+  if (spec['detraccion'] case {
+    'tipo_bien_detraido': final Object codigo,
+    'porcentaje': final Object porcentaje,
+    'monto': final Object monto,
+    'cuenta_bancaria': final Object cuenta,
+  }) {
+    notes.add(
+      'Operación sujeta al Sistema de Pago de Obligaciones Tributarias con '
+      'el Gobierno Central. Detracción (código $codigo, '
+      '${fractionToPercent('$porcentaje')} %): '
+      '${formatMoney('PEN', roundAmount('$monto'))}. '
+      'Cuenta en el Banco de la Nación: $cuenta.',
+    );
+  }
   if (spec['comprobante_afectado_serie_numero'] case final String afectado) {
     final tipoNota = '${spec['tipo_nota']}';
     final motivos = document.tipoComprobante == '07'

@@ -216,6 +216,17 @@ class $CompaniesTable extends Companies
     requiredDuringInsert: false,
     defaultValue: const Constant('10'),
   );
+  static const VerificationMeta _cuentaDetraccionesMeta =
+      const VerificationMeta('cuentaDetracciones');
+  @override
+  late final GeneratedColumn<String> cuentaDetracciones =
+      GeneratedColumn<String>(
+        'cuenta_detracciones',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _esAgentePercepcionMeta =
       const VerificationMeta('esAgentePercepcion');
   @override
@@ -276,6 +287,7 @@ class $CompaniesTable extends Companies
     sunatEnvironment,
     moneda,
     igvTipo,
+    cuentaDetracciones,
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
@@ -416,6 +428,15 @@ class $CompaniesTable extends Companies
         igvTipo.isAcceptableOrUnknown(data['igv_tipo']!, _igvTipoMeta),
       );
     }
+    if (data.containsKey('cuenta_detracciones')) {
+      context.handle(
+        _cuentaDetraccionesMeta,
+        cuentaDetracciones.isAcceptableOrUnknown(
+          data['cuenta_detracciones']!,
+          _cuentaDetraccionesMeta,
+        ),
+      );
+    }
     if (data.containsKey('es_agente_percepcion')) {
       context.handle(
         _esAgentePercepcionMeta,
@@ -521,6 +542,10 @@ class $CompaniesTable extends Companies
         DriftSqlType.string,
         data['${effectivePrefix}igv_tipo'],
       )!,
+      cuentaDetracciones: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cuenta_detracciones'],
+      ),
       esAgentePercepcion: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}es_agente_percepcion'],
@@ -577,6 +602,10 @@ class Company extends DataClass implements Insertable<Company> {
 
   /// IGV type of new products (Catalog 7), "10" = gravado
   final String igvTipo;
+
+  /// Banco de la Nación account where customers deposit detracciones.
+  /// Schema 2.
+  final String? cuentaDetracciones;
   final bool esAgentePercepcion;
   final bool esAgenteRetencion;
 
@@ -602,6 +631,7 @@ class Company extends DataClass implements Insertable<Company> {
     required this.sunatEnvironment,
     required this.moneda,
     required this.igvTipo,
+    this.cuentaDetracciones,
     required this.esAgentePercepcion,
     required this.esAgenteRetencion,
     required this.lookupProvider,
@@ -654,6 +684,9 @@ class Company extends DataClass implements Insertable<Company> {
     }
     map['moneda'] = Variable<String>(moneda);
     map['igv_tipo'] = Variable<String>(igvTipo);
+    if (!nullToAbsent || cuentaDetracciones != null) {
+      map['cuenta_detracciones'] = Variable<String>(cuentaDetracciones);
+    }
     map['es_agente_percepcion'] = Variable<bool>(esAgentePercepcion);
     map['es_agente_retencion'] = Variable<bool>(esAgenteRetencion);
     {
@@ -707,6 +740,9 @@ class Company extends DataClass implements Insertable<Company> {
       sunatEnvironment: Value(sunatEnvironment),
       moneda: Value(moneda),
       igvTipo: Value(igvTipo),
+      cuentaDetracciones: cuentaDetracciones == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cuentaDetracciones),
       esAgentePercepcion: Value(esAgentePercepcion),
       esAgenteRetencion: Value(esAgenteRetencion),
       lookupProvider: Value(lookupProvider),
@@ -740,6 +776,9 @@ class Company extends DataClass implements Insertable<Company> {
       ),
       moneda: serializer.fromJson<String>(json['moneda']),
       igvTipo: serializer.fromJson<String>(json['igvTipo']),
+      cuentaDetracciones: serializer.fromJson<String?>(
+        json['cuentaDetracciones'],
+      ),
       esAgentePercepcion: serializer.fromJson<bool>(json['esAgentePercepcion']),
       esAgenteRetencion: serializer.fromJson<bool>(json['esAgenteRetencion']),
       lookupProvider: $CompaniesTable.$converterlookupProvider.fromJson(
@@ -772,6 +811,7 @@ class Company extends DataClass implements Insertable<Company> {
       ),
       'moneda': serializer.toJson<String>(moneda),
       'igvTipo': serializer.toJson<String>(igvTipo),
+      'cuentaDetracciones': serializer.toJson<String?>(cuentaDetracciones),
       'esAgentePercepcion': serializer.toJson<bool>(esAgentePercepcion),
       'esAgenteRetencion': serializer.toJson<bool>(esAgenteRetencion),
       'lookupProvider': serializer.toJson<String>(
@@ -800,6 +840,7 @@ class Company extends DataClass implements Insertable<Company> {
     SunatEnvironment? sunatEnvironment,
     String? moneda,
     String? igvTipo,
+    Value<String?> cuentaDetracciones = const Value.absent(),
     bool? esAgentePercepcion,
     bool? esAgenteRetencion,
     LookupProvider? lookupProvider,
@@ -825,6 +866,9 @@ class Company extends DataClass implements Insertable<Company> {
     sunatEnvironment: sunatEnvironment ?? this.sunatEnvironment,
     moneda: moneda ?? this.moneda,
     igvTipo: igvTipo ?? this.igvTipo,
+    cuentaDetracciones: cuentaDetracciones.present
+        ? cuentaDetracciones.value
+        : this.cuentaDetracciones,
     esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
     esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
     lookupProvider: lookupProvider ?? this.lookupProvider,
@@ -862,6 +906,9 @@ class Company extends DataClass implements Insertable<Company> {
           : this.sunatEnvironment,
       moneda: data.moneda.present ? data.moneda.value : this.moneda,
       igvTipo: data.igvTipo.present ? data.igvTipo.value : this.igvTipo,
+      cuentaDetracciones: data.cuentaDetracciones.present
+          ? data.cuentaDetracciones.value
+          : this.cuentaDetracciones,
       esAgentePercepcion: data.esAgentePercepcion.present
           ? data.esAgentePercepcion.value
           : this.esAgentePercepcion,
@@ -896,6 +943,7 @@ class Company extends DataClass implements Insertable<Company> {
           ..write('sunatEnvironment: $sunatEnvironment, ')
           ..write('moneda: $moneda, ')
           ..write('igvTipo: $igvTipo, ')
+          ..write('cuentaDetracciones: $cuentaDetracciones, ')
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
           ..write('lookupProvider: $lookupProvider')
@@ -924,6 +972,7 @@ class Company extends DataClass implements Insertable<Company> {
     sunatEnvironment,
     moneda,
     igvTipo,
+    cuentaDetracciones,
     esAgentePercepcion,
     esAgenteRetencion,
     lookupProvider,
@@ -951,6 +1000,7 @@ class Company extends DataClass implements Insertable<Company> {
           other.sunatEnvironment == this.sunatEnvironment &&
           other.moneda == this.moneda &&
           other.igvTipo == this.igvTipo &&
+          other.cuentaDetracciones == this.cuentaDetracciones &&
           other.esAgentePercepcion == this.esAgentePercepcion &&
           other.esAgenteRetencion == this.esAgenteRetencion &&
           other.lookupProvider == this.lookupProvider);
@@ -976,6 +1026,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
   final Value<SunatEnvironment> sunatEnvironment;
   final Value<String> moneda;
   final Value<String> igvTipo;
+  final Value<String?> cuentaDetracciones;
   final Value<bool> esAgentePercepcion;
   final Value<bool> esAgenteRetencion;
   final Value<LookupProvider> lookupProvider;
@@ -1000,6 +1051,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.sunatEnvironment = const Value.absent(),
     this.moneda = const Value.absent(),
     this.igvTipo = const Value.absent(),
+    this.cuentaDetracciones = const Value.absent(),
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
@@ -1025,6 +1077,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     this.sunatEnvironment = const Value.absent(),
     this.moneda = const Value.absent(),
     this.igvTipo = const Value.absent(),
+    this.cuentaDetracciones = const Value.absent(),
     this.esAgentePercepcion = const Value.absent(),
     this.esAgenteRetencion = const Value.absent(),
     this.lookupProvider = const Value.absent(),
@@ -1051,6 +1104,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Expression<String>? sunatEnvironment,
     Expression<String>? moneda,
     Expression<String>? igvTipo,
+    Expression<String>? cuentaDetracciones,
     Expression<bool>? esAgentePercepcion,
     Expression<bool>? esAgenteRetencion,
     Expression<String>? lookupProvider,
@@ -1076,6 +1130,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       if (sunatEnvironment != null) 'sunat_environment': sunatEnvironment,
       if (moneda != null) 'moneda': moneda,
       if (igvTipo != null) 'igv_tipo': igvTipo,
+      if (cuentaDetracciones != null) 'cuenta_detracciones': cuentaDetracciones,
       if (esAgentePercepcion != null)
         'es_agente_percepcion': esAgentePercepcion,
       if (esAgenteRetencion != null) 'es_agente_retencion': esAgenteRetencion,
@@ -1104,6 +1159,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     Value<SunatEnvironment>? sunatEnvironment,
     Value<String>? moneda,
     Value<String>? igvTipo,
+    Value<String?>? cuentaDetracciones,
     Value<bool>? esAgentePercepcion,
     Value<bool>? esAgenteRetencion,
     Value<LookupProvider>? lookupProvider,
@@ -1129,6 +1185,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
       sunatEnvironment: sunatEnvironment ?? this.sunatEnvironment,
       moneda: moneda ?? this.moneda,
       igvTipo: igvTipo ?? this.igvTipo,
+      cuentaDetracciones: cuentaDetracciones ?? this.cuentaDetracciones,
       esAgentePercepcion: esAgentePercepcion ?? this.esAgentePercepcion,
       esAgenteRetencion: esAgenteRetencion ?? this.esAgenteRetencion,
       lookupProvider: lookupProvider ?? this.lookupProvider,
@@ -1200,6 +1257,9 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
     if (igvTipo.present) {
       map['igv_tipo'] = Variable<String>(igvTipo.value);
     }
+    if (cuentaDetracciones.present) {
+      map['cuenta_detracciones'] = Variable<String>(cuentaDetracciones.value);
+    }
     if (esAgentePercepcion.present) {
       map['es_agente_percepcion'] = Variable<bool>(esAgentePercepcion.value);
     }
@@ -1239,6 +1299,7 @@ class CompaniesCompanion extends UpdateCompanion<Company> {
           ..write('sunatEnvironment: $sunatEnvironment, ')
           ..write('moneda: $moneda, ')
           ..write('igvTipo: $igvTipo, ')
+          ..write('cuentaDetracciones: $cuentaDetracciones, ')
           ..write('esAgentePercepcion: $esAgentePercepcion, ')
           ..write('esAgenteRetencion: $esAgenteRetencion, ')
           ..write('lookupProvider: $lookupProvider, ')
@@ -2946,6 +3007,17 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _detraccionPorcentajeMeta =
+      const VerificationMeta('detraccionPorcentaje');
+  @override
+  late final GeneratedColumn<String> detraccionPorcentaje =
+      GeneratedColumn<String>(
+        'detraccion_porcentaje',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _favoritoMeta = const VerificationMeta(
     'favorito',
   );
@@ -2979,6 +3051,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     iscTasa,
     esBolsa,
     detraccionCodigo,
+    detraccionPorcentaje,
     favorito,
   ];
   @override
@@ -3107,6 +3180,15 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         ),
       );
     }
+    if (data.containsKey('detraccion_porcentaje')) {
+      context.handle(
+        _detraccionPorcentajeMeta,
+        detraccionPorcentaje.isAcceptableOrUnknown(
+          data['detraccion_porcentaje']!,
+          _detraccionPorcentajeMeta,
+        ),
+      );
+    }
     if (data.containsKey('favorito')) {
       context.handle(
         _favoritoMeta,
@@ -3186,6 +3268,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}detraccion_codigo'],
       ),
+      detraccionPorcentaje: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}detraccion_porcentaje'],
+      ),
       favorito: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}favorito'],
@@ -3231,6 +3317,10 @@ class Product extends DataClass implements Insertable<Product> {
   /// Catalog 54, when the good or service is subject to detracción
   final String? detraccionCodigo;
 
+  /// Detracción rate of [detraccionCodigo] as a percentage, e.g. "12" (from
+  /// SUNAT's annex; rates change, so the user enters it). Schema 2.
+  final String? detraccionPorcentaje;
+
   /// Shown in the quick sale grid
   final bool favorito;
   const Product({
@@ -3250,6 +3340,7 @@ class Product extends DataClass implements Insertable<Product> {
     this.iscTasa,
     required this.esBolsa,
     this.detraccionCodigo,
+    this.detraccionPorcentaje,
     required this.favorito,
   });
   @override
@@ -3284,6 +3375,9 @@ class Product extends DataClass implements Insertable<Product> {
     map['es_bolsa'] = Variable<bool>(esBolsa);
     if (!nullToAbsent || detraccionCodigo != null) {
       map['detraccion_codigo'] = Variable<String>(detraccionCodigo);
+    }
+    if (!nullToAbsent || detraccionPorcentaje != null) {
+      map['detraccion_porcentaje'] = Variable<String>(detraccionPorcentaje);
     }
     map['favorito'] = Variable<bool>(favorito);
     return map;
@@ -3321,6 +3415,9 @@ class Product extends DataClass implements Insertable<Product> {
       detraccionCodigo: detraccionCodigo == null && nullToAbsent
           ? const Value.absent()
           : Value(detraccionCodigo),
+      detraccionPorcentaje: detraccionPorcentaje == null && nullToAbsent
+          ? const Value.absent()
+          : Value(detraccionPorcentaje),
       favorito: Value(favorito),
     );
   }
@@ -3347,6 +3444,9 @@ class Product extends DataClass implements Insertable<Product> {
       iscTasa: serializer.fromJson<String?>(json['iscTasa']),
       esBolsa: serializer.fromJson<bool>(json['esBolsa']),
       detraccionCodigo: serializer.fromJson<String?>(json['detraccionCodigo']),
+      detraccionPorcentaje: serializer.fromJson<String?>(
+        json['detraccionPorcentaje'],
+      ),
       favorito: serializer.fromJson<bool>(json['favorito']),
     );
   }
@@ -3370,6 +3470,7 @@ class Product extends DataClass implements Insertable<Product> {
       'iscTasa': serializer.toJson<String?>(iscTasa),
       'esBolsa': serializer.toJson<bool>(esBolsa),
       'detraccionCodigo': serializer.toJson<String?>(detraccionCodigo),
+      'detraccionPorcentaje': serializer.toJson<String?>(detraccionPorcentaje),
       'favorito': serializer.toJson<bool>(favorito),
     };
   }
@@ -3391,6 +3492,7 @@ class Product extends DataClass implements Insertable<Product> {
     Value<String?> iscTasa = const Value.absent(),
     bool? esBolsa,
     Value<String?> detraccionCodigo = const Value.absent(),
+    Value<String?> detraccionPorcentaje = const Value.absent(),
     bool? favorito,
   }) => Product(
     id: id ?? this.id,
@@ -3411,6 +3513,9 @@ class Product extends DataClass implements Insertable<Product> {
     detraccionCodigo: detraccionCodigo.present
         ? detraccionCodigo.value
         : this.detraccionCodigo,
+    detraccionPorcentaje: detraccionPorcentaje.present
+        ? detraccionPorcentaje.value
+        : this.detraccionPorcentaje,
     favorito: favorito ?? this.favorito,
   );
   Product copyWithCompanion(ProductsCompanion data) {
@@ -3441,6 +3546,9 @@ class Product extends DataClass implements Insertable<Product> {
       detraccionCodigo: data.detraccionCodigo.present
           ? data.detraccionCodigo.value
           : this.detraccionCodigo,
+      detraccionPorcentaje: data.detraccionPorcentaje.present
+          ? data.detraccionPorcentaje.value
+          : this.detraccionPorcentaje,
       favorito: data.favorito.present ? data.favorito.value : this.favorito,
     );
   }
@@ -3464,6 +3572,7 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('iscTasa: $iscTasa, ')
           ..write('esBolsa: $esBolsa, ')
           ..write('detraccionCodigo: $detraccionCodigo, ')
+          ..write('detraccionPorcentaje: $detraccionPorcentaje, ')
           ..write('favorito: $favorito')
           ..write(')'))
         .toString();
@@ -3487,6 +3596,7 @@ class Product extends DataClass implements Insertable<Product> {
     iscTasa,
     esBolsa,
     detraccionCodigo,
+    detraccionPorcentaje,
     favorito,
   );
   @override
@@ -3509,6 +3619,7 @@ class Product extends DataClass implements Insertable<Product> {
           other.iscTasa == this.iscTasa &&
           other.esBolsa == this.esBolsa &&
           other.detraccionCodigo == this.detraccionCodigo &&
+          other.detraccionPorcentaje == this.detraccionPorcentaje &&
           other.favorito == this.favorito);
 }
 
@@ -3529,6 +3640,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String?> iscTasa;
   final Value<bool> esBolsa;
   final Value<String?> detraccionCodigo;
+  final Value<String?> detraccionPorcentaje;
   final Value<bool> favorito;
   final Value<int> rowid;
   const ProductsCompanion({
@@ -3548,6 +3660,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.iscTasa = const Value.absent(),
     this.esBolsa = const Value.absent(),
     this.detraccionCodigo = const Value.absent(),
+    this.detraccionPorcentaje = const Value.absent(),
     this.favorito = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3568,6 +3681,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.iscTasa = const Value.absent(),
     this.esBolsa = const Value.absent(),
     this.detraccionCodigo = const Value.absent(),
+    this.detraccionPorcentaje = const Value.absent(),
     this.favorito = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : companyId = Value(companyId),
@@ -3590,6 +3704,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? iscTasa,
     Expression<bool>? esBolsa,
     Expression<String>? detraccionCodigo,
+    Expression<String>? detraccionPorcentaje,
     Expression<bool>? favorito,
     Expression<int>? rowid,
   }) {
@@ -3610,6 +3725,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (iscTasa != null) 'isc_tasa': iscTasa,
       if (esBolsa != null) 'es_bolsa': esBolsa,
       if (detraccionCodigo != null) 'detraccion_codigo': detraccionCodigo,
+      if (detraccionPorcentaje != null)
+        'detraccion_porcentaje': detraccionPorcentaje,
       if (favorito != null) 'favorito': favorito,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3632,6 +3749,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String?>? iscTasa,
     Value<bool>? esBolsa,
     Value<String?>? detraccionCodigo,
+    Value<String?>? detraccionPorcentaje,
     Value<bool>? favorito,
     Value<int>? rowid,
   }) {
@@ -3652,6 +3770,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       iscTasa: iscTasa ?? this.iscTasa,
       esBolsa: esBolsa ?? this.esBolsa,
       detraccionCodigo: detraccionCodigo ?? this.detraccionCodigo,
+      detraccionPorcentaje: detraccionPorcentaje ?? this.detraccionPorcentaje,
       favorito: favorito ?? this.favorito,
       rowid: rowid ?? this.rowid,
     );
@@ -3708,6 +3827,11 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (detraccionCodigo.present) {
       map['detraccion_codigo'] = Variable<String>(detraccionCodigo.value);
     }
+    if (detraccionPorcentaje.present) {
+      map['detraccion_porcentaje'] = Variable<String>(
+        detraccionPorcentaje.value,
+      );
+    }
     if (favorito.present) {
       map['favorito'] = Variable<bool>(favorito.value);
     }
@@ -3736,6 +3860,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('iscTasa: $iscTasa, ')
           ..write('esBolsa: $esBolsa, ')
           ..write('detraccionCodigo: $detraccionCodigo, ')
+          ..write('detraccionPorcentaje: $detraccionPorcentaje, ')
           ..write('favorito: $favorito, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -8915,6 +9040,7 @@ typedef $$CompaniesTableCreateCompanionBuilder = CompaniesCompanion Function({
   Value<SunatEnvironment> sunatEnvironment,
   Value<String> moneda,
   Value<String> igvTipo,
+  Value<String?> cuentaDetracciones,
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
@@ -8940,6 +9066,7 @@ typedef $$CompaniesTableUpdateCompanionBuilder = CompaniesCompanion Function({
   Value<SunatEnvironment> sunatEnvironment,
   Value<String> moneda,
   Value<String> igvTipo,
+  Value<String?> cuentaDetracciones,
   Value<bool> esAgentePercepcion,
   Value<bool> esAgenteRetencion,
   Value<LookupProvider> lookupProvider,
@@ -9183,6 +9310,11 @@ class $$CompaniesTableFilterComposer
 
   ColumnFilters<String> get igvTipo => $composableBuilder(
     column: $table.igvTipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cuentaDetracciones => $composableBuilder(
+    column: $table.cuentaDetracciones,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9482,6 +9614,11 @@ class $$CompaniesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cuentaDetracciones => $composableBuilder(
+    column: $table.cuentaDetracciones,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get esAgentePercepcion => $composableBuilder(
     column: $table.esAgentePercepcion,
     builder: (column) => ColumnOrderings(column),
@@ -9576,6 +9713,11 @@ class $$CompaniesTableAnnotationComposer
 
   GeneratedColumn<String> get igvTipo =>
       $composableBuilder(column: $table.igvTipo, builder: (column) => column);
+
+  GeneratedColumn<String> get cuentaDetracciones => $composableBuilder(
+    column: $table.cuentaDetracciones,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get esAgentePercepcion => $composableBuilder(
     column: $table.esAgentePercepcion,
@@ -9824,6 +9966,7 @@ class $$CompaniesTableTableManager
                 Value<SunatEnvironment> sunatEnvironment = const Value.absent(),
                 Value<String> moneda = const Value.absent(),
                 Value<String> igvTipo = const Value.absent(),
+                Value<String?> cuentaDetracciones = const Value.absent(),
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
@@ -9848,6 +9991,7 @@ class $$CompaniesTableTableManager
                 sunatEnvironment: sunatEnvironment,
                 moneda: moneda,
                 igvTipo: igvTipo,
+                cuentaDetracciones: cuentaDetracciones,
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
@@ -9874,6 +10018,7 @@ class $$CompaniesTableTableManager
                 Value<SunatEnvironment> sunatEnvironment = const Value.absent(),
                 Value<String> moneda = const Value.absent(),
                 Value<String> igvTipo = const Value.absent(),
+                Value<String?> cuentaDetracciones = const Value.absent(),
                 Value<bool> esAgentePercepcion = const Value.absent(),
                 Value<bool> esAgenteRetencion = const Value.absent(),
                 Value<LookupProvider> lookupProvider = const Value.absent(),
@@ -9898,6 +10043,7 @@ class $$CompaniesTableTableManager
                 sunatEnvironment: sunatEnvironment,
                 moneda: moneda,
                 igvTipo: igvTipo,
+                cuentaDetracciones: cuentaDetracciones,
                 esAgentePercepcion: esAgentePercepcion,
                 esAgenteRetencion: esAgenteRetencion,
                 lookupProvider: lookupProvider,
@@ -11043,6 +11189,7 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<String?> iscTasa,
   Value<bool> esBolsa,
   Value<String?> detraccionCodigo,
+  Value<String?> detraccionPorcentaje,
   Value<bool> favorito,
   Value<int> rowid,
 });
@@ -11063,6 +11210,7 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<String?> iscTasa,
   Value<bool> esBolsa,
   Value<String?> detraccionCodigo,
+  Value<String?> detraccionPorcentaje,
   Value<bool> favorito,
   Value<int> rowid,
 });
@@ -11170,6 +11318,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get detraccionCodigo => $composableBuilder(
     column: $table.detraccionCodigo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get detraccionPorcentaje => $composableBuilder(
+    column: $table.detraccionPorcentaje,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11286,6 +11439,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get detraccionPorcentaje => $composableBuilder(
+    column: $table.detraccionPorcentaje,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get favorito => $composableBuilder(
     column: $table.favorito,
     builder: (column) => ColumnOrderings(column),
@@ -11379,6 +11537,11 @@ class $$ProductsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get detraccionPorcentaje => $composableBuilder(
+    column: $table.detraccionPorcentaje,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get favorito =>
       $composableBuilder(column: $table.favorito, builder: (column) => column);
 
@@ -11450,6 +11613,7 @@ class $$ProductsTableTableManager
                 Value<String?> iscTasa = const Value.absent(),
                 Value<bool> esBolsa = const Value.absent(),
                 Value<String?> detraccionCodigo = const Value.absent(),
+                Value<String?> detraccionPorcentaje = const Value.absent(),
                 Value<bool> favorito = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion(
@@ -11469,6 +11633,7 @@ class $$ProductsTableTableManager
                 iscTasa: iscTasa,
                 esBolsa: esBolsa,
                 detraccionCodigo: detraccionCodigo,
+                detraccionPorcentaje: detraccionPorcentaje,
                 favorito: favorito,
                 rowid: rowid,
               ),
@@ -11490,6 +11655,7 @@ class $$ProductsTableTableManager
                 Value<String?> iscTasa = const Value.absent(),
                 Value<bool> esBolsa = const Value.absent(),
                 Value<String?> detraccionCodigo = const Value.absent(),
+                Value<String?> detraccionPorcentaje = const Value.absent(),
                 Value<bool> favorito = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProductsCompanion.insert(
@@ -11509,6 +11675,7 @@ class $$ProductsTableTableManager
                 iscTasa: iscTasa,
                 esBolsa: esBolsa,
                 detraccionCodigo: detraccionCodigo,
+                detraccionPorcentaje: detraccionPorcentaje,
                 favorito: favorito,
                 rowid: rowid,
               ),

@@ -158,7 +158,11 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.anonymousOver700 =>
     'Las boletas de más de S/ 700 necesitan el DNI del cliente.',
   DraftProblem.cuotasMismatch =>
-    'Las cuotas deben sumar el total y vencer después de hoy.',
+    'Las cuotas deben sumar el total (menos la detracción, si la hay) y '
+        'vencer después de hoy.',
+  DraftProblem.missingDetraccionAccount =>
+    'La factura tiene detracción: registra la cuenta de detracciones del '
+        'Banco de la Nación en Empresa → Datos de la empresa.',
   DraftProblem.noteSerieMismatch =>
     'Las notas de facturas usan series F y las de boletas, series B.',
   DraftProblem.invalidAffectedDocument =>
