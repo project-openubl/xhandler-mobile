@@ -211,15 +211,13 @@ class _LineDialogState extends State<LineDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const RequiredFieldsLegend(),
             if (!editing)
-              FormTextField(
-                _descripcion,
-                Strings.descripcion,
-                validator: (text) => text.isEmpty ? Strings.required : null,
-              ),
+              FormTextField(_descripcion, Strings.descripcion, required: true),
             FormTextField(
               _cantidad,
               Strings.cantidad,
+              required: true,
               keyboardType: decimal,
               validator: (text) =>
                   parseAmount(text) == null ? Strings.invalidCantidad : null,
@@ -227,6 +225,7 @@ class _LineDialogState extends State<LineDialog> {
             FormTextField(
               _precio,
               Strings.precio,
+              required: true,
               keyboardType: decimal,
               validator: (text) =>
                   parseAmount(text) == null ? Strings.invalidPrecio : null,
@@ -289,9 +288,11 @@ class _CuotaDialogState extends State<CuotaDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const RequiredFieldsLegend(),
             FormTextField(
               _importe,
               Strings.importe,
+              required: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

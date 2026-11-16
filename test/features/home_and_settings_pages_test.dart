@@ -146,7 +146,7 @@ void main() {
       await data.waitFor(tester, find.text(Strings.noBackupYet));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.backupPassword),
+        find.widgetWithText(TextFormField, '${Strings.backupPassword} *'),
         'short',
       );
       await tester.tap(find.text(Strings.createBackup));
@@ -154,11 +154,14 @@ void main() {
       expect(find.text(Strings.backupPasswordTooShort), findsOneWidget);
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.backupPassword),
+        find.widgetWithText(TextFormField, '${Strings.backupPassword} *'),
         'long enough',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.backupPasswordConfirmation),
+        find.widgetWithText(
+          TextFormField,
+          '${Strings.backupPasswordConfirmation} *',
+        ),
         'something else',
       );
       await tester.tap(find.text(Strings.createBackup));

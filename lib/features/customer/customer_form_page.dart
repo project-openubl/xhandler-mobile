@@ -177,6 +177,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
           key: _form,
           child: PageListView(
             children: [
+              const RequiredFieldsLegend(),
               CatalogDropdown(
                 label: Strings.tipoDocumentoIdentidad,
                 value: _tipo,
@@ -194,6 +195,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                       _numero,
                       Strings.numeroDocumento,
                       key: ValueKey(_tipo),
+                      required: true,
                       digitsOnly: _numeric,
                       maxLength: Catalogs.numeroDocumentoLength[_tipo],
                       validator: _validateNumero,
@@ -220,11 +222,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
                     ),
                 ],
               ),
-              FormTextField(
-                _nombre,
-                Strings.nombre,
-                validator: (nombre) => nombre.isEmpty ? Strings.required : null,
-              ),
+              FormTextField(_nombre, Strings.nombre, required: true),
               const FormSection(Strings.direccion),
               FormTextField(_direccion, Strings.direccion),
               FormTextField(_distrito, Strings.distrito),

@@ -116,7 +116,6 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    String? required(String text) => text.isEmpty ? Strings.required : null;
     return Scaffold(
       appBar: AppBar(
         title: const Text(Strings.emailSettings),
@@ -148,25 +147,28 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
               ],
             ),
             const SizedBox(height: 12),
+            const RequiredFieldsLegend(),
             FormTextField(
               _host,
               Strings.smtpHost,
               enabled: _loaded,
-              validator: required,
+              required: true,
             ),
             FormTextField(
               _port,
               Strings.smtpPort,
               enabled: _loaded,
+              required: true,
               digitsOnly: true,
               maxLength: 5,
               validator: (text) =>
-                  int.tryParse(text) == null ? Strings.required : null,
+                  int.tryParse(text) == null ? Strings.invalidValue : null,
             ),
             FormTextField(
               _username,
               Strings.email,
               enabled: _loaded,
+              required: true,
               keyboardType: TextInputType.emailAddress,
               validator: (text) => isEmail(text) ? null : Strings.invalidEmail,
             ),
@@ -176,7 +178,7 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
               enabled: _loaded,
               obscureText: true,
               helperText: Strings.appPasswordHelp,
-              validator: required,
+              required: true,
             ),
             const SizedBox(height: 8),
             SaveButton(

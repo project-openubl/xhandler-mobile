@@ -64,7 +64,8 @@ void main() {
       await tester.tap(find.text(Strings.add));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text(Strings.required), findsOneWidget);
+      // Descripción and precio are empty; cantidad starts at 1
+      expect(find.text(Strings.required), findsNWidgets(2));
 
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'Servicio');
@@ -87,6 +88,6 @@ void main() {
     await tester.tap(find.text(Strings.add));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text(Strings.invalidPrecio), findsOneWidget);
+    expect(find.text(Strings.required), findsOneWidget);
   });
 }

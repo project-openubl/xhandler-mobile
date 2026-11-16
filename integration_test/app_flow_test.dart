@@ -206,7 +206,7 @@ void main() {
     // Full form: a factura with a free line
     await tapText(tester, Strings.newDocument);
     await tapText(tester, Strings.factura);
-    await tapText(tester, Strings.selectCustomer);
+    await tapText(tester, '${Strings.selectCustomer} *');
     await tapText(tester, _customerName);
     await tapText(tester, Strings.freeLine);
     await enter(tester, Strings.descripcion, 'Servicio de consultoría');

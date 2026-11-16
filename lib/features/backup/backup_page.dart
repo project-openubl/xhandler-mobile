@@ -126,9 +126,11 @@ class _BackupPageState extends ConsumerState<BackupPage> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
+            const RequiredFieldsLegend(),
             FormTextField(
               _password,
               Strings.backupPassword,
+              required: true,
               obscureText: true,
               helperText: Strings.backupPasswordHelp,
               validator: (text) =>
@@ -137,6 +139,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
             FormTextField(
               _confirmation,
               Strings.backupPasswordConfirmation,
+              required: true,
               obscureText: true,
               validator: (text) =>
                   text == _password.text ? null : Strings.passwordsDiffer,

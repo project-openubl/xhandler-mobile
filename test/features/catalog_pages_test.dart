@@ -25,12 +25,12 @@ void main() {
     final company = await tester.runAsync(data.createCompany);
     await data.pump(tester, ProductFormPage(company!));
 
-    await tester.enterText(_field(Strings.descripcion), 'Café');
-    await tester.enterText(_field('${Strings.precio} (PEN)'), '0');
+    await tester.enterText(_field('${Strings.descripcion} *'), 'Café');
+    await tester.enterText(_field('${Strings.precio} (PEN) *'), '0');
     await data.tapAndWait(tester);
     expect(find.text(Strings.invalidPrecio), findsOneWidget);
 
-    await tester.enterText(_field('${Strings.precio} (PEN)'), '4.50');
+    await tester.enterText(_field('${Strings.precio} (PEN) *'), '4.50');
     await data.tapAndWait(tester);
 
     final products = (await tester.runAsync(
@@ -54,7 +54,7 @@ void main() {
     expect(find.byType(ProductFormPage), findsNothing);
 
     await data.pump(tester, ProductFormPage(company));
-    await tester.enterText(_field(Strings.descripcion), 'Café');
+    await tester.enterText(_field('${Strings.descripcion} *'), 'Café');
     await tester.pump();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -78,8 +78,8 @@ void main() {
     final data = TestData();
     final company = await tester.runAsync(data.createCompany);
     await data.pump(tester, ProductFormPage(company!));
-    await tester.enterText(_field(Strings.descripcion), 'Cerveza');
-    await tester.enterText(_field('${Strings.precio} (PEN)'), '7');
+    await tester.enterText(_field('${Strings.descripcion} *'), 'Cerveza');
+    await tester.enterText(_field('${Strings.precio} (PEN) *'), '7');
 
     await tester.tap(find.text(Strings.moreOptions));
     await tester.pumpAndSettle();
@@ -89,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
     await data.tapAndWait(tester);
 
-    expect(find.text(Strings.invalidIscTasa), findsOneWidget);
+    expect(find.text(Strings.required), findsOneWidget);
     await data.unmount(tester);
   });
 
@@ -100,8 +100,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pasaporte').last);
       await tester.pumpAndSettle();
-      await tester.enterText(_field(Strings.numeroDocumento), numero);
-      await tester.enterText(_field(Strings.nombre), 'John Smith');
+      await tester.enterText(_field('${Strings.numeroDocumento} *'), numero);
+      await tester.enterText(_field('${Strings.nombre} *'), 'John Smith');
     }
 
     testWidgets('saves a customer and refuses its document twice', (
@@ -140,7 +140,7 @@ void main() {
       );
 
       await data.pump(tester, CustomerFormPage(company, customer: customer));
-      await tester.enterText(_field(Strings.nombre), 'John A. Smith');
+      await tester.enterText(_field('${Strings.nombre} *'), 'John A. Smith');
       await data.tapAndWait(tester);
 
       expect(find.text(Strings.customerExists), findsNothing);
@@ -161,8 +161,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('DNI').last);
       await tester.pumpAndSettle();
-      await tester.enterText(_field(Strings.numeroDocumento), '1234567');
-      await tester.enterText(_field(Strings.nombre), 'Juana');
+      await tester.enterText(_field('${Strings.numeroDocumento} *'), '1234567');
+      await tester.enterText(_field('${Strings.nombre} *'), 'Juana');
       await data.tapAndWait(tester);
 
       expect(find.text(Strings.invalidDni), findsOneWidget);
@@ -196,7 +196,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('DNI').last);
       await tester.pumpAndSettle();
-      await tester.enterText(_field(Strings.numeroDocumento), '46027897');
+      await tester.enterText(
+        _field('${Strings.numeroDocumento} *'),
+        '46027897',
+      );
 
       await tester.tap(find.byTooltip(Strings.lookup));
       for (
@@ -241,7 +244,7 @@ void main() {
 
     await tester.tap(find.text(Strings.lookupDecolecta));
     await tester.pumpAndSettle();
-    await tester.enterText(_field(Strings.lookupToken), ' t0k ');
+    await tester.enterText(_field('${Strings.lookupToken} *'), ' t0k ');
     await data.tapAndWait(tester);
 
     final saved = (await tester.runAsync(

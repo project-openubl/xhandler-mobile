@@ -92,6 +92,8 @@ class DespatchAdviceDraft implements DocumentDraft {
   bool get _isPrivado => modalidad == ModalidadTraslado.privado;
 
   @override
+  /// The form lists the empty fields itself (`_missing` in
+  /// despatch_advice_form_page.dart); keep both in step
   DraftProblem? get problem {
     if (lines.isEmpty) return DraftProblem.noLines;
     if (customer.isAnonymous) return DraftProblem.anonymousDestinatario;

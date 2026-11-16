@@ -217,11 +217,21 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
       return draftProblemMessage(DraftProblem.anonymousOver700);
     }
     if (_credito && _cuotas.isEmpty) return Strings.creditoWithoutCuotas;
-    if (_moneda != 'PEN' && _rate == null) {
+    // An empty rate is in the missing fields instead
+    if (_moneda != 'PEN' &&
+        _rate == null &&
+        _tipoCambio.text.trim().isNotEmpty) {
       return draftProblemMessage(DraftProblem.missingTipoCambio);
     }
     return null;
   }
+
+  /// Labels of the required fields still empty
+  List<String> get _missing => [
+    if (_customer == null) Strings.customer,
+    if (_moneda != 'PEN' && _tipoCambio.text.trim().isEmpty) Strings.tipoCambio,
+    if (_lines.isEmpty) Strings.lines,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +245,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final customer = _customer;
     final totals = _totals;
     final warning = _warning;
+    final missing = _missing;
     final moneda = _moneda;
     final title = _isFactura ? Strings.factura : Strings.boleta;
 
@@ -248,6 +259,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
               const TestModeBanner(),
             if (seriesValue != null && series.isEmpty)
               MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
+            const RequiredFieldsLegend(),
             Row(
               children: [
                 Expanded(
@@ -270,7 +282,9 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.person),
-              title: Text(customer?.nombre ?? Strings.selectCustomer),
+              title: customer == null
+                  ? const RequiredLabel(Strings.selectCustomer)
+                  : Text(customer.nombre),
               subtitle: customer == null || customer.isAnonymous
                   ? null
                   : Text(
@@ -314,7 +328,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
-                          labelText: Strings.tipoCambio,
+                          label: RequiredLabel(Strings.tipoCambio),
                           helperText: Strings.tipoCambioHelp,
                           helperMaxLines: 2,
                         ),
@@ -325,7 +339,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                 ],
               ],
             ),
-            const FormSection(Strings.lines),
+            const FormSection(Strings.lines, required: true),
             DraftLinesList(
               lines: _lines,
               moneda: moneda,
@@ -372,10 +386,15 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
             TotalsSection(totals: totals, error: _previewError, moneda: moneda),
             if (warning != null) DraftWarning(warning),
             const SizedBox(height: 24),
+            MissingFieldsHint(missing),
             SaveButton(
               label: Strings.emit,
               filled: true,
-              onPressed: _draft == null || _serie == null || warning != null
+              onPressed:
+                  missing.isNotEmpty ||
+                      _draft == null ||
+                      _serie == null ||
+                      warning != null
                   ? null
                   : _emit,
             ),

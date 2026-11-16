@@ -127,11 +127,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
           key: _form,
           child: PageListView(
             children: [
-              FormTextField(
-                _descripcion,
-                Strings.descripcion,
-                validator: (text) => text.isEmpty ? Strings.required : null,
-              ),
+              const RequiredFieldsLegend(),
+              FormTextField(_descripcion, Strings.descripcion, required: true),
               FormTextField(_codigo, Strings.codigo),
               CatalogDropdown(
                 label: Strings.unidadMedida,
@@ -142,6 +139,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
               FormTextField(
                 _precio,
                 '${Strings.precio} (${widget.company.moneda})',
+                required: true,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -197,6 +195,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     FormTextField(
                       _iscTasa,
                       Strings.iscTasa,
+                      required: true,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),

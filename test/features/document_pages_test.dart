@@ -117,11 +117,11 @@ void main() {
     await tester.tap(find.text(Strings.freeLine));
     await pumpUntil(tester, () => shows(Strings.add));
     await tester.enterText(
-      find.widgetWithText(TextFormField, Strings.descripcion),
+      find.widgetWithText(TextFormField, '${Strings.descripcion} *'),
       'Café',
     );
     await tester.enterText(
-      find.widgetWithText(TextFormField, Strings.precio),
+      find.widgetWithText(TextFormField, '${Strings.precio} *'),
       precio,
     );
     await tester.tap(find.text(Strings.add));
@@ -162,6 +162,40 @@ void main() {
       );
       await tester.pump(const Duration(seconds: 1)); // transition
       expect(find.byType(InvoiceFormPage), findsNothing); // replaced
+      await data.unmount(tester);
+    });
+
+    testWidgets('a factura marks what it needs and says what is missing', (
+      tester,
+    ) async {
+      final data = TestData();
+      final company = await tester.runAsync(data.createCompany);
+      final bridge = FakeBridge();
+      await pumpPage(
+        tester,
+        data,
+        serviceFor(data, bridge),
+        bridge,
+        InvoiceFormPage(company!, tipoComprobante: '01'),
+      );
+      await pumpUntil(tester, () => shows('F001-00000001'));
+      expect(find.text('* ${Strings.requiredFieldsLegend}'), findsOneWidget);
+      expect(find.text('${Strings.selectCustomer} *'), findsOneWidget);
+      expect(find.text('${Strings.lines} *'), findsOneWidget);
+      expect(
+        find.text(Strings.completeToEmit([Strings.customer, Strings.lines])),
+        findsOneWidget,
+      );
+
+      await addFreeLine(tester, '59');
+      await pumpUntil(
+        tester,
+        () => shows(Strings.completeToEmit([Strings.customer])),
+      );
+      final emit = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, Strings.emit),
+      );
+      expect(emit.onPressed, isNull);
       await data.unmount(tester);
     });
 
@@ -471,7 +505,7 @@ void main() {
 
     await open();
     await tester.enterText(
-      find.widgetWithText(TextField, Strings.sustento),
+      find.widgetWithText(TextField, '${Strings.sustento} *'),
       'Descuento por pronto pago',
     );
     await tester.pump();
@@ -506,7 +540,7 @@ void main() {
     expect(find.byTooltip(Strings.delete), findsNothing);
 
     await tester.enterText(
-      find.widgetWithText(TextField, Strings.sustento),
+      find.widgetWithText(TextField, '${Strings.sustento} *'),
       'Pedido duplicado',
     );
     await tester.tap(find.text(Catalogs.tiposNotaCredito['01']!));
@@ -662,16 +696,16 @@ void main() {
       PerceptionRetentionFormPage(company, tipoComprobante: '20'),
     );
     await pumpUntil(tester, () => shows('R001-00000001'));
-    await tester.tap(find.text(Strings.selectSupplier));
+    await tester.tap(find.text('${Strings.selectSupplier} *'));
     await pumpUntil(tester, () => shows('PROVEEDOR S.A.C.'));
     await tester.tap(find.text('PROVEEDOR S.A.C.'));
-    await pumpUntil(tester, () => !shows(Strings.selectSupplier));
+    await pumpUntil(tester, () => !shows('${Strings.selectSupplier} *'));
     await tester.enterText(
-      find.widgetWithText(TextFormField, Strings.facturaSerieNumero),
+      find.widgetWithText(TextFormField, '${Strings.facturaSerieNumero} *'),
       'F002-15',
     );
     await tester.enterText(
-      find.widgetWithText(TextFormField, Strings.facturaTotal),
+      find.widgetWithText(TextFormField, '${Strings.facturaTotal} *'),
       '1000',
     );
     await tester.enterText(
@@ -757,7 +791,7 @@ void main() {
     expect(inForm('SUPERMERCADOS PERUANOS'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextField, Strings.pesoTotal),
+      find.widgetWithText(TextField, '${Strings.pesoTotal} *'),
       '3',
     );
     Future<void> tapVisible(String text) async {
@@ -766,27 +800,45 @@ void main() {
       await tester.tap(find.text(text).last);
     }
 
+    await tester.pump();
+    expect(
+      find.text(
+        Strings.completeToEmit([
+          Strings.partida,
+          Strings.llegada,
+          Strings.vehicle,
+          Strings.driver,
+        ]),
+      ),
+      findsOneWidget,
+    );
+
     for (final label in [Strings.partida, Strings.llegada]) {
-      await tapVisible(label);
+      await tapVisible('$label *');
       await pumpUntil(tester, () => shows(Strings.newAddress));
       // The sheet slides in before it takes taps
       await tester.pump(const Duration(seconds: 1));
       await tester.tap(find.text(Strings.newAddress));
-      await pumpUntil(tester, () => shows(Strings.ubigeo));
+      await pumpUntil(tester, () => shows('${Strings.ubigeo} *'));
       await tester.pump(const Duration(seconds: 1));
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.direccion),
+        find.widgetWithText(TextFormField, '${Strings.direccion} *'),
         'Av. $label 1',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.ubigeo),
+        find.widgetWithText(TextFormField, '${Strings.ubigeo} *'),
         '150101',
       );
       await tester.tap(find.text(Strings.save));
       await pumpUntil(tester, () => !shows(Strings.newAddress), label);
     }
+    expect(
+      find.text(Strings.completeToEmit([Strings.vehicle, Strings.driver])),
+      findsOneWidget,
+    );
     await tapVisible(Strings.vehiculoM1L);
     await tester.pump();
+    expect(find.textContaining('Para emitir'), findsNothing);
 
     await tapVisible(Strings.emit);
     await pumpUntil(tester, () => shows(Strings.viewDocument), 'sheet');
@@ -972,15 +1024,20 @@ void main() {
     final missingRate = find.text(
       draftProblemMessage(DraftProblem.missingTipoCambio),
     );
-    expect(missingRate, findsOneWidget);
+    // An empty rate is one more field to fill in
+    expect(missingRate, findsNothing);
+    expect(
+      find.text(Strings.completeToEmit([Strings.tipoCambio, Strings.lines])),
+      findsOneWidget,
+    );
     // Without the rate a catalog price would go in unconverted
     await tester.tap(find.text(Strings.addProduct));
     await tester.pump();
-    expect(missingRate, findsNWidgets(2)); // the warning and a message
+    expect(missingRate, findsOneWidget); // a message
     expect(find.text('Café'), findsNothing);
     await tester.pump(const Duration(seconds: 5)); // the message goes away
     await tester.enterText(
-      find.widgetWithText(TextField, Strings.tipoCambio),
+      find.widgetWithText(TextField, '${Strings.tipoCambio} *'),
       '4',
     );
     await tester.tap(find.text(Strings.addProduct));

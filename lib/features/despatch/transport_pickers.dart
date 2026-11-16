@@ -170,7 +170,7 @@ class _SaveDialogState<T> extends ConsumerState<_SaveDialog<T>> {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: widget.fields,
+            children: [const RequiredFieldsLegend(), ...widget.fields],
           ),
         ),
       ),
@@ -193,8 +193,6 @@ class _SaveDialogState<T> extends ConsumerState<_SaveDialog<T>> {
     );
   }
 }
-
-String? _required(String text) => text.trim().isEmpty ? Strings.required : null;
 
 /// Uppercase letters and digits only: "abc-123" → "ABC123"
 String _clean(String text) =>
@@ -231,6 +229,7 @@ class _VehicleDialogState extends State<_VehicleDialog> {
         FormTextField(
           _placa,
           Strings.placa,
+          required: true,
           validator: (_) => RegExp(r'^[A-Z0-9]{6,8}$').hasMatch(_cleanPlaca)
               ? null
               : Strings.invalidPlaca,
@@ -238,7 +237,6 @@ class _VehicleDialogState extends State<_VehicleDialog> {
         FormTextField(
           _circulacion,
           Strings.numeroCirculacion,
-          helperText: Strings.optional,
           validator: (text) =>
               text.isEmpty ||
                   RegExp(r'^[A-Z0-9]{10,15}$').hasMatch(_clean(text))
@@ -293,16 +291,18 @@ class _DriverDialogState extends State<_DriverDialog> {
         FormTextField(
           _dni,
           Strings.dni,
+          required: true,
           digitsOnly: true,
           maxLength: 8,
           validator: (text) =>
               text.length == 8 ? null : Strings.invalidNumeroDocumento(8),
         ),
-        FormTextField(_nombres, Strings.nombres, validator: _required),
-        FormTextField(_apellidos, Strings.apellidos, validator: _required),
+        FormTextField(_nombres, Strings.nombres, required: true),
+        FormTextField(_apellidos, Strings.apellidos, required: true),
         FormTextField(
           _licencia,
           Strings.licencia,
+          required: true,
           // SUNAT: 9 to 10 letters and digits
           validator: (text) => RegExp(r'^[A-Za-z0-9]{9,10}$').hasMatch(text)
               ? null
@@ -352,15 +352,12 @@ class _AddressDialogState extends State<_AddressDialog> {
     return _SaveDialog<Address>(
       title: Strings.newAddress,
       fields: [
-        FormTextField(
-          _nombre,
-          Strings.addressName,
-          helperText: Strings.optional,
-        ),
-        FormTextField(_direccion, Strings.direccion, validator: _required),
+        FormTextField(_nombre, Strings.addressName),
+        FormTextField(_direccion, Strings.direccion, required: true),
         FormTextField(
           _ubigeo,
           Strings.ubigeo,
+          required: true,
           digitsOnly: true,
           maxLength: 6,
           validator: (text) => text.length == 6 ? null : Strings.invalidUbigeo,
