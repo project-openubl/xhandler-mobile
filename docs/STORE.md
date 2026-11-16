@@ -33,7 +33,8 @@ project owner's accounts, keys or legal review; nothing here was submitted.
    y guías SUNAT").
 9. **(owner)** Optional integrations that need accounts (DESIGN §14): Google Drive /
    iCloud backups, Gmail API / Microsoft Graph email, SIRE.
-10. Add the secrets in "Release CI" and release with release-tools' release-mobile.
+10. Add the secrets in "Release CI" and release with release-tools' release-mobile. Before the
+    store accounts exist, a release needs only the Android signing secrets ("Before the stores").
 
 ## Store listing (Spanish)
 
@@ -178,6 +179,13 @@ and release the version in App Store Connect once Apple approves it. The signed 
 `SHA256SUMS` are attached to the GitHub release, for people who install from there. Create a
 `release-X.Y` branch by hand (`git push origin main:release-X.Y`): release-tools'
 `_cut-release-branches` is for xhandler's versions, not the app's.
+
+**Before the stores.** Only the Android signing secrets are required. A store whose secrets are all
+unset is skipped with a notice, so until the store accounts exist a release is the GitHub release
+with the signed APK and AAB, and no iOS build (it can't be signed without the Apple account). Setting
+only some of a store's secrets is an error. The upload key signs the GitHub APK and, once on Google
+Play, Play App Signing re-signs the store's builds with Google's key: an APK installed from GitHub has
+to be uninstalled before installing from Google Play.
 
 **Version and build number.** Both come from the tag (`tool/release_version.sh <tag>` prints them).
 The version is the tag without the `v` on Android and `X.Y.Z` on iOS (Apple takes nothing else). The
