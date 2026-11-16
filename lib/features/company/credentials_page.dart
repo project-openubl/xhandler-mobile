@@ -8,6 +8,7 @@ import '../../data/secure_store.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import 'certificate_status.dart';
 import 'company_repository.dart';
 
@@ -90,8 +91,7 @@ class _CredentialsPageState extends ConsumerState<CredentialsPage> {
         title: const Text(Strings.credentials),
         actions: [SaveButton(onPressed: _loaded ? _save : null)],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: PageListView(
         children: [
           if (!_loaded) const LinearProgressIndicator(),
           if (widget.company.sunatEnvironment == SunatEnvironment.beta)

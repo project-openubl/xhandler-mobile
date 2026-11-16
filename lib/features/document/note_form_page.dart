@@ -9,6 +9,7 @@ import '../../data/database.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../series/series_repository.dart';
 import 'document_repository.dart';
@@ -272,8 +273,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       dirty: _edited,
       child: Scaffold(
         appBar: AppBar(title: Text(title)),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
+        body: PageListView(
           children: [
             if (widget.company.sunatEnvironment == SunatEnvironment.beta)
               const TestModeBanner(),

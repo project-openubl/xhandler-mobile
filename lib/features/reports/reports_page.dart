@@ -8,6 +8,7 @@ import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../theme/status_colors.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../document/document_repository.dart';
 import '../pdf/share_document.dart';
 import 'sales_register.dart';
@@ -88,8 +89,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.reports)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: PageListView(
         children: [
           Row(
             children: [

@@ -10,6 +10,7 @@ import '../../data/database.dart';
 import '../../peru_date.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../company/company_repository.dart';
 import '../delivery/delivery_service.dart';
 import '../delivery/delivery_sheet.dart';
@@ -109,8 +110,7 @@ class DocumentDetailPage extends ConsumerWidget {
             ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: PageListView(
         children: [
           ListTile(
             leading: Icon(

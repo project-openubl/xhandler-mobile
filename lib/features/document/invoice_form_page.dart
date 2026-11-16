@@ -8,6 +8,7 @@ import '../../peru_date.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../series/series_repository.dart';
 import 'document_service.dart';
@@ -241,8 +242,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
       dirty: _lines.isNotEmpty,
       child: Scaffold(
         appBar: AppBar(title: Text(title)),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
+        body: PageListView(
           children: [
             if (widget.company.sunatEnvironment == SunatEnvironment.beta)
               const TestModeBanner(),

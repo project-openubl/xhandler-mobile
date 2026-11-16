@@ -6,6 +6,7 @@ import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import 'sample_invoice.dart';
 
 /// Checks the whole chain against SUNAT beta (build, sign and send a sample
@@ -75,37 +76,33 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.diagnostics)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              Strings.sunatBetaCheckTitle,
-              style: Theme.of(context).textTheme.titleMedium,
+      body: PageListView(
+        children: [
+          Text(
+            Strings.sunatBetaCheckTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          const Text(Strings.sunatBetaCheckHelp),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: _progress == null ? _run : null,
+            child: const Text(Strings.sunatBetaCheckRun),
+          ),
+          const SizedBox(height: 16),
+          if (_progress != null) Text(_progress!),
+          if (_result != null) SelectableText(_result!),
+          const Divider(height: 48),
+          const Text(Strings.shareErrorLogHelp),
+          const SizedBox(height: 16),
+          Builder(
+            // Its own context anchors the share sheet on iPads
+            builder: (anchor) => OutlinedButton(
+              onPressed: () => _shareLog(anchor),
+              child: const Text(Strings.shareErrorLog),
             ),
-            const SizedBox(height: 8),
-            const Text(Strings.sunatBetaCheckHelp),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _progress == null ? _run : null,
-              child: const Text(Strings.sunatBetaCheckRun),
-            ),
-            const SizedBox(height: 16),
-            if (_progress != null) Text(_progress!),
-            if (_result != null) SelectableText(_result!),
-            const Divider(height: 48),
-            const Text(Strings.shareErrorLogHelp),
-            const SizedBox(height: 16),
-            Builder(
-              // Its own context anchors the share sheet on iPads
-              builder: (anchor) => OutlinedButton(
-                onPressed: () => _shareLog(anchor),
-                child: const Text(Strings.shareErrorLog),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

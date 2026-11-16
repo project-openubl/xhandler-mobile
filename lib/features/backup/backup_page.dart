@@ -15,6 +15,7 @@ import '../../data/providers.dart';
 import '../../peru_date.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../company/company_repository.dart';
 import '../document/background_outbox.dart';
 import 'backup_service.dart';
@@ -111,8 +112,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
       appBar: AppBar(title: const Text(Strings.backupTitle)),
       body: Form(
         key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: PageListView(
           children: [
             const Text(Strings.backupHelp),
             const SizedBox(height: 8),

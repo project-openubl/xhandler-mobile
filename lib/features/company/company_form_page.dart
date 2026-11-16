@@ -8,6 +8,7 @@ import '../../router.dart';
 import '../../src/rust/api/ruc.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import 'company_repository.dart';
 
 /// Creates a company, or edits [company]
@@ -112,8 +113,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
         body: Form(
           onChanged: _edited ? null : () => setState(() => _edited = true),
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: PageListView(
             children: [
               const RequiredFieldsLegend(),
               FormTextField(

@@ -13,6 +13,7 @@ import '../../src/rust/api/signer.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../document/sunat_bridge.dart';
 import 'certificate_status.dart';
 import 'company_repository.dart';
@@ -111,8 +112,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
     final testMode = widget.company.sunatEnvironment == SunatEnvironment.beta;
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.certificate)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: PageListView(
         children: [
           switch (saved) {
             AsyncData(value: final info?) => _CertificateSummary(info),
