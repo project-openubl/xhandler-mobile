@@ -32,7 +32,8 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   /// Bump it with an `onUpgrade` step, a new snapshot in drift_schemas/app/
-  /// and the generated test helpers (see test/data/migration_test.dart)
+  /// and the generated test helpers (see test/data/migration_test.dart).
+  /// New tables with company data also go in backup_service.dart's lists.
   @override
   int get schemaVersion => 2;
 

@@ -408,6 +408,18 @@ abstract final class Strings {
       'Se reemplazará todo lo que hay en este teléfono por el contenido de '
       'la copia.';
   static const restore = 'Restaurar';
+  static String exportCompany(String name) => 'Exportar solo $name';
+  static const importCompanies = 'Importar empresas de una copia';
+  static const importHelp =
+      'Se agregan las empresas de la copia que no están en este teléfono, '
+      'con sus comprobantes, certificado y credenciales; lo demás no cambia. '
+      'Si una empresa sigue emitiendo en otro teléfono, usa series '
+      'distintas en cada uno.';
+  static const import = 'Importar';
+  static const importing = 'Importando…';
+  static String imported(String names) => 'Se agregó: $names';
+  static const nothingToImport =
+      'Las empresas de la copia ya están en este teléfono.';
   static const restoring = 'Restaurando…';
   static const wrongBackupPassword =
       'La contraseña no es correcta o el archivo está dañado.';

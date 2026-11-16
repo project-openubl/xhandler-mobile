@@ -396,6 +396,16 @@ the old one), cancels the background outbox (a run already in progress is a resi
 risk) and starts the app over with a new provider scope. The restored phone gets a new
 `device_id`.
 
+Per company: "Exportar solo …" writes the same file format with the active company
+alone. In the snapshot, the other companies' rows and the device settings are deleted
+and the file is vacuumed, so nothing of theirs is left in free pages. Only that
+company's secrets go in the file, and it doesn't count as the last backup. "Importar
+empresas de una copia" opens a company file or a full backup (an older schema is
+upgraded first) and adds, in one transaction, every company whose RUC and id this phone
+doesn't have, with its rows (copied by column name: migrated and fresh databases order
+columns differently) and secrets. Nothing else changes and the app doesn't restart. A
+company kept on two phones needs different series on each (§4).
+
 ---
 
 ## 10. Reports
@@ -516,7 +526,6 @@ the app icon and a manual Release workflow; publishing needs the owner's account
   the project owner.
 - Automatic backups to Google Drive `appDataFolder` / iCloud Drive and their schedule:
   need a Google Cloud OAuth client and the iCloud entitlement for the app's Apple team.
-  Per-company export/import is also pending.
 - Sales in other currencies in soles (SBS exchange rate of the issue date), as the
   register and the IGV declaration need them.
 - PLE 14.1 isn't planned: SIRE replaced it (RS 000125-2026, from the October 2026

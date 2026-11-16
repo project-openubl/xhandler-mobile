@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -75,8 +76,13 @@ class BackupService {
   );
 
   /// Backs up [db], protected by [password], into a temporary file the
-  /// caller deletes once saved
-  Future<File> create(AppDatabase db, String password) async {
+  /// caller deletes once saved. With [onlyCompanyId], the file holds that
+  /// company alone (its data and secrets), to move it to another phone.
+  Future<File> create(
+    AppDatabase db,
+    String password, {
+    String? onlyCompanyId,
+  }) async {
     final snapshot = await _temporaryFile('snapshot');
     final backup = await _temporaryFile('backup');
     try {
@@ -88,20 +94,23 @@ class BackupService {
       final key = await _key(password, salt);
       final deviceKey = await _deviceKey();
       final path = snapshot.path;
-      await _rekeyApart(path, deviceKey, _hex(key));
+      await _rekeyApart(path, deviceKey, _hex(key), keep: onlyCompanyId);
+      final secrets = await _secureStore.readAllCompanySecrets();
+      if (onlyCompanyId != null) {
+        secrets.removeWhere(
+          (key, _) => !key.startsWith('company/$onlyCompanyId/'),
+        );
+      }
 
       final nonce = _random(_nonceLength);
-      final secrets = await _cipher.encrypt(
+      final sealedSecrets = await _cipher.encrypt(
         utf8.encode(
-          jsonEncode({
-            'schema_version': db.schemaVersion,
-            'secrets': await _secureStore.readAllCompanySecrets(),
-          }),
+          jsonEncode({'schema_version': db.schemaVersion, 'secrets': secrets}),
         ),
         secretKey: SecretKey(key),
         nonce: nonce,
       );
-      final sealed = [...secrets.cipherText, ...secrets.mac.bytes];
+      final sealed = [...sealedSecrets.cipherText, ...sealedSecrets.mac.bytes];
       final sink = backup.openWrite()
         ..add(ascii.encode(_magic))
         ..add(salt)
@@ -208,6 +217,120 @@ class BackupService {
     await incoming.rename(databaseFile.path);
   }
 
+  /// Adds to [db] the companies of [backup] this device doesn't have (by
+  /// RUC), with their data and secrets, and returns their names. Opened
+  /// databases of older versions are upgraded first. [db] stays open.
+  Future<List<String>> merge(OpenedBackup backup, AppDatabase db) async {
+    final deviceKey = await _deviceKey();
+    try {
+      // A second AppDatabase on purpose (Drift warns about it in debug):
+      // opening it upgrades an older backup's schema
+      final incoming = AppDatabase(
+        openEncryptedDatabase(backup.database, deviceKey),
+      );
+      final List<Company> offered;
+      try {
+        offered = await (incoming.select(
+          incoming.companies,
+        )..where((c) => c.deletedAt.isNull())).get();
+      } finally {
+        await incoming.close();
+      }
+      final here = await db.select(db.companies).get();
+      final rucs = {
+        for (final company in here)
+          if (company.deletedAt == null) company.ruc,
+      };
+      final ids = {for (final company in here) company.id};
+      // A company deleted here keeps its id: one coming back with it is
+      // skipped too (rare; the message then says it's already here)
+      final added = [
+        for (final company in offered)
+          if (!rucs.contains(company.ruc) && !ids.contains(company.id)) company,
+      ];
+      if (added.isEmpty) return const [];
+
+      // Secrets first: if copying fails they're taken back, so a company is
+      // never here without its certificate and credentials
+      await _secureStore.addCompanySecrets({
+        for (final MapEntry(:key, :value) in backup.secrets.entries)
+          if (added.any((c) => key.startsWith('company/${c.id}/'))) key: value,
+      });
+      try {
+        await _copyRows(db, backup.database, deviceKey, [
+          for (final company in added) company.id,
+        ]);
+      } on Object {
+        for (final company in added) {
+          await _secureStore.deleteCompanySecrets(company.id);
+        }
+        rethrow;
+      }
+      db.markTablesUpdated(db.allTables);
+      return [
+        for (final company in added)
+          company.nombreComercial ?? company.razonSocial,
+      ];
+    } finally {
+      if (backup.database.existsSync()) await backup.database.delete();
+    }
+  }
+
+  /// Copies the rows of the companies [ids] from the database [file] into
+  /// [db], in one transaction. Values are bound: the file came from outside.
+  static Future<void> _copyRows(
+    AppDatabase db,
+    File file,
+    String key,
+    List<String> ids,
+  ) async {
+    await db.customStatement('ATTACH DATABASE ? AS incoming KEY ?', [
+      file.path,
+      key,
+    ]);
+    try {
+      await db.transaction(() async {
+        for (final (table, filter) in _companyRows(ids.length)) {
+          // By name: a migrated database orders columns differently
+          final columns =
+              (await db.customSelect('PRAGMA main.table_info($table)').get())
+                  .map((row) => '"${row.read<String>('name')}"')
+                  .join(', ');
+          await db.customStatement(
+            'INSERT INTO main.$table ($columns) '
+            'SELECT $columns FROM incoming.$table WHERE $filter',
+            ids,
+          );
+        }
+      });
+    } finally {
+      await db.customStatement('DETACH DATABASE incoming');
+    }
+  }
+
+  /// Every table with rows of some companies, parents first, and how to
+  /// select those rows given the [count] company ids as parameters
+  static List<(String, String)> _companyRows(int count) {
+    final ids = List.filled(count, '?').join(', ');
+    final documents =
+        'document_id IN (SELECT id FROM incoming.documents '
+        'WHERE company_id IN ($ids))';
+    return [
+      ('companies', 'id IN ($ids)'),
+      for (final table in _companyTables) (table, 'company_id IN ($ids)'),
+      for (final table in _documentTables) (table, documents),
+    ];
+  }
+
+  /// Every table the export and the import know about
+  @visibleForTesting
+  static Set<String> get knownTables => {
+    'companies',
+    'device_settings',
+    ..._companyTables,
+    ..._documentTables,
+  };
+
   static Future<List<int>> _key(String password, List<int> salt) async =>
       (await _kdf.deriveKeyFromPassword(
         password: password,
@@ -222,20 +345,63 @@ Future<void> _rekeyApart(
   String from,
   String to, {
   bool newDevice = false,
-}) => Isolate.run(() => _rekey(path, from, to, newDevice: newDevice));
+  String? keep,
+}) =>
+    Isolate.run(() => _rekey(path, from, to, newDevice: newDevice, keep: keep));
+
+/// Tables with a `company_id`, after `companies`. Every table must be here,
+/// in [_documentTables], or be `companies`/`device_settings` (a test checks):
+/// one left out would be exported for every company
+const _companyTables = [
+  'series',
+  'customers',
+  'products',
+  'documents',
+  'vehicles',
+  'drivers',
+  'addresses',
+];
+
+/// Tables of a document's files and history, after `documents`
+const _documentTables = ['document_files', 'document_events', 'deliveries'];
 
 /// Re-encrypts the database at [path] from [from] to [to]. Runs in an
 /// isolate: it rewrites the whole file. A [newDevice] gets its own id
 /// and forgets the old phone's last backup
-/// (docs/DESIGN.md §3.1); documents keep the one that issued them.
-void _rekey(String path, String from, String to, {bool newDevice = false}) {
+/// (docs/DESIGN.md §3.1); documents keep the one that issued them. With
+/// [keep], only that company's rows stay, and none of the others' remain
+/// in the file's free pages.
+void _rekey(
+  String path,
+  String from,
+  String to, {
+  bool newDevice = false,
+  String? keep,
+}) {
   final database = sqlite3.open(path);
   try {
     database
       ..execute("PRAGMA key = '$from'")
       // Fails here when [from] isn't its key
-      ..select('SELECT count(*) FROM sqlite_master')
-      ..execute("PRAGMA rekey = '$to'");
+      ..select('SELECT count(*) FROM sqlite_master');
+    if (keep != null) {
+      for (final table in _documentTables) {
+        database.execute(
+          'DELETE FROM $table WHERE document_id IN '
+          '(SELECT id FROM documents WHERE company_id != ?)',
+          [keep],
+        );
+      }
+      for (final table in _companyTables.reversed) {
+        database.execute('DELETE FROM $table WHERE company_id != ?', [keep]);
+      }
+      database
+        ..execute('DELETE FROM companies WHERE id != ?', [keep])
+        // This phone's settings mean nothing elsewhere
+        ..execute('DELETE FROM device_settings')
+        ..execute('VACUUM');
+    }
+    database.execute("PRAGMA rekey = '$to'");
     if (newDevice) {
       // This phone's own id, and no backup date of another phone
       database.execute(

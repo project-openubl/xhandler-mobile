@@ -141,6 +141,16 @@ class SecureStore {
     }
   }
 
+  /// Adds companies' [secrets], as stored (from a backup), keeping the rest;
+  /// only `company/...` keys are written
+  Future<void> addCompanySecrets(Map<String, String> secrets) async {
+    for (final MapEntry(:key, :value) in secrets.entries) {
+      if (key.startsWith(_companyPrefix)) {
+        await _storage.write(key: key, value: value);
+      }
+    }
+  }
+
   static String _key(String companyId, CompanySecret secret) =>
       'company/$companyId/${secret.name}';
 }
