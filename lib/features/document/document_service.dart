@@ -212,6 +212,7 @@ class DocumentService {
           clienteNumeroDocumento: draft.customer.numeroDocumentoIdentidad,
           clienteNombre: draft.customer.nombre,
           moneda: draft.moneda,
+          tipoCambio: Value(draft.tipoCambio),
           total: total,
           status: DocumentStatus.pendingSend,
           digestValue: signed.digestValue,
@@ -304,6 +305,7 @@ class DocumentService {
           clienteNumeroDocumento: current.clienteNumeroDocumento,
           clienteNombre: current.clienteNombre,
           moneda: current.moneda,
+          tipoCambio: Value(current.tipoCambio),
           total: current.total,
           status: DocumentStatus.pendingSend,
           digestValue: signed.digestValue,
@@ -433,7 +435,12 @@ class DocumentService {
     String total,
     String fechaEmision,
   ) {
-    if (exceedsAnonymousLimit(draft.customer, draft.moneda, total)) {
+    if (exceedsAnonymousLimit(
+      draft.customer,
+      draft.moneda,
+      total,
+      tipoCambio: draft.tipoCambio,
+    )) {
       throw const InvalidDraftError(DraftProblem.anonymousOver700);
     }
     if (draft is! InvoiceDraft || draft.cuotas.isEmpty) return;

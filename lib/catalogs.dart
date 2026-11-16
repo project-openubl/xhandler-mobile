@@ -1,5 +1,12 @@
 /// Names of the SUNAT catalog codes the app shows
 abstract final class Catalogs {
+  /// Currencies documents can be issued in (ISO 4217)
+  static const monedas = {
+    'PEN': 'Soles (S/)',
+    'USD': r'Dólares (US$)',
+    'EUR': 'Euros (€)',
+  };
+
   /// Catalog 1, the document types the app issues
   static const tiposComprobante = {
     '01': 'Factura',

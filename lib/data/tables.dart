@@ -214,6 +214,10 @@ class Documents extends Table with SyncColumns {
   TextColumn get clienteNombre => text()();
   TextColumn get moneda => text()();
 
+  /// Soles per unit of [moneda] (SBS selling rate of the issue date, typed
+  /// by the user); `null` for documents in soles. Schema 3.
+  TextColumn get tipoCambio => text().nullable()();
+
   /// Decimal as text
   TextColumn get total => text()();
   TextColumn get status => textEnum<DocumentStatus>()();

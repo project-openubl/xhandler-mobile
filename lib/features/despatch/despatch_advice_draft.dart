@@ -84,6 +84,9 @@ class DespatchAdviceDraft implements DocumentDraft {
   String get moneda => 'PEN';
 
   @override
+  String? get tipoCambio => null;
+
+  @override
   String? get affectedDocumentId => related?.id;
 
   bool get _isPrivado => modalidad == ModalidadTraslado.privado;

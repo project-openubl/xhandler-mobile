@@ -23,7 +23,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §
 | Taxes | Everything in v1: IGV types, ISC, ICB, crédito/cuotas, detracción, percepción, descuentos/cargos, exportación, anticipos |
 | Emit | Sends right away. Boletas sent individually (resumen diario used only for voiding boletas) |
 | Environment | Per company. Beta shows a "MODO PRUEBA" banner. Switching to production archives beta documents read-only and resets series |
-| Currency | PEN default, any ISO currency allowed with manual exchange rate |
+| Currency | PEN default; facturas and boletas also in USD or EUR with the exchange rate typed by the user (SBS selling rate of the issue date); notas inherit it |
 | Prices | Per product/line: with or without IGV |
 | Customers | Manual entry + optional RUC/DNI lookup through a free-tier commercial service (Decolecta, company-provided token) |
 | Sync readiness | No sync in v1, but the schema is ready for a later sync backend (`xhandler-ui`): UUID ids, timestamps, soft deletes |
@@ -104,7 +104,7 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 
 ## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
-Defined in `lib/data/tables.dart`; schema version 2 (snapshots in `drift_schemas/app/`).
+Defined in `lib/data/tables.dart`; schema version 3 (snapshots in `drift_schemas/app/`).
 Decimals are stored as text to keep them exact; timestamps as ISO-8601 UTC text.
 
 ```
@@ -131,7 +131,7 @@ drivers           company_id, tipo_documento_identidad, numero_documento_identid
 addresses         company_id, nombre, ubigeo, direccion, codigo_local  -- GRE partida/llegada
 documents         company_id, environment, tipo_comprobante, serie, numero, fecha_emision
                   (Peru's date), cliente_tipo_documento, cliente_numero_documento,
-                  cliente_nombre, moneda, total, status (§5), sunat_code, sunat_description,
+                  cliente_nombre, moneda, tipo_cambio (v3), total, status (§5), sunat_code, sunat_description,
                   sunat_notes (json), ticket, digest_value, attempts, next_attempt_at,
                   input_json (what the user entered), enriched_json (as built, for the PDF),
                   affected_document_id, voided_by_document_id, device_id
@@ -279,6 +279,13 @@ rate), lines (catalog or free text), forma de pago (contado / crédito with cuot
 "Más opciones" (observaciones, orden de compra, guías, descuentos, cargos, anticipos,
 tipo de operación). Live totals by calling `build_document` with a 300 ms debounce.
 
+Currency: soles, dollars or euros. In dollars or euros the exchange rate (soles per unit,
+the SBS selling rate of the issue date) is typed by the user and required; catalog prices
+(in soles) are converted at it when a product is added, and stay editable; products
+can't be added before the rate is typed. Lines already added aren't converted again
+when the currency or rate changes (the form says so). The S/ 700 limit for unidentified
+customers counts the total in soles.
+
 Progressive disclosure for taxes:
 
 | Feature | Configured on | Appears when |
@@ -417,7 +424,8 @@ company kept on two phones needs different series on each (§4).
 
 Built so far: "Reportes" shows a month's sales register (every issued factura, boleta and
 nota of the current mode but the rejected ones, with its status; notas de crédito
-subtract, voided ones have no amounts, unconfirmed ones are flagged) with totals per currency, exported as CSV (UTF-8 with BOM) or Excel. The `excel`
+subtract, voided ones have no amounts, unconfirmed ones are flagged) with totals per currency, exported as CSV (UTF-8 with BOM) or Excel. Files carry each document's
+exchange rate and its total in soles (rate × total, half up). The `excel`
 package conflicts with `pdf`'s `xml` version, so the app writes the one-sheet `.xlsx`
 itself (inline strings, numeric amounts; checked with LibreOffice).
 
@@ -526,8 +534,10 @@ the app icon and a manual Release workflow; publishing needs the owner's account
   the project owner.
 - Automatic backups to Google Drive `appDataFolder` / iCloud Drive and their schedule:
   need a Google Cloud OAuth client and the iCloud entitlement for the app's Apple team.
-- Sales in other currencies in soles (SBS exchange rate of the issue date), as the
-  register and the IGV declaration need them.
+- Detracción on facturas in dollars or euros: its amount must be in soles, and xbuilder
+  prints it in the document's currency; until it supports that, only facturas in soles
+  carry one. Likewise ICBPER (S/ 0.50 per bag) on documents in dollars or euros: confirm
+  whether SUNAT expects it converted.
 - PLE 14.1 isn't planned: SIRE replaced it (RS 000125-2026, from the October 2026
   period; new registrants from June 2026, RS 000075-2026) and builds the sales proposal
   from the electronic documents SUNAT already has. CSV/Excel stay for the user's own

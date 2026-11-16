@@ -4024,6 +4024,17 @@ class $DocumentsTable extends Documents
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _tipoCambioMeta = const VerificationMeta(
+    'tipoCambio',
+  );
+  @override
+  late final GeneratedColumn<String> tipoCambio = GeneratedColumn<String>(
+    'tipo_cambio',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _totalMeta = const VerificationMeta('total');
   @override
   late final GeneratedColumn<String> total = GeneratedColumn<String>(
@@ -4196,6 +4207,7 @@ class $DocumentsTable extends Documents
     clienteNumeroDocumento,
     clienteNombre,
     moneda,
+    tipoCambio,
     total,
     status,
     sunatCode,
@@ -4330,6 +4342,12 @@ class $DocumentsTable extends Documents
       );
     } else if (isInserting) {
       context.missing(_monedaMeta);
+    }
+    if (data.containsKey('tipo_cambio')) {
+      context.handle(
+        _tipoCambioMeta,
+        tipoCambio.isAcceptableOrUnknown(data['tipo_cambio']!, _tipoCambioMeta),
+      );
     }
     if (data.containsKey('total')) {
       context.handle(
@@ -4504,6 +4522,10 @@ class $DocumentsTable extends Documents
         DriftSqlType.string,
         data['${effectivePrefix}moneda'],
       )!,
+      tipoCambio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_cambio'],
+      ),
       total: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}total'],
@@ -4600,6 +4622,10 @@ class Document extends DataClass implements Insertable<Document> {
   final String clienteNombre;
   final String moneda;
 
+  /// Soles per unit of [moneda] (SBS selling rate of the issue date, typed
+  /// by the user); `null` for documents in soles. Schema 3.
+  final String? tipoCambio;
+
   /// Decimal as text
   final String total;
   final DocumentStatus status;
@@ -4649,6 +4675,7 @@ class Document extends DataClass implements Insertable<Document> {
     required this.clienteNumeroDocumento,
     required this.clienteNombre,
     required this.moneda,
+    this.tipoCambio,
     required this.total,
     required this.status,
     this.sunatCode,
@@ -4687,6 +4714,9 @@ class Document extends DataClass implements Insertable<Document> {
     map['cliente_numero_documento'] = Variable<String>(clienteNumeroDocumento);
     map['cliente_nombre'] = Variable<String>(clienteNombre);
     map['moneda'] = Variable<String>(moneda);
+    if (!nullToAbsent || tipoCambio != null) {
+      map['tipo_cambio'] = Variable<String>(tipoCambio);
+    }
     map['total'] = Variable<String>(total);
     {
       map['status'] = Variable<String>(
@@ -4740,6 +4770,9 @@ class Document extends DataClass implements Insertable<Document> {
       clienteNumeroDocumento: Value(clienteNumeroDocumento),
       clienteNombre: Value(clienteNombre),
       moneda: Value(moneda),
+      tipoCambio: tipoCambio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tipoCambio),
       total: Value(total),
       status: Value(status),
       sunatCode: sunatCode == null && nullToAbsent
@@ -4797,6 +4830,7 @@ class Document extends DataClass implements Insertable<Document> {
       ),
       clienteNombre: serializer.fromJson<String>(json['clienteNombre']),
       moneda: serializer.fromJson<String>(json['moneda']),
+      tipoCambio: serializer.fromJson<String?>(json['tipoCambio']),
       total: serializer.fromJson<String>(json['total']),
       status: $DocumentsTable.$converterstatus.fromJson(
         serializer.fromJson<String>(json['status']),
@@ -4841,6 +4875,7 @@ class Document extends DataClass implements Insertable<Document> {
       ),
       'clienteNombre': serializer.toJson<String>(clienteNombre),
       'moneda': serializer.toJson<String>(moneda),
+      'tipoCambio': serializer.toJson<String?>(tipoCambio),
       'total': serializer.toJson<String>(total),
       'status': serializer.toJson<String>(
         $DocumentsTable.$converterstatus.toJson(status),
@@ -4875,6 +4910,7 @@ class Document extends DataClass implements Insertable<Document> {
     String? clienteNumeroDocumento,
     String? clienteNombre,
     String? moneda,
+    Value<String?> tipoCambio = const Value.absent(),
     String? total,
     DocumentStatus? status,
     Value<String?> sunatCode = const Value.absent(),
@@ -4905,6 +4941,7 @@ class Document extends DataClass implements Insertable<Document> {
         clienteNumeroDocumento ?? this.clienteNumeroDocumento,
     clienteNombre: clienteNombre ?? this.clienteNombre,
     moneda: moneda ?? this.moneda,
+    tipoCambio: tipoCambio.present ? tipoCambio.value : this.tipoCambio,
     total: total ?? this.total,
     status: status ?? this.status,
     sunatCode: sunatCode.present ? sunatCode.value : this.sunatCode,
@@ -4956,6 +4993,9 @@ class Document extends DataClass implements Insertable<Document> {
           ? data.clienteNombre.value
           : this.clienteNombre,
       moneda: data.moneda.present ? data.moneda.value : this.moneda,
+      tipoCambio: data.tipoCambio.present
+          ? data.tipoCambio.value
+          : this.tipoCambio,
       total: data.total.present ? data.total.value : this.total,
       status: data.status.present ? data.status.value : this.status,
       sunatCode: data.sunatCode.present ? data.sunatCode.value : this.sunatCode,
@@ -5004,6 +5044,7 @@ class Document extends DataClass implements Insertable<Document> {
           ..write('clienteNumeroDocumento: $clienteNumeroDocumento, ')
           ..write('clienteNombre: $clienteNombre, ')
           ..write('moneda: $moneda, ')
+          ..write('tipoCambio: $tipoCambio, ')
           ..write('total: $total, ')
           ..write('status: $status, ')
           ..write('sunatCode: $sunatCode, ')
@@ -5038,6 +5079,7 @@ class Document extends DataClass implements Insertable<Document> {
     clienteNumeroDocumento,
     clienteNombre,
     moneda,
+    tipoCambio,
     total,
     status,
     sunatCode,
@@ -5071,6 +5113,7 @@ class Document extends DataClass implements Insertable<Document> {
           other.clienteNumeroDocumento == this.clienteNumeroDocumento &&
           other.clienteNombre == this.clienteNombre &&
           other.moneda == this.moneda &&
+          other.tipoCambio == this.tipoCambio &&
           other.total == this.total &&
           other.status == this.status &&
           other.sunatCode == this.sunatCode &&
@@ -5102,6 +5145,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
   final Value<String> clienteNumeroDocumento;
   final Value<String> clienteNombre;
   final Value<String> moneda;
+  final Value<String?> tipoCambio;
   final Value<String> total;
   final Value<DocumentStatus> status;
   final Value<String?> sunatCode;
@@ -5132,6 +5176,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     this.clienteNumeroDocumento = const Value.absent(),
     this.clienteNombre = const Value.absent(),
     this.moneda = const Value.absent(),
+    this.tipoCambio = const Value.absent(),
     this.total = const Value.absent(),
     this.status = const Value.absent(),
     this.sunatCode = const Value.absent(),
@@ -5163,6 +5208,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     required String clienteNumeroDocumento,
     required String clienteNombre,
     required String moneda,
+    this.tipoCambio = const Value.absent(),
     required String total,
     required DocumentStatus status,
     this.sunatCode = const Value.absent(),
@@ -5209,6 +5255,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Expression<String>? clienteNumeroDocumento,
     Expression<String>? clienteNombre,
     Expression<String>? moneda,
+    Expression<String>? tipoCambio,
     Expression<String>? total,
     Expression<String>? status,
     Expression<String>? sunatCode,
@@ -5242,6 +5289,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
         'cliente_numero_documento': clienteNumeroDocumento,
       if (clienteNombre != null) 'cliente_nombre': clienteNombre,
       if (moneda != null) 'moneda': moneda,
+      if (tipoCambio != null) 'tipo_cambio': tipoCambio,
       if (total != null) 'total': total,
       if (status != null) 'status': status,
       if (sunatCode != null) 'sunat_code': sunatCode,
@@ -5277,6 +5325,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     Value<String>? clienteNumeroDocumento,
     Value<String>? clienteNombre,
     Value<String>? moneda,
+    Value<String?>? tipoCambio,
     Value<String>? total,
     Value<DocumentStatus>? status,
     Value<String?>? sunatCode,
@@ -5309,6 +5358,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           clienteNumeroDocumento ?? this.clienteNumeroDocumento,
       clienteNombre: clienteNombre ?? this.clienteNombre,
       moneda: moneda ?? this.moneda,
+      tipoCambio: tipoCambio ?? this.tipoCambio,
       total: total ?? this.total,
       status: status ?? this.status,
       sunatCode: sunatCode ?? this.sunatCode,
@@ -5378,6 +5428,9 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
     if (moneda.present) {
       map['moneda'] = Variable<String>(moneda.value);
     }
+    if (tipoCambio.present) {
+      map['tipo_cambio'] = Variable<String>(tipoCambio.value);
+    }
     if (total.present) {
       map['total'] = Variable<String>(total.value);
     }
@@ -5445,6 +5498,7 @@ class DocumentsCompanion extends UpdateCompanion<Document> {
           ..write('clienteNumeroDocumento: $clienteNumeroDocumento, ')
           ..write('clienteNombre: $clienteNombre, ')
           ..write('moneda: $moneda, ')
+          ..write('tipoCambio: $tipoCambio, ')
           ..write('total: $total, ')
           ..write('status: $status, ')
           ..write('sunatCode: $sunatCode, ')
@@ -11759,6 +11813,7 @@ typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
   required String clienteNumeroDocumento,
   required String clienteNombre,
   required String moneda,
+  Value<String?> tipoCambio,
   required String total,
   required DocumentStatus status,
   Value<String?> sunatCode,
@@ -11790,6 +11845,7 @@ typedef $$DocumentsTableUpdateCompanionBuilder = DocumentsCompanion Function({
   Value<String> clienteNumeroDocumento,
   Value<String> clienteNombre,
   Value<String> moneda,
+  Value<String?> tipoCambio,
   Value<String> total,
   Value<DocumentStatus> status,
   Value<String?> sunatCode,
@@ -11991,6 +12047,11 @@ class $$DocumentsTableFilterComposer
 
   ColumnFilters<String> get moneda => $composableBuilder(
     column: $table.moneda,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tipoCambio => $composableBuilder(
+    column: $table.tipoCambio,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12274,6 +12335,11 @@ class $$DocumentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tipoCambio => $composableBuilder(
+    column: $table.tipoCambio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get total => $composableBuilder(
     column: $table.total,
     builder: (column) => ColumnOrderings(column),
@@ -12464,6 +12530,11 @@ class $$DocumentsTableAnnotationComposer
 
   GeneratedColumn<String> get moneda =>
       $composableBuilder(column: $table.moneda, builder: (column) => column);
+
+  GeneratedColumn<String> get tipoCambio => $composableBuilder(
+    column: $table.tipoCambio,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get total =>
       $composableBuilder(column: $table.total, builder: (column) => column);
@@ -12705,6 +12776,7 @@ class $$DocumentsTableTableManager
                 Value<String> clienteNumeroDocumento = const Value.absent(),
                 Value<String> clienteNombre = const Value.absent(),
                 Value<String> moneda = const Value.absent(),
+                Value<String?> tipoCambio = const Value.absent(),
                 Value<String> total = const Value.absent(),
                 Value<DocumentStatus> status = const Value.absent(),
                 Value<String?> sunatCode = const Value.absent(),
@@ -12735,6 +12807,7 @@ class $$DocumentsTableTableManager
                 clienteNumeroDocumento: clienteNumeroDocumento,
                 clienteNombre: clienteNombre,
                 moneda: moneda,
+                tipoCambio: tipoCambio,
                 total: total,
                 status: status,
                 sunatCode: sunatCode,
@@ -12767,6 +12840,7 @@ class $$DocumentsTableTableManager
                 required String clienteNumeroDocumento,
                 required String clienteNombre,
                 required String moneda,
+                Value<String?> tipoCambio = const Value.absent(),
                 required String total,
                 required DocumentStatus status,
                 Value<String?> sunatCode = const Value.absent(),
@@ -12797,6 +12871,7 @@ class $$DocumentsTableTableManager
                 clienteNumeroDocumento: clienteNumeroDocumento,
                 clienteNombre: clienteNombre,
                 moneda: moneda,
+                tipoCambio: tipoCambio,
                 total: total,
                 status: status,
                 sunatCode: sunatCode,

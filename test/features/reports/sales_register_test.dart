@@ -21,6 +21,7 @@ Document _document({
   int numero = 1,
   String fecha = '2026-11-13',
   String moneda = 'PEN',
+  String? tipoCambio,
   DocumentStatus status = DocumentStatus.accepted,
   String? enriched,
   String nombre = 'SUPERMERCADOS PERUANOS S.A.',
@@ -38,6 +39,7 @@ Document _document({
   clienteNumeroDocumento: '20100070970',
   clienteNombre: nombre,
   moneda: moneda,
+  tipoCambio: tipoCambio,
   total: '45.60',
   status: status,
   digestValue: 'hash',
@@ -218,4 +220,11 @@ void main() {
       );
     },
   );
+
+  test('documents in other currencies give their total in soles', () {
+    final usd = SalesRow.of(_document(moneda: 'USD', tipoCambio: '3.752'));
+    expect(usd.tipoCambio, '3.752');
+    expect(usd.totalSoles, '171.09'); // 45.60 × 3.752 = 171.0912
+    expect(SalesRow.of(_document()).totalSoles, '45.60');
+  });
 }

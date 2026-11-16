@@ -18,8 +18,8 @@ import 'emit_flow.dart';
 import 'invoice_draft.dart';
 import 'invoice_form_parts.dart';
 
-/// Writes and issues a factura ("01") or boleta ("03") (docs/DESIGN.md §6.2).
-/// Amounts are in the company's currency (no exchange rate yet).
+/// Writes and issues a factura ("01") or boleta ("03") (docs/DESIGN.md §6.2),
+/// in soles, dollars or euros with the exchange rate the user types.
 class InvoiceFormPage extends ConsumerStatefulWidget {
   const InvoiceFormPage(
     this.company, {
@@ -42,6 +42,11 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   final _lines = <DraftLine>[];
   bool _credito = false;
   final _cuotas = <DraftCuota>[];
+  late String _moneda = widget.company.moneda;
+  final _tipoCambio = TextEditingController();
+
+  /// The rate when its field got the focus
+  String _rateBefore = '';
   DocumentTotals? _totals;
   String? _previewError;
   late final _preview = TotalsPreview((totals, error) {
@@ -58,7 +63,16 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   @override
   void dispose() {
     _preview.dispose();
+    _tipoCambio.dispose();
     super.dispose();
+  }
+
+  /// Soles per unit of the document's currency; `null` in soles or while
+  /// not typed (or unusable)
+  String? get _rate {
+    if (_moneda == 'PEN') return null;
+    final rate = parseAmount(_tipoCambio.text);
+    return isValidRate(rate) ? rate : null;
   }
 
   /// `null` while something required is missing
@@ -71,7 +85,8 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
       tipoComprobante: widget.tipoComprobante,
       customer: customer,
       lines: List.of(_lines),
-      moneda: widget.company.moneda,
+      moneda: _moneda,
+      tipoCambio: _rate,
       cuotas: _credito ? List.of(_cuotas) : const [],
     );
   }
@@ -93,7 +108,8 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                     tipoComprobante: widget.tipoComprobante,
                     customer: customer,
                     lines: List.of(_lines),
-                    moneda: widget.company.moneda,
+                    moneda: _moneda,
+                    tipoCambio: _rate,
                   ),
                 ),
     );
@@ -125,13 +141,28 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
   }
 
   Future<void> _addProduct() async {
-    final product = await pickProduct(context, widget.company);
-    if (product != null) {
-      _lines.add(
-        DraftLine.fromProduct(product, igvTipo: widget.company.igvTipo),
-      );
-      _changed();
+    final rate = _rate;
+    // Catalog prices are in soles: converted at the rate, then editable
+    // like any line. Without the rate they'd go in unconverted.
+    if (_moneda != 'PEN' && rate == null) {
+      showMessage(context, draftProblemMessage(DraftProblem.missingTipoCambio));
+      return;
     }
+    final product = await pickProduct(context, widget.company);
+    if (product == null) return;
+    var line = DraftLine.fromProduct(product, igvTipo: widget.company.igvTipo);
+    if (rate != null) {
+      line = line.copyWith(precio: divideAmounts(line.precio, rate, 4));
+    }
+    _lines.add(line);
+    _changed();
+  }
+
+  /// Lines already added keep their prices: says so when the currency or
+  /// rate changes under them
+  void _currencyChanged() {
+    if (_lines.isNotEmpty) showMessage(context, Strings.linesNotConverted);
+    _changed();
   }
 
   Future<void> _editLine({int? index}) async {
@@ -181,10 +212,13 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final customer = _customer;
     if (customer != null &&
         total != null &&
-        exceedsAnonymousLimit(customer, widget.company.moneda, total)) {
+        exceedsAnonymousLimit(customer, _moneda, total, tipoCambio: _rate)) {
       return draftProblemMessage(DraftProblem.anonymousOver700);
     }
     if (_credito && _cuotas.isEmpty) return Strings.creditoWithoutCuotas;
+    if (_moneda != 'PEN' && _rate == null) {
+      return draftProblemMessage(DraftProblem.missingTipoCambio);
+    }
     return null;
   }
 
@@ -200,7 +234,7 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
     final customer = _customer;
     final totals = _totals;
     final warning = _warning;
-    final moneda = widget.company.moneda;
+    final moneda = _moneda;
     final title = _isFactura ? Strings.factura : Strings.boleta;
 
     return UnsavedChangesGuard(
@@ -245,6 +279,51 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                     ),
               trailing: const Icon(Icons.chevron_right),
               onTap: _pickCustomer,
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: CatalogDropdown(
+                    label: Strings.moneda,
+                    value: _moneda,
+                    options: Catalogs.monedas,
+                    onChanged: (moneda) {
+                      if (moneda == _moneda) return;
+                      _moneda = moneda!;
+                      _currencyChanged();
+                    },
+                  ),
+                ),
+                if (moneda != 'PEN') ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    // Told once the field is left with another rate, not on
+                    // every key
+                    child: Focus(
+                      onFocusChange: (focused) {
+                        if (focused) {
+                          _rateBefore = _tipoCambio.text;
+                        } else if (_tipoCambio.text != _rateBefore) {
+                          _currencyChanged();
+                        }
+                      },
+                      child: TextField(
+                        controller: _tipoCambio,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: Strings.tipoCambio,
+                          helperText: Strings.tipoCambioHelp,
+                          helperMaxLines: 2,
+                        ),
+                        onChanged: (_) => _changed(),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             const FormSection(Strings.lines),
             DraftLinesList(

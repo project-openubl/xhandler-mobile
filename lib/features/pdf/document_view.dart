@@ -211,6 +211,7 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
     if (!anonymous) ('Documento', _identity(cliente)),
     if (_address(cliente) case final address?) ('Dirección', address),
     ('Moneda', moneda),
+    if (document.tipoCambio case final rate?) ('Tipo de cambio', rate),
   ];
   final notes = <String>[];
   if (spec['forma_pago'] case {'tipo': final String tipo} && final formaPago) {

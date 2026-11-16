@@ -58,4 +58,14 @@ void main() {
     expect(addAmounts('1', '2'), '3');
     expect(addAmounts('0.05', '0'), '0.05');
   });
+
+  test('multiplies and divides amounts exactly, with 3-decimal rates', () {
+    expect(multiplyAmounts('100', '3.752'), '375.20');
+    expect(multiplyAmounts('199.99', '3.7525'), '750.46'); // 750.462475
+    expect(divideAmounts('375.20', '3.752'), '100.00');
+    expect(divideAmounts('10', '3'), '3.33');
+    expect(divideAmounts('20', '3'), '6.67');
+    expect(divideAmounts('8.50', '3.752', 4), '2.2655');
+    expect(formatMoney('EUR', '10'), '€ 10.00');
+  });
 }

@@ -144,6 +144,44 @@ void main() {
     );
   });
 
+  test('a document in dollars keeps its rate, and so do its notas', () async {
+    final id = await emit(
+      const InvoiceDraft(
+        tipoComprobante: '01',
+        moneda: 'USD',
+        tipoCambio: '3.752',
+        customer: _rucCustomer,
+        lines: [DraftLine(descripcion: 'Café', cantidad: '1', precio: '10')],
+      ),
+    );
+    bridge.responses.add(
+      const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+    );
+    await service.send(id);
+    final factura = await document(id);
+    expect(factura.tipoCambio, '3.752');
+
+    final fc01 = await (database.select(
+      database.series,
+    )..where((s) => s.serie.equals('FC01'))).getSingle();
+    final noteId = await service.emit(
+      company: company,
+      serie: fc01,
+      draft: NoteDraft(
+        tipoComprobante: '07',
+        affected: factura,
+        tipoNota: '01',
+        sustento: 'Anulación',
+        customer: _rucCustomer,
+        lines: const [
+          DraftLine(descripcion: 'Café', cantidad: '1', precio: '10'),
+        ],
+      ),
+    );
+    final note = await document(noteId);
+    expect((note.moneda, note.tipoCambio), ('USD', '3.752'));
+  });
+
   group('detracción', () {
     const subject = InvoiceDraft(
       tipoComprobante: '01',
