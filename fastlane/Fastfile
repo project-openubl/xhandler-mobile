@@ -1,0 +1,126 @@
+# Uploads a release build to the stores (.github/workflows/release.yml, docs/STORE.md). The
+# workflow builds and signs; these lanes only upload, and skip what a store already has, so a
+# rerun of the same tag continues instead of failing on a build number that is taken.
+#
+#   bundle exec fastlane android release aab:app.aab code:1020003 prerelease:true
+#   bundle exec fastlane ios release ipa:app.ipa version:1.2.0 code:1020003 prerelease:true
+
+require "tmpdir"
+
+opt_out_usage
+
+APP_ID = "io.github.projectopenubl.xhandler"
+ANDROID_METADATA = File.expand_path("metadata/android", __dir__)
+
+# "What's new" of a release: changelogs/<code>.txt, else changelogs/default.txt
+def release_notes(code)
+  dir = File.join(ANDROID_METADATA, "es-419", "changelogs")
+  file = [File.join(dir, "#{code}.txt"), File.join(dir, "default.txt")].find { |f| File.exist?(f) }
+  File.read(file).strip
+end
+
+def flag(value)
+  value.to_s == "true"
+end
+
+platform :android do
+  # Pre-releases go to internal testing; releases to production as a staged rollout
+  # (PLAY_ROLLOUT, default 0.1), which is raised in Play Console. PLAY_RELEASE_STATUS=draft is
+  # for while the app is still a draft in Play Console: Play only takes draft releases then.
+  lane :release do |options|
+    code = Integer(options.fetch(:code))
+    prerelease = flag(options.fetch(:prerelease))
+    track = prerelease ? "internal" : "production"
+    json_key_data = ENV.fetch("PLAY_SERVICE_ACCOUNT_JSON")
+
+    uploaded = google_play_track_version_codes(track: track, json_key_data: json_key_data)
+    if uploaded.include?(code)
+      UI.success("Version code #{code} is already on the #{track} track")
+      next
+    end
+
+    status = ENV["PLAY_RELEASE_STATUS"].to_s
+    status = prerelease ? "completed" : "inProgress" if status.empty?
+    upload_to_play_store(
+      json_key_data: json_key_data,
+      track: track,
+      aab: options.fetch(:aab),
+      release_status: status,
+      rollout: status == "inProgress" ? ENV.fetch("PLAY_ROLLOUT", "0.1") : nil,
+      metadata_path: ANDROID_METADATA,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end
+
+platform :ios do
+  # Every build goes to TestFlight. A release is then submitted for App Store review and
+  # released by hand once approved.
+  lane :release do |options|
+    code = Integer(options.fetch(:code))
+    version = options.fetch(:version)
+    submit = !flag(options.fetch(:prerelease))
+
+    app_store_connect_api_key(
+      key_id: ENV.fetch("APPSTORE_API_KEY_ID"),
+      issuer_id: ENV.fetch("APPSTORE_API_ISSUER_ID"),
+      key_content: ENV.fetch("APPSTORE_API_PRIVATE_KEY")
+    )
+
+    # The build numbers of a version only go up, so a higher one means ours was uploaded too
+    latest = latest_testflight_build_number(app_identifier: APP_ID, version: version, initial_build_number: 0)
+    if latest >= code
+      UI.success("Build #{code} of #{version} is already in App Store Connect (latest: #{latest})")
+    else
+      # Waits for Apple to process the build when it is submitted next
+      upload_to_testflight(
+        ipa: options.fetch(:ipa),
+        app_identifier: APP_ID,
+        skip_waiting_for_build_processing: !submit
+      )
+    end
+    next unless submit
+
+    # Without it, every build asks the export compliance questions in App Store Connect and
+    # can't be submitted from here. Its value is a legal decision (docs/STORE.md).
+    info_plist = File.read(File.expand_path("../ios/Runner/Info.plist", __dir__))
+    unless info_plist.include?("ITSAppUsesNonExemptEncryption")
+      UI.user_error!("The build is in TestFlight, but submitting it needs ITSAppUsesNonExemptEncryption in ios/Runner/Info.plist (docs/STORE.md, Export compliance)")
+    end
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    live = app.get_live_app_store_version
+    pending = app.get_edit_app_store_version
+    submitted = [
+      Spaceship::ConnectAPI::AppStoreVersion::AppStoreState::WAITING_FOR_REVIEW,
+      Spaceship::ConnectAPI::AppStoreVersion::AppStoreState::IN_REVIEW,
+      Spaceship::ConnectAPI::AppStoreVersion::AppStoreState::PENDING_DEVELOPER_RELEASE
+    ]
+    if live&.version_string == version
+      UI.success("#{version} is already on the App Store")
+      next
+    end
+    if pending&.version_string == version && submitted.include?(pending.app_store_state)
+      UI.success("#{version} is already submitted (#{pending.app_store_state})")
+      next
+    end
+
+    deliver(
+      app_identifier: APP_ID,
+      app_version: version,
+      build_number: code.to_s,
+      submit_for_review: true,
+      automatic_release: false,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      # The listing is kept in App Store Connect; only "What's new" comes from here
+      metadata_path: Dir.mktmpdir,
+      release_notes: { "es-MX" => release_notes(code) },
+      run_precheck_before_submit: false,
+      force: true
+    )
+  end
+end

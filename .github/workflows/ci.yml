@@ -54,7 +54,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test --coverage
       # Reported, not enforced: download it from the run's artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage/lcov.info
@@ -88,7 +88,9 @@ jobs:
           printf 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g\norg.gradle.daemon=false\n' > ~/.gradle/gradle.properties
       # The emulator below is x86_64
       - run: flutter build apk --debug --target-platform android-x64
-      # Runs the integration tests (Rust bridge included) on an emulator
+      # Runs the Rust bridge integration test on an emulator. The app flow
+      # test (integration_test/app_flow_test.dart) isn't run: it depends on
+      # SUNAT beta being up
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -105,7 +107,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           # On failure, the device log says why the app stopped
-          script: flutter test integration_test --reporter expanded || { adb logcat -d -t 500 '*:W' | tail -200; exit 1; }
+          script: flutter test integration_test/bridge_test.dart --reporter expanded || { adb logcat -d -t 500 '*:W' | tail -200; exit 1; }
 
   ios:
     runs-on: macos-latest
