@@ -99,82 +99,88 @@ class _CompanyHome extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showModalBottomSheet<void>(
           context: context,
+          // Six options with percepción and retención: let the sheet grow
+          // past the default 9/16 height cap and scroll when it doesn't fit
+          isScrollControlled: true,
+          useSafeArea: true,
           builder: (sheetContext) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.point_of_sale),
-                  title: const Text(Strings.quickSale),
-                  subtitle: const Text(Strings.quickSaleHelp),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => QuickSalePage(company),
-                      ),
-                    );
-                  },
-                ),
-                for (final (tipo, icon, title, help) in const [
-                  (
-                    '03',
-                    Icons.receipt_long,
-                    Strings.boleta,
-                    Strings.boletaHelp,
-                  ),
-                  (
-                    '01',
-                    Icons.request_quote,
-                    Strings.factura,
-                    Strings.facturaHelp,
-                  ),
-                ])
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   ListTile(
-                    leading: Icon(icon),
-                    title: Text(title),
-                    subtitle: Text(help),
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      _newDocument(context, tipo);
-                    },
-                  ),
-                ListTile(
-                  leading: const Icon(Icons.local_shipping),
-                  title: const Text(Strings.guia),
-                  subtitle: const Text(Strings.guiaHelp),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => DespatchAdviceFormPage(company),
-                      ),
-                    );
-                  },
-                ),
-                for (final (tipo, title, help) in [
-                  if (company.esAgentePercepcion)
-                    ('40', Strings.percepcion, Strings.percepcionHelp),
-                  if (company.esAgenteRetencion)
-                    ('20', Strings.retencion, Strings.retencionHelp),
-                ])
-                  ListTile(
-                    leading: const Icon(Icons.percent),
-                    title: Text(title),
-                    subtitle: Text(help),
+                    leading: const Icon(Icons.point_of_sale),
+                    title: const Text(Strings.quickSale),
+                    subtitle: const Text(Strings.quickSaleHelp),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => PerceptionRetentionFormPage(
-                            company,
-                            tipoComprobante: tipo,
-                          ),
+                          builder: (_) => QuickSalePage(company),
                         ),
                       );
                     },
                   ),
-              ],
+                  for (final (tipo, icon, title, help) in const [
+                    (
+                      '03',
+                      Icons.receipt_long,
+                      Strings.boleta,
+                      Strings.boletaHelp,
+                    ),
+                    (
+                      '01',
+                      Icons.request_quote,
+                      Strings.factura,
+                      Strings.facturaHelp,
+                    ),
+                  ])
+                    ListTile(
+                      leading: Icon(icon),
+                      title: Text(title),
+                      subtitle: Text(help),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        _newDocument(context, tipo);
+                      },
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.local_shipping),
+                    title: const Text(Strings.guia),
+                    subtitle: const Text(Strings.guiaHelp),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => DespatchAdviceFormPage(company),
+                        ),
+                      );
+                    },
+                  ),
+                  for (final (tipo, title, help) in [
+                    if (company.esAgentePercepcion)
+                      ('40', Strings.percepcion, Strings.percepcionHelp),
+                    if (company.esAgenteRetencion)
+                      ('20', Strings.retencion, Strings.retencionHelp),
+                  ])
+                    ListTile(
+                      leading: const Icon(Icons.percent),
+                      title: Text(title),
+                      subtitle: Text(help),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PerceptionRetentionFormPage(
+                              company,
+                              tipoComprobante: tipo,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
           ),
         ),

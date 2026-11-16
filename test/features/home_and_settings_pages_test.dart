@@ -73,6 +73,39 @@ void main() {
       expect(find.text(Strings.retencion), findsNothing);
       await data.unmount(tester);
     });
+
+    for (final (orientation, size) in const [
+      ('portrait', Size(360, 640)),
+      ('landscape', Size(640, 360)),
+    ]) {
+      testWidgets(
+        'shows all six options to agentes of both on a $orientation phone',
+        (tester) async {
+          await tester.binding.setSurfaceSize(size);
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          final data = TestData();
+          await tester.runAsync(() async {
+            final company = await data.createCompany();
+            await data.companies.update(
+              company.id,
+              const CompaniesCompanion(
+                esAgentePercepcion: Value(true),
+                esAgenteRetencion: Value(true),
+              ),
+            );
+          });
+          await openNewDocumentSheet(tester, data);
+          // Let the sheet finish sliding in
+          await tester.pump(const Duration(seconds: 1));
+
+          expect(tester.takeException(), isNull);
+          expect(find.text(Strings.quickSale).hitTestable(), findsOneWidget);
+          await tester.ensureVisible(find.text(Strings.retencion));
+          expect(find.text(Strings.retencion).hitTestable(), findsOneWidget);
+          await data.unmount(tester);
+        },
+      );
+    }
   });
 
   testWidgets('ReportsPage shows an empty month', (tester) async {
