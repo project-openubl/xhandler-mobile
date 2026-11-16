@@ -53,6 +53,11 @@ Future<SunatResponse> getStatusCdr({
   credentials: credentials,
 );
 
+/// The URL the printed copy of a guía de remisión must encode in its QR, from
+/// the CDR zip SUNAT accepted it with; `None` for other documents
+String? guiaQrLink({required List<int> cdrZip}) =>
+    RustLib.instance.api.crateApiSunatGuiaQrLink(cdrZip: cdrZip);
+
 class SunatCredentials {
   /// SOL user, e.g. "20123456789MODDATOS"
   final String username;

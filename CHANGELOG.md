@@ -13,3 +13,6 @@ gather under "Unreleased" until the first store version.
 - Several companies per phone, test mode against SUNAT beta.
 - Encrypted backups protected by a password.
 - Monthly sales register in Excel and CSV.
+- Notas de crédito type 13, correcting the cuotas of a factura al crédito, and
+  notas adjusting exports.
+- Printed guías de remisión, with the QR SUNAT returns once it accepts them.

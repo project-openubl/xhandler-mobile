@@ -427,6 +427,15 @@ class DocumentService {
     if (!serie.serie.startsWith(affected.serie.substring(0, 1))) {
       throw const InvalidDraftError(DraftProblem.noteSerieMismatch);
     }
+    // Type 13 corrects the cuotas of a factura al crédito, and only it has
+    // cuotas
+    final ajuste =
+        draft.tipoComprobante == '07' &&
+        draft.tipoNota == ajusteMontosYFechasDePago;
+    if (ajuste != draft.cuotas.isNotEmpty ||
+        (ajuste && !isFacturaAlCredito(affected))) {
+      throw const InvalidDraftError(DraftProblem.invalidAjuste);
+    }
   }
 
   void _checkTotals(
@@ -443,6 +452,14 @@ class DocumentService {
     )) {
       throw const InvalidDraftError(DraftProblem.anonymousOver700);
     }
+    bool afterIssue(List<DraftCuota> cuotas) =>
+        cuotas.every((c) => c.fechaPago.compareTo(fechaEmision) > 0);
+    // A type 13 nota's cuotas aren't checked against the invoice: they are
+    // the new amount owed, and xhandler fills the nota's forma de pago
+    // total from them
+    if (draft is NoteDraft && !afterIssue(draft.cuotas)) {
+      throw const InvalidDraftError(DraftProblem.cuotasNotDue);
+    }
     if (draft is! InvoiceDraft || draft.cuotas.isEmpty) return;
     final cuotas = draft.cuotas;
     final sum = cuotas.fold(BigInt.zero, (sum, c) => sum + toCents(c.importe));
@@ -452,8 +469,7 @@ class DocumentService {
       {'monto': final Object monto} => toCents(roundAmount('$monto')),
       _ => BigInt.zero,
     };
-    if (sum != toCents(total) - detraccion ||
-        cuotas.any((c) => c.fechaPago.compareTo(fechaEmision) <= 0)) {
+    if (sum != toCents(total) - detraccion || !afterIssue(cuotas)) {
       throw const InvalidDraftError(DraftProblem.cuotasMismatch);
     }
   }

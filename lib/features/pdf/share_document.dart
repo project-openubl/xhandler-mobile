@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/database.dart';
+import '../../src/rust/api/sunat.dart';
 import '../document/document_repository.dart';
 import 'document_view.dart';
 import 'pdf_templates.dart';
@@ -25,12 +26,16 @@ Future<List<DeliveryFile>> deliveryFiles({
   required PdfTemplate template,
 }) async {
   final name = sunatFileName(company, document);
-  final pdf = await template.render(
-    documentView(document, company),
-    await loadPdfTheme(),
-  );
   final xml = await documents.file(document.id, DocumentFileKind.signedXml);
   final cdr = await documents.file(document.id, DocumentFileKind.cdrZip);
+  final pdf = await template.render(
+    documentView(
+      document,
+      company,
+      guiaQr: document.tipoComprobante == '09' ? _guiaQr(document, cdr) : null,
+    ),
+    await loadPdfTheme(),
+  );
   return [
     (name: '$name.pdf', mimeType: 'application/pdf', bytes: pdf),
     if (xml != null)
@@ -38,6 +43,23 @@ Future<List<DeliveryFile>> deliveryFiles({
     if (cdr != null)
       (name: 'R-$name.zip', mimeType: 'application/zip', bytes: cdr),
   ];
+}
+
+/// An accepted guía whose CDR has no QR link (or that has no CDR): without
+/// it, the guía has no valid printed representation
+class MissingGuiaQrError implements Exception {
+  const MissingGuiaQrError(this.documentId);
+
+  final String documentId;
+
+  @override
+  String toString() => 'MissingGuiaQrError: no QR link for guía $documentId';
+}
+
+/// The QR link of an accepted guía, from its CDR
+String _guiaQr(Document guia, Uint8List? cdr) {
+  final link = cdr == null ? null : guiaQrLink(cdrZip: cdr);
+  return link ?? (throw MissingGuiaQrError(guia.id));
 }
 
 /// Shares [files] with an app the user picks; [anchor] places the share

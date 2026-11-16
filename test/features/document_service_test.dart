@@ -1158,6 +1158,43 @@ void main() {
       );
     });
 
+    test('only type 13 carries cuotas, and of a factura al crédito', () async {
+      final contado = await document(await acceptedDocument());
+      final fc01 = await (database.select(
+        database.series,
+      )..where((s) => s.serie.equals('FC01'))).getSingle();
+      const cuotas = [DraftCuota(importe: '50.00', fechaPago: '2099-01-20')];
+      for (final (tipoNota, cuotas) in [
+        (ajusteMontosYFechasDePago, cuotas), // of a factura al contado
+        (ajusteMontosYFechasDePago, const <DraftCuota>[]),
+        ('01', cuotas),
+      ]) {
+        await expectLater(
+          service.emit(
+            company: company,
+            serie: fc01,
+            draft: NoteDraft(
+              tipoComprobante: '07',
+              affected: contado,
+              tipoNota: tipoNota,
+              sustento: 'Ajuste',
+              customer: _draft.customer,
+              lines: _draft.lines,
+              cuotas: cuotas,
+            ),
+          ),
+          throwsA(
+            isA<InvalidDraftError>().having(
+              (e) => e.problem,
+              'problem',
+              DraftProblem.invalidAjuste,
+            ),
+          ),
+          reason: tipoNota,
+        );
+      }
+    });
+
     test('an accepted nota does not void the document it modifies', () async {
       final factura = await acceptedDocument();
       final fc01 = await (database.select(

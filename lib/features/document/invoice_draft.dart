@@ -420,16 +420,29 @@ class InvoiceDraft implements DocumentDraft {
           },
       'forma_pago': cuotas.isEmpty
           ? {'tipo': 'Contado'}
-          : {
-              'tipo': 'Credito',
-              'cuotas': [
-                for (final cuota in cuotas)
-                  {'importe': cuota.importe, 'fecha_pago': cuota.fechaPago},
-              ],
-            },
+          : {'tipo': 'Credito', 'cuotas': _cuotasJson(cuotas)},
     },
   });
 }
+
+/// xbuilder's `cuotas`
+List<Map<String, String>> _cuotasJson(List<DraftCuota> cuotas) => [
+  for (final cuota in cuotas)
+    {'importe': cuota.importe, 'fecha_pago': cuota.fechaPago},
+];
+
+/// Whether [invoice] is a factura al crédito, from its stored input
+bool isFacturaAlCredito(Document invoice) {
+  final spec =
+      (jsonDecode(invoice.inputJson) as Map<String, Object?>)['spec']!
+          as Map<String, Object?>;
+  final forma = spec['forma_pago'] as Map<String, Object?>?;
+  return invoice.tipoComprobante == '01' && forma?['tipo'] == 'Credito';
+}
+
+/// Catalog 9: a nota de crédito correcting the amount owed and installments
+/// of a factura al crédito (R.S. 193-2020)
+const ajusteMontosYFechasDePago = '13';
 
 /// A nota de crédito ("07") or débito ("08") of an issued invoice
 class NoteDraft implements DocumentDraft {
@@ -440,6 +453,7 @@ class NoteDraft implements DocumentDraft {
     required this.sustento,
     required this.customer,
     required this.lines,
+    this.cuotas = const [],
   }) : assert(tipoComprobante == '07' || tipoComprobante == '08');
 
   @override
@@ -456,6 +470,10 @@ class NoteDraft implements DocumentDraft {
   @override
   final DraftCustomer customer;
   final List<DraftLine> lines;
+
+  /// The corrected installments of a [ajusteMontosYFechasDePago] nota;
+  /// empty for the others
+  final List<DraftCuota> cuotas;
 
   @override
   String get moneda => affected.moneda;
@@ -493,6 +511,7 @@ class NoteDraft implements DocumentDraft {
           '${affected.serie}-${affected.numero}',
       'descripcion_sustento': sustento,
       'detalles': [for (final line in lines) line.toJson()],
+      if (cuotas.isNotEmpty) 'forma_pago': {'cuotas': _cuotasJson(cuotas)},
     },
   });
 }

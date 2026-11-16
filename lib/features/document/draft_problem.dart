@@ -37,6 +37,10 @@ enum DraftProblem {
   /// detracción), after the issue date
   cuotasMismatch,
 
+  /// The installments of a nota de crédito type 13 must fall due after
+  /// the issue date
+  cuotasNotDue,
+
   /// A factura with detracción needs the company's Banco de la Nación
   /// account
   missingDetraccionAccount,
@@ -47,6 +51,10 @@ enum DraftProblem {
   /// Notas modify facturas and boletas accepted by SUNAT, in the same
   /// environment
   invalidAffectedDocument,
+
+  /// A nota de crédito type 13 corrects the cuotas of a factura al crédito,
+  /// and only it carries cuotas
+  invalidAjuste,
 
   /// Notas de crédito can't credit more than the invoice's total
   noteExceedsInvoice,

@@ -42,6 +42,10 @@ class NoteFormPage extends ConsumerStatefulWidget {
 /// and full return carry its lines as they were
 const _wholeInvoiceTipos = {'01', '02', '06'};
 
+/// Notas adjusting exports: crédito 11, débito 10 (by document type, as
+/// crédito 10 is "otros conceptos")
+const _exportTipos = {'07': '11', '08': '10'};
+
 class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   /// Whether the user changed the copy of the affected document
   bool _edited = false;
@@ -56,6 +60,9 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   /// A nota de crédito starts with the invoice's lines, to edit or remove
   late final _lines = _isCredito ? _invoiceLines() : <DraftLine>[];
   String _tipoNota = '01';
+
+  /// The corrected installments of a type 13 nota de crédito
+  final _cuotas = <DraftCuota>[];
   late final _sustento = TextEditingController(text: _tiposNota[_tipoNota]);
   String? _serieId;
   DocumentTotals? _totals;
@@ -89,15 +96,40 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   bool get _wholeInvoice =>
       _isCredito && _wholeInvoiceTipos.contains(_tipoNota);
 
-  /// Wrong RUC only happens on facturas
-  Map<String, String> get _tiposNota => _isCredito
-      ? {
-          for (final MapEntry(:key, :value)
-              in Catalogs.tiposNotaCredito.entries)
-            if (key != '02' || widget.affected.tipoComprobante == '01')
-              key: value,
-        }
-      : Catalogs.tiposNotaDebito;
+  bool get _isAjuste => _isCredito && _tipoNota == ajusteMontosYFechasDePago;
+
+  bool get _isFactura => widget.affected.tipoComprobante == '01';
+
+  /// The reasons that fit the affected invoice: wrong RUC and adjusting the
+  /// installments only happen on facturas (al crédito, for the latter), and
+  /// adjusting exports on invoices with exports
+  late final Map<String, String> _tiposNota = _fittingTipos();
+
+  Map<String, String> _fittingTipos() {
+    final alCredito = isFacturaAlCredito(widget.affected);
+    final exports = _invoiceLines().any((line) => line.igvTipo == '40');
+    final catalog = _isCredito
+        ? Catalogs.tiposNotaCredito
+        : Catalogs.tiposNotaDebito;
+    bool fits(String tipo) => switch (tipo) {
+      _ when tipo == _exportTipos[widget.tipoComprobante] => exports,
+      '02' when _isCredito => _isFactura,
+      ajusteMontosYFechasDePago when _isCredito => alCredito,
+      _ => true,
+    };
+    return {
+      for (final MapEntry(:key, :value) in catalog.entries)
+        if (fits(key)) key: value,
+    };
+  }
+
+  /// A type 13 nota changes no amounts: one line at zero, as SUNAT asks
+  DraftLine get _ajusteLine => DraftLine(
+    descripcion: Catalogs.tiposNotaCredito[ajusteMontosYFechasDePago]!,
+    cantidad: '1',
+    precio: '0',
+    igvTipo: widget.company.igvTipo,
+  );
 
   List<DraftLine> _invoiceLines() => [
     for (final line in _spec['detalles']! as List)
@@ -121,7 +153,9 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   NoteDraft? get _draft {
     final sustento = _sustento.text.trim();
-    if (_lines.isEmpty || sustento.isEmpty) return null;
+    if (_lines.isEmpty || sustento.isEmpty || (_isAjuste && _cuotas.isEmpty)) {
+      return null;
+    }
     return NoteDraft(
       tipoComprobante: widget.tipoComprobante,
       affected: widget.affected,
@@ -129,6 +163,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       sustento: sustento,
       customer: _customer,
       lines: List.of(_lines),
+      cuotas: _isAjuste ? List.of(_cuotas) : const [],
     );
   }
 
@@ -150,13 +185,29 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     if (_sustento.text == _tiposNota[_tipoNota]) {
       _sustento.text = _tiposNota[tipo]!;
     }
+    final wasAjuste = _isAjuste;
     _tipoNota = tipo;
-    if (_wholeInvoice) {
+    if (_isAjuste) {
+      _lines
+        ..clear()
+        ..add(_ajusteLine);
+    } else if (_wholeInvoice || wasAjuste) {
       _lines
         ..clear()
         ..addAll(_invoiceLines());
     }
     _changed();
+  }
+
+  Future<void> _addCuota() async {
+    final cuota = await showDialog<DraftCuota>(
+      context: context,
+      builder: (_) => const CuotaDialog(),
+    );
+    if (cuota != null) {
+      _cuotas.add(cuota);
+      _changed();
+    }
   }
 
   Future<void> _editLine({int? index}) async {
@@ -215,7 +266,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     final moneda = widget.affected.moneda;
     final title = _isCredito ? Strings.notaCredito : Strings.notaDebito;
     final warning = _warning;
-    final editable = !_wholeInvoice;
+    final editable = !_wholeInvoice && !_isAjuste;
 
     return UnsavedChangesGuard(
       dirty: _edited,
@@ -279,6 +330,20 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
                 icon: const Icon(Icons.edit_note),
                 label: const Text(Strings.freeLine),
               ),
+            if (_isAjuste) ...[
+              const FormSection(Strings.cuotasCorregidas),
+              CuotasList(
+                cuotas: _cuotas,
+                moneda: moneda,
+                onAdd: _addCuota,
+                onRemove: (index) {
+                  _cuotas.removeAt(index);
+                  _changed();
+                },
+              ),
+              if (_cuotas.isEmpty)
+                const DraftWarning(Strings.ajusteWithoutCuotas),
+            ],
             TotalsSection(
               totals: _totals,
               error: _previewError,

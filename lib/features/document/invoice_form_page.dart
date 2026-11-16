@@ -359,27 +359,16 @@ class _InvoiceFormPageState extends ConsumerState<InvoiceFormPage> {
                 _changed();
               },
             ),
-            if (_credito) ...[
-              for (final (index, cuota) in _cuotas.indexed)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(formatMoney(moneda, cuota.importe)),
-                  subtitle: Text('${Strings.fechaPago}: ${cuota.fechaPago}'),
-                  trailing: IconButton(
-                    tooltip: Strings.delete,
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      _cuotas.removeAt(index);
-                      _changed();
-                    },
-                  ),
-                ),
-              TextButton.icon(
-                onPressed: _addCuota,
-                icon: const Icon(Icons.add),
-                label: const Text(Strings.addCuota),
+            if (_credito)
+              CuotasList(
+                cuotas: _cuotas,
+                moneda: moneda,
+                onAdd: _addCuota,
+                onRemove: (index) {
+                  _cuotas.removeAt(index);
+                  _changed();
+                },
               ),
-            ],
             TotalsSection(totals: totals, error: _previewError, moneda: moneda),
             if (warning != null) DraftWarning(warning),
             const SizedBox(height: 24),

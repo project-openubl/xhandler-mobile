@@ -84,6 +84,9 @@ Future<void> deliverDocument(
         );
         if (shared) await service.record(document, DeliveryChannel.share, null);
     }
+  } on MissingGuiaQrError catch (error, stack) {
+    AppLog.error('Delivery', error, stack);
+    if (anchor.mounted) showMessage(anchor, Strings.guiaWithoutQr);
   } on EmailException catch (error) {
     if (anchor.mounted) showMessage(anchor, emailErrorMessage(error.error));
   } on Object catch (error, stack) {
