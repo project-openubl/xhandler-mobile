@@ -33,7 +33,7 @@ project owner's accounts, keys or legal review; nothing here was submitted.
    y guías SUNAT").
 9. **(owner)** Optional integrations that need accounts (DESIGN §14): Google Drive /
    iCloud backups, Gmail API / Microsoft Graph email, SIRE.
-10. Add the secrets in "Release CI" and run the Release workflow.
+10. Add the secrets in "Release CI" and release with release-tools' release-mobile.
 
 ## Store listing (Spanish)
 
@@ -158,14 +158,61 @@ This is usually treated as exempt (US EAR category 5 part 2, mass-market / data
 protection), which in App Store Connect means answering that the app uses only exempt
 encryption, and adding `ITSAppUsesNonExemptEncryption = NO` to `ios/Runner/Info.plist`.
 Distribution in France may also need an ANSSI declaration. This is a legal call, so the
-key isn't set in the project yet.
+key isn't set in the project yet: a `vX.Y.Z` release stops before the App Store submission until it
+is (Release CI).
 
 ## Release CI
 
-`.github/workflows/release.yml` (manual: Actions → Release → Run workflow) builds a
-signed AAB and uploads it to the Play internal track, and builds an IPA and uploads it
-to TestFlight. The build number is the workflow run number. It needs these repository
-secrets **(owner)**:
+Releases are made from release-tools: Actions → **Release xhandler-mobile** with the version
+(`vX.Y.0-alpha.N` from `main`, `vX.Y.Z` from `release-X.Y`, see release-tools' VERSIONING.md). It
+checks CI on the branch, tags it, publishes the GitHub release and waits for
+`.github/workflows/release.yml` here, which builds the signed app and uploads it:
+
+| Version | Google Play | App Store |
+|---|---|---|
+| `-alpha.N`, `-beta.N`, `-rc.N` | Internal testing | TestFlight |
+| `vX.Y.Z` | Production, staged rollout to 10% (`PLAY_ROLLOUT`) | TestFlight, then submitted for review |
+
+Making a stable release public stays a decision in the stores: raise the rollout in Play Console,
+and release the version in App Store Connect once Apple approves it. The signed APK and AAB and their
+`SHA256SUMS` are attached to the GitHub release, for people who install from there. Create a
+`release-X.Y` branch by hand (`git push origin main:release-X.Y`): release-tools'
+`_cut-release-branches` is for xhandler's versions, not the app's.
+
+**Version and build number.** Both come from the tag (`tool/release_version.sh <tag>` prints them).
+The version is the tag without the `v` on Android and `X.Y.Z` on iOS (Apple takes nothing else). The
+build number (Android `versionCode`, iOS `CFBundleVersion`) is
+`((X*100 + Y)*100 + Z)*100 + S`, with `S` = `N` for `alpha.N`, `30+N` for `beta.N`, `60+N` for
+`rc.N` and `99` for the release: `v1.2.0-alpha.3` is 1020003, `v1.2.0` 1020099. It follows the
+version order, so up to `.29` pre-releases of each kind and minor and patch versions up to 99.
+A tag always gives the same number, and a store never takes a number twice, so a tag is never moved.
+
+**Reruns.** `fastlane/Fastfile` uploads and skips what the stores already have (the version code on
+its Play track, the build in App Store Connect, a version already in review or on sale), and
+attached files stay. To retry a failed release, run release-mobile again with the same version, or
+dispatch Release here from `main` with the tag (a re-run would use the workflow file of the tagged
+commit).
+
+**What's new.** The text the stores show for the release, in Spanish:
+`fastlane/metadata/android/es-419/changelogs/<build number>.txt`, or `default.txt` when it doesn't
+exist (Google Play: up to 500 characters). The App Store gets the same text for `es-MX`. Add the
+file in the pull requests before the release. Both listings must have those languages.
+
+**First uploads.** Play requires the first upload of a new app to be made by hand in Play Console:
+upload a release build with build number 1 (the `+1` of `pubspec.yaml`), so every tagged release
+is above it. While the app is still a draft, Play's API only takes draft releases: set the
+repository variable `PLAY_RELEASE_STATUS=draft` until the first release is out, then delete it.
+An App Store submission needs `ITSAppUsesNonExemptEncryption` in `ios/Runner/Info.plist`
+([Export compliance](#export-compliance-owner)): until it is set, a `vX.Y.Z` release stops after the
+TestFlight upload.
+
+The iOS job uses manual signing with an App Store provisioning profile downloaded with the API
+key: `tool/ios_release_signing.rb` switches only the Runner target's Release build to manual
+signing with the team and profile. It hasn't run yet (no Apple account here), so expect to adjust
+it on the first run. On the first TestFlight build, check that the Rust bridge loads: if it fails
+with "Failed to lookup symbol", set the Runner's Strip Style to Non-Global Symbols.
+
+Repository secrets **(owner)**; fastlane uses the same Play and App Store Connect keys:
 
 | Secret | What |
 |---|---|
@@ -175,18 +222,10 @@ secrets **(owner)**:
 | `IOS_DISTRIBUTION_P12_BASE64`, `IOS_DISTRIBUTION_P12_PASSWORD` | Apple distribution certificate |
 | `APPLE_TEAM_ID` | Apple team |
 | `IOS_PROVISIONING_PROFILE_NAME` | Name of the App Store provisioning profile for `io.github.projectopenubl.xhandler` |
-| `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_PRIVATE_KEY` | App Store Connect API key (`.p8` contents) |
+| `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_PRIVATE_KEY` | App Store Connect API key (`.p8` contents), with the App Manager role |
 
-Play requires the first upload of a new app to be made by hand in Play Console; the
-workflow handles the following ones, numbering builds from the run number + 100 (use
-"Re-run failed jobs", not "all jobs", or a number repeats). While the app is still a
-draft, Play's API only takes `status: draft` releases: change it in the workflow until
-the first release is out. The iOS job uses manual signing with an App Store
-provisioning profile downloaded with the API key: `tool/ios_release_signing.rb` switches
-only the Runner target's Release build to manual signing with the team and profile. It
-hasn't run yet (no Apple account here), so expect to adjust it on the first run. On the
-first TestFlight build, check that the Rust bridge loads: if it fails with "Failed to
-lookup symbol", set the Runner's Strip Style to Non-Global Symbols.
+Optional repository variables: `PLAY_ROLLOUT` (fraction of users of a stable release's first rollout,
+default `0.1`) and `PLAY_RELEASE_STATUS` (above).
 
 ## App icon
 

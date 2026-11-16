@@ -49,3 +49,10 @@ app.*.map.json
 
 # Rust
 /rust/target/
+
+# fastlane
+/fastlane/README.md
+/fastlane/report.xml
+/fastlane/Preview.html
+/vendor/bundle/
+/.bundle/
