@@ -18,6 +18,17 @@ abstract final class Catalogs {
     '40': 'Comprobante de percepción',
   };
 
+  /// Short names of [tiposComprobante], for the documents list
+  static const tiposComprobanteCortos = {
+    '01': 'Factura',
+    '03': 'Boleta',
+    '07': 'N. crédito',
+    '08': 'N. débito',
+    '09': 'Guía',
+    '20': 'Retención',
+    '40': 'Percepción',
+  };
+
   /// First letters a series may start with, by document type
   static const serieLetters = {
     '01': 'F',

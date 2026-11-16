@@ -925,6 +925,9 @@ void main() {
       () => find.textContaining('B001-').evaluate().length == 2,
     );
 
+    // The status chips scroll, after the type chip
+    await tester.ensureVisible(find.text(Strings.acceptedDocuments));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(Strings.acceptedDocuments));
     await pumpUntil(
       tester,
@@ -995,22 +998,20 @@ void main() {
     await data.unmount(tester);
   });
 
-  testWidgets('DocumentsList searches, and notas de crédito subtract', (
-    tester,
+  /// A factura SUNAT accepted and a nota de crédito of all of it
+  Future<(Company, Document)> facturaAndNota(
+    WidgetTester tester,
+    TestData data,
+    DocumentService service,
+    FakeBridge bridge,
   ) async {
-    final data = TestData();
-    final bridge = FakeBridge();
-    final service = serviceFor(data, bridge);
     final factura = await acceptedFactura(tester, data, service, bridge);
     final company = (await tester.runAsync(
       () => data.companies.watchActive().first,
     ))!;
-    await tester.runAsync(() async {
-      // A nota de crédito of the whole factura
-      final fc01 = await (data.database.select(
-        data.database.series,
-      )..where((s) => s.serie.equals('FC01'))).getSingle();
-      await service.emit(
+    final fc01 = await serie(tester, data, 'FC01');
+    await tester.runAsync(
+      () => service.emit(
         company: company,
         serie: fc01,
         draft: NoteDraft(
@@ -1027,8 +1028,23 @@ void main() {
             DraftLine(descripcion: 'Café', cantidad: '2', precio: '59'),
           ],
         ),
-      );
-    });
+      ),
+    );
+    return (company, factura);
+  }
+
+  testWidgets('DocumentsList searches, and notas de crédito subtract', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final (company, factura) = await facturaAndNota(
+      tester,
+      data,
+      service,
+      bridge,
+    );
 
     await pumpPage(
       tester,
@@ -1043,11 +1059,82 @@ void main() {
     );
     expect(find.text('S/ 118.00'), findsOneWidget); // the factura
     expect(find.text('−S/ 118.00'), findsOneWidget); // the nota
+    // Each row names its type, which the series alone does not tell
+    expect(
+      find.textContaining('${Catalogs.tiposComprobanteCortos['01']} · '),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('${Catalogs.tiposComprobanteCortos['07']} · '),
+      findsOneWidget,
+    );
 
     await tester.enterText(find.byType(SearchBar), 'fc01');
     await tester.pump();
     expect(find.textContaining('F001-'), findsNothing);
     expect(find.textContaining('FC01-'), findsOneWidget);
+    await data.unmount(tester);
+  });
+
+  testWidgets('DocumentsList filters by one or more types', (tester) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.companies.watchActive().first,
+    ))!;
+    await tester.runAsync(
+      () => service.voidDocument(factura.id, motivo: 'Error'),
+    );
+    final facturas = Catalogs.tiposComprobanteCortos['01']!;
+    bool listed(String text) => find.textContaining(text).evaluate().isNotEmpty;
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      Scaffold(body: DocumentsList(company)),
+    );
+    await pumpUntil(tester, () => listed(Strings.comunicacionBaja));
+
+    await tester.tap(find.text(Strings.filterType));
+    await tester.pumpAndSettle();
+    // Only the types with documents: no boletas, notas, percepciones…
+    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+    await tester.tap(
+      find.widgetWithText(CheckboxListTile, Strings.voidingDocuments),
+    );
+    await tester.pump();
+    expect(listed('F001-'), isFalse);
+    expect(listed(Strings.comunicacionBaja), isTrue);
+
+    await tester.tap(find.widgetWithText(CheckboxListTile, facturas));
+    await tester.pump();
+    expect(listed('F001-'), isTrue);
+    expect(listed(Strings.comunicacionBaja), isTrue);
+    expect(find.widgetWithText(FilterChip, '$facturas +1'), findsOneWidget);
+
+    await tester.tap(
+      find.widgetWithText(CheckboxListTile, Strings.voidingDocuments),
+    );
+    await tester.pump();
+    expect(listed(Strings.comunicacionBaja), isFalse);
+    await tester.tapAt(const Offset(10, 10)); // outside the sheet
+    await tester.pumpAndSettle();
+
+    // Together with the search
+    await tester.enterText(find.byType(SearchBar), 'RA-');
+    await tester.pump();
+    expect(find.text(Strings.noResults), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilterChip, facturas));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(Strings.clearFilter));
+    await tester.pump();
+    expect(listed(Strings.comunicacionBaja), isTrue);
+    expect(find.widgetWithText(FilterChip, Strings.filterType), findsOneWidget);
     await data.unmount(tester);
   });
 

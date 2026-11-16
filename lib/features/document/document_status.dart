@@ -92,6 +92,10 @@ String tipoComprobanteLabel(String tipo) => switch (tipo) {
   _ => Catalogs.tiposComprobante[tipo] ?? tipo,
 };
 
+/// Short name of a document type, for lists: "N. crédito"
+String tipoComprobanteShortLabel(String tipo) =>
+    Catalogs.tiposComprobanteCortos[tipo] ?? tipoComprobanteLabel(tipo);
+
 /// An xbuilder error in Spanish, e.g. "detalles[0].igv_tipo: 99 is not a
 /// valid Catalog7" → "Un código no es válido: tipo de IGV (línea 1)"
 String documentErrorMessage(String error) {

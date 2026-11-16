@@ -195,7 +195,8 @@ class _CompanyHome extends StatelessWidget {
             SetupChecklist(company),
           ],
           CertificateWarningBanner(company.id),
-          Expanded(child: DocumentsList(company)),
+          // Keyed so the filters reset when switching company
+          Expanded(child: DocumentsList(company, key: ValueKey(company.id))),
         ],
       ),
     );
