@@ -271,6 +271,11 @@ class _CompanyDrawer extends ConsumerWidget {
           title: const Text(Strings.security),
           onTap: () => open(Routes.security),
         ),
+        ListTile(
+          leading: const Icon(Icons.palette),
+          title: const Text(Strings.appearance),
+          onTap: () => open(Routes.appearance),
+        ),
       ],
     );
   }

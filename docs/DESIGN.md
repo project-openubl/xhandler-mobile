@@ -142,7 +142,8 @@ document_files    document_id, kind (signed_xml | cdr_zip), bytes, sha256
 document_events   document_id, status, code, message, device_id      -- timeline / audit
 deliveries        document_id, channel (email | share), recipient, device_id
 device_settings   key, value  -- this device only, not synced: device_id, active_company_id,
-                              -- last_backup_at, notifications_asked
+                              -- last_backup_at, notifications_asked,
+                              -- app_lock_minutes, theme_mode
 ```
 
 ### 3.1 Sync readiness

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'data/database.dart';
+import 'features/appearance/appearance_page.dart';
 import 'features/backup/backup_page.dart';
 import 'features/company/active_company_page.dart';
 import 'features/company/certificate_page.dart';
@@ -35,6 +36,7 @@ abstract final class Routes {
   static const emailSettings = '/company/email';
   static const backup = '/backup';
   static const security = '/security';
+  static const appearance = '/appearance';
   static const documentPattern = '/documents/:id';
   static String document(String id) => '/documents/$id';
   static const reports = '/company/reports';
@@ -67,6 +69,7 @@ GoRouter buildRouter() => GoRouter(
     _companyRoute(Routes.reports, ReportsPage.new),
     GoRoute(path: Routes.backup, builder: (_, _) => const BackupPage()),
     GoRoute(path: Routes.security, builder: (_, _) => const SecurityPage()),
+    GoRoute(path: Routes.appearance, builder: (_, _) => const AppearancePage()),
     GoRoute(
       path: Routes.documentPattern,
       builder: (_, state) =>

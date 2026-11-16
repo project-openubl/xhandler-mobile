@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'app_log.dart';
 
+import 'features/appearance/theme_mode.dart';
 import 'features/lock/app_lock.dart';
 import 'notifications.dart';
 import 'router.dart';
@@ -11,14 +13,17 @@ import 'strings.dart';
 import 'theme/status_colors.dart';
 import 'widgets/readable_width.dart';
 
-class App extends StatefulWidget {
-  const App({super.key});
+class App extends ConsumerStatefulWidget {
+  const App({super.key, this.initialThemeMode = ThemeMode.system});
+
+  /// The stored theme mode, read before the first frame
+  final ThemeMode initialThemeMode;
 
   @override
-  State<App> createState() => _AppState();
+  ConsumerState<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends ConsumerState<App> {
   final _router = buildRouter();
 
   @override
@@ -57,7 +62,9 @@ class _AppState extends State<App> {
       locale: const Locale('es', 'PE'),
       supportedLocales: const [Locale('es', 'PE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      // Material's own colors; the dark theme follows the phone's setting
+      // Material's own colors; light or dark as the user picked, by default
+      // following the phone's setting
+      themeMode: appThemeMode(ref, widget.initialThemeMode),
       theme: ThemeData(extensions: const [StatusColors.light]),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
