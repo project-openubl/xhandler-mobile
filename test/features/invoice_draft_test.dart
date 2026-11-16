@@ -58,6 +58,44 @@ void main() {
         ),
       );
 
+  test('other currencies need their exchange rate', () {
+    InvoiceDraft draft(String moneda, String? tipoCambio) => InvoiceDraft(
+      tipoComprobante: '03',
+      moneda: moneda,
+      tipoCambio: tipoCambio,
+      customer: anonymousCustomer,
+      lines: const [DraftLine(descripcion: 'Café', cantidad: '1', precio: '1')],
+    );
+    expect(draft('PEN', null).problem, isNull);
+    expect(draft('USD', null).problem, DraftProblem.missingTipoCambio);
+    expect(draft('EUR', '0').problem, DraftProblem.missingTipoCambio);
+    // Rounds to 0.00: it couldn't convert anything
+    expect(draft('EUR', '0.004').problem, DraftProblem.missingTipoCambio);
+    expect(draft('USD', '3.752').problem, isNull);
+  });
+
+  test('the S/ 700 limit counts other currencies in soles', () {
+    expect(exceedsAnonymousLimit(anonymousCustomer, 'PEN', '700.01'), isTrue);
+    expect(
+      exceedsAnonymousLimit(
+        anonymousCustomer,
+        'USD',
+        '186',
+        tipoCambio: '3.752',
+      ),
+      false, // 697.87
+    );
+    expect(
+      exceedsAnonymousLimit(
+        anonymousCustomer,
+        'USD',
+        '187',
+        tipoCambio: '3.752',
+      ),
+      true, // 701.62
+    );
+  });
+
   test('detracción: the highest rate, kept out of the lines', () {
     const service = DraftLine(
       descripcion: 'Mantenimiento',

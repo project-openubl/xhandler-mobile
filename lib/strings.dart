@@ -256,6 +256,13 @@ abstract final class Strings {
   static const timeline = 'Historial';
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';
+  static const moneda = 'Moneda';
+  static const tipoCambio = 'Tipo de cambio';
+  static const linesNotConverted =
+      'Los precios de las líneas ya agregadas no se recalculan: revísalos.';
+  static const tipoCambioHelp =
+      'Venta SBS del día, en soles. Los productos del catálogo se convierten '
+      'al agregarlos.';
   static String sendingDeadline(String date) =>
       'SUNAT debe recibirlo hasta el $date';
 
@@ -442,8 +449,9 @@ abstract final class Strings {
   static const salesRegisterHelp =
       'Facturas, boletas y notas emitidas (salvo las rechazadas), con su '
       'estado; las notas de crédito restan y las anuladas figuran sin '
-      'importes. Los importes en dólares no se convierten a soles. Para '
-      'abrir en Excel usa el archivo Excel.';
+      'importes. Los totales son por moneda; los archivos traen además el '
+      'tipo de cambio y el total en soles. Para abrir en Excel usa el '
+      'archivo Excel.';
 
   // Quick sale
   static const quickSale = 'Venta rápida';

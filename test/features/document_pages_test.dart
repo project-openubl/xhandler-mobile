@@ -887,6 +887,66 @@ void main() {
     await data.unmount(tester);
   });
 
+  testWidgets('a boleta in dollars converts catalog prices at its rate', (
+    tester,
+  ) async {
+    final data = TestData();
+    final company = (await tester.runAsync(() async {
+      final company = await data.createCompany();
+      await ProductRepository(data.database).create(
+        ProductsCompanion.insert(
+          companyId: company.id,
+          descripcion: 'Café',
+          precio: '4.00',
+        ),
+      );
+      return company;
+    }))!;
+    final bridge = FakeBridge()
+      ..total = '1.00'
+      ..responses.add(_accepted);
+    await pumpPage(
+      tester,
+      data,
+      serviceFor(data, bridge),
+      bridge,
+      InvoiceFormPage(company, tipoComprobante: '03'),
+    );
+    await pumpUntil(tester, () => shows('B001-00000001'));
+
+    await tester.tap(find.text(Catalogs.monedas['PEN']!));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text(Catalogs.monedas['USD']!).last);
+    await tester.pump(const Duration(seconds: 1));
+    final missingRate = find.text(
+      draftProblemMessage(DraftProblem.missingTipoCambio),
+    );
+    expect(missingRate, findsOneWidget);
+    // Without the rate a catalog price would go in unconverted
+    await tester.tap(find.text(Strings.addProduct));
+    await tester.pump();
+    expect(missingRate, findsNWidgets(2)); // the warning and a message
+    expect(find.text('Café'), findsNothing);
+    await tester.pump(const Duration(seconds: 5)); // the message goes away
+    await tester.enterText(
+      find.widgetWithText(TextField, Strings.tipoCambio),
+      '4',
+    );
+    await tester.tap(find.text(Strings.addProduct));
+    await pumpUntil(tester, () => shows('Café'));
+    await tester.tap(find.text('Café').last);
+    await pumpUntil(tester, () => shows(r'1 × US$ 1.00'));
+
+    await tester.tap(find.text(Strings.emit));
+    await pumpUntil(tester, () => shows(Strings.viewDocument), 'sheet');
+    final document = (await tester.runAsync(
+      () => data.database.select(data.database.documents).getSingle(),
+    ))!;
+    expect(document.moneda, 'USD');
+    expect(document.tipoCambio, '4');
+    await data.unmount(tester);
+  });
+
   testWidgets('DocumentsList searches, and notas de crédito subtract', (
     tester,
   ) async {

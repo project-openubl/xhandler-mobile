@@ -76,6 +76,9 @@ class PerceptionRetentionDraft implements DocumentDraft {
   String get moneda => 'PEN';
 
   @override
+  String? get tipoCambio => null;
+
+  @override
   String? get affectedDocumentId => null;
 
   @override

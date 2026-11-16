@@ -68,11 +68,44 @@ String fromCents(BigInt cents) {
   return '${cents.isNegative ? '-' : ''}${text.substring(0, split)}.${text.substring(split)}';
 }
 
-/// An amount as people read it: "S/ 59.00", "US$ 12.50"
+/// [amount] as a whole number of 10^-[scale] units, rounded half up
+BigInt _units(String amount, int scale) =>
+    BigInt.parse(roundAmount(amount, scale).replaceAll('.', ''));
+
+/// [units] of 10^-[scale] as an amount rounded half up to [decimals]
+String _amountOf(BigInt units, int scale, int decimals) {
+  final text = units.abs().toString().padLeft(scale + 1, '0');
+  final split = text.length - scale;
+  final exact =
+      '${units.isNegative ? '-' : ''}${text.substring(0, split)}.${text.substring(split)}';
+  return roundAmount(exact, decimals);
+}
+
+/// Exchange rates have more decimals than amounts: computations keep these
+const _rateScale = 6;
+
+/// [a] × [b], half up to [decimals]: "100", "3.752" → "375.20"
+String multiplyAmounts(String a, String b, [int decimals = 2]) => _amountOf(
+  _units(a, _rateScale) * _units(b, _rateScale),
+  2 * _rateScale,
+  decimals,
+);
+
+/// [a] ÷ [b], half up to [decimals]: "375.20", "3.752" → "100.00"
+String divideAmounts(String a, String b, [int decimals = 2]) => _amountOf(
+  _units(a, _rateScale) *
+      BigInt.from(10).pow(decimals + 1) ~/
+      _units(b, _rateScale),
+  decimals + 1,
+  decimals,
+);
+
+/// An amount as people read it: "S/ 59.00", "US$ 12.50", "€ 10.00"
 String formatMoney(String moneda, String amount) {
   final symbol = switch (moneda) {
     'PEN' => 'S/',
     'USD' => r'US$',
+    'EUR' => '€',
     _ => moneda,
   };
   return '$symbol ${roundAmount(amount)}';

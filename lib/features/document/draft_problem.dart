@@ -27,6 +27,9 @@ enum DraftProblem {
   /// Transfers between the company's establishments need their SUNAT codes
   missingCodigoLocal,
 
+  /// Documents in other currencies need their exchange rate
+  missingTipoCambio,
+
   /// Boletas over S/ 700 need an identified customer
   anonymousOver700,
 

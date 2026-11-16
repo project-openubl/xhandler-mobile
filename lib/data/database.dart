@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   /// and the generated test helpers (see test/data/migration_test.dart).
   /// New tables with company data also go in backup_service.dart's lists.
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +44,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.addColumn(companies, companies.cuentaDetracciones);
         await m.addColumn(products, products.detraccionPorcentaje);
+      }
+      // Documents in other currencies: their exchange rate
+      if (from < 3) {
+        await m.addColumn(documents, documents.tipoCambio);
       }
     },
   );

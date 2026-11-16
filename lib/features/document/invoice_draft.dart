@@ -208,13 +208,26 @@ const anonymousCustomer = DraftCustomer(
   nombre: 'CLIENTES VARIOS',
 );
 
-/// Boletas over S/ 700 need an identified customer. Only soles are checked:
-/// other currencies need an exchange rate, not supported yet.
+/// Whether [rate] (soles per unit) can convert amounts: given, and not
+/// zero once rounded to cents
+bool isValidRate(String? rate) => rate != null && toCents(rate) > BigInt.zero;
+
+/// Boletas over S/ 700 need an identified customer; amounts in other
+/// currencies count in soles at their [tipoCambio]
 bool exceedsAnonymousLimit(
   DraftCustomer customer,
   String moneda,
-  String total,
-) => customer.isAnonymous && moneda == 'PEN' && toCents(total) > toCents('700');
+  String total, {
+  String? tipoCambio,
+}) {
+  if (!customer.isAnonymous) return false;
+  final soles = moneda == 'PEN'
+      ? total
+      : tipoCambio == null
+      ? null
+      : multiplyAmounts(total, tipoCambio);
+  return soles != null && toCents(soles) > toCents('700');
+}
 
 /// Payment in installments ("crédito")
 class DraftCuota {
@@ -233,6 +246,9 @@ abstract interface class DocumentDraft {
   String get tipoComprobante;
   DraftCustomer get customer;
   String get moneda;
+
+  /// Soles per unit of [moneda]; `null` in soles
+  String? get tipoCambio;
 
   /// The document a nota modifies, `null` for invoices
   String? get affectedDocumentId;
@@ -288,6 +304,7 @@ class InvoiceDraft implements DocumentDraft {
     required this.lines,
     required this.moneda,
     this.cuotas = const [],
+    this.tipoCambio,
     this.detraccionMonto,
   });
 
@@ -302,6 +319,11 @@ class InvoiceDraft implements DocumentDraft {
 
   /// Empty for payment in full ("contado")
   final List<DraftCuota> cuotas;
+
+  /// Required in other currencies than soles: the SBS selling rate of the
+  /// issue date, typed by the user
+  @override
+  final String? tipoCambio;
 
   /// The detracción it carries, of [detraccionLine]. Only facturas in soles
   /// over [detraccionThreshold] do, and the total is known once built, so
@@ -347,6 +369,7 @@ class InvoiceDraft implements DocumentDraft {
       lines: lines,
       moneda: moneda,
       cuotas: cuotas,
+      tipoCambio: tipoCambio,
       detraccionMonto: fromCents(monto),
     );
   }
@@ -359,6 +382,9 @@ class InvoiceDraft implements DocumentDraft {
     if (lines.isEmpty) return DraftProblem.noLines;
     if (tipoComprobante == '01' && customer.tipoDocumentoIdentidad != '6') {
       return DraftProblem.facturaWithoutRuc;
+    }
+    if (moneda != 'PEN' && !isValidRate(tipoCambio)) {
+      return DraftProblem.missingTipoCambio;
     }
     return null;
   }
@@ -433,6 +459,10 @@ class NoteDraft implements DocumentDraft {
 
   @override
   String get moneda => affected.moneda;
+
+  /// The rate of the document it modifies
+  @override
+  String? get tipoCambio => affected.tipoCambio;
 
   @override
   String? get affectedDocumentId => affected.id;

@@ -31,6 +31,7 @@ class SalesRow {
     required this.clienteNumeroDocumento,
     required this.clienteNombre,
     required this.moneda,
+    required this.tipoCambio,
     required this.exportacion,
     required this.gravado,
     required this.exonerado,
@@ -64,6 +65,7 @@ class SalesRow {
       clienteNumeroDocumento: document.clienteNumeroDocumento,
       clienteNombre: document.clienteNombre,
       moneda: document.moneda,
+      tipoCambio: document.tipoCambio,
       exportacion: amount(totals.exportacion),
       gravado: amount(totals.gravado),
       exonerado: amount(totals.exonerado),
@@ -87,6 +89,9 @@ class SalesRow {
   final String clienteNumeroDocumento;
   final String clienteNombre;
   final String moneda;
+
+  /// Soles per unit of [moneda]; `null` in soles
+  final String? tipoCambio;
   final String exportacion;
   final String gravado;
   final String exonerado;
@@ -98,6 +103,12 @@ class SalesRow {
   final DocumentStatus status;
 
   bool get voided => status == DocumentStatus.voided;
+
+  /// [total] in soles, as the register (and SIRE) need it
+  String get totalSoles {
+    final rate = tipoCambio;
+    return rate == null ? total : multiplyAmounts(total, rate);
+  }
 
   /// SUNAT hasn't confirmed it yet (or its voiding)
   bool get unconfirmed => !voided && !acceptedStatuses.contains(status);
@@ -135,6 +146,11 @@ final List<_Column> _columns = [
   ),
   (title: 'Cliente', amount: false, value: (row) => row.clienteNombre),
   (title: 'Moneda', amount: false, value: (row) => row.moneda),
+  (
+    title: 'Tipo de cambio',
+    amount: false,
+    value: (row) => row.tipoCambio ?? '',
+  ),
   (title: 'Exportación', amount: true, value: (row) => row.exportacion),
   (title: 'Gravado', amount: true, value: (row) => row.gravado),
   (title: 'Exonerado', amount: true, value: (row) => row.exonerado),
@@ -143,6 +159,7 @@ final List<_Column> _columns = [
   (title: 'IGV', amount: true, value: (row) => row.igv),
   (title: 'ICBPER', amount: true, value: (row) => row.icb),
   (title: 'Total', amount: true, value: (row) => row.total),
+  (title: 'Total en soles', amount: true, value: (row) => row.totalSoles),
   (title: 'Estado', amount: false, value: (row) => row.status.label),
   (title: 'Modifica a', amount: false, value: (row) => row.modifica ?? ''),
 ];
