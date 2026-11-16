@@ -192,7 +192,7 @@ void main() {
     Document fromSpec(String tipo, String serie, Map<String, Object?> spec) =>
         _document(tipo, serie, jsonEncode({'spec': spec}), '1180.00');
 
-    test('only valid documents print; guías wait for SUNAT\'s QR', () {
+    test('only valid documents print; guías once SUNAT accepts them', () {
       expect(hasPrintedView(factura), isTrue);
       for (final status in [
         DocumentStatus.rejected,
@@ -209,12 +209,25 @@ void main() {
       final waiting = factura.copyWith(status: DocumentStatus.inProgress);
       expect(hasPrintedView(waiting), isTrue);
       expect(documentView(waiting, _company).pending, isTrue);
+      final guia = fromSpec('09', 'T001', draftSpec('guia_transporte_privado'));
+      expect(hasPrintedView(guia), isTrue);
+      // Their QR comes in the CDR
       expect(
-        hasPrintedView(
-          fromSpec('09', 'T001', draftSpec('guia_transporte_privado')),
-        ),
+        hasPrintedView(guia.copyWith(status: DocumentStatus.inProgress)),
         isFalse,
       );
+    });
+
+    test('a guía prints the QR link of its CDR', () {
+      const link =
+          'https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=abc123';
+      final view = documentView(
+        fromSpec('09', 'T001', draftSpec('guia_transporte_privado')),
+        _company,
+        guiaQr: link,
+      );
+      expect(view.qr, link);
+      expect(view.footer, contains('Consulte su validez con el código QR'));
     });
 
     test('a nota names the document it modifies', () {

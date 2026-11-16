@@ -160,6 +160,7 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.cuotasMismatch =>
     'Las cuotas deben sumar el total (menos la detracción, si la hay) y '
         'vencer después de hoy.',
+  DraftProblem.cuotasNotDue => 'Las cuotas deben vencer después de hoy.',
   DraftProblem.missingTipoCambio =>
     'Escribe el tipo de cambio (venta SBS del día) para emitir en otra '
         'moneda.',
@@ -170,6 +171,9 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
     'Las notas de facturas usan series F y las de boletas, series B.',
   DraftProblem.invalidAffectedDocument =>
     'Las notas modifican facturas y boletas aceptadas por SUNAT.',
+  DraftProblem.invalidAjuste =>
+    'El ajuste de montos y fechas de pago corrige las cuotas de una factura '
+        'al crédito.',
   DraftProblem.noteExceedsInvoice =>
     'Las notas de crédito no pueden sumar más que el comprobante.',
   DraftProblem.voidNotesFirst => 'Anula primero sus notas de crédito y débito.',

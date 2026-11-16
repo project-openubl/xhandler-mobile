@@ -75,9 +75,8 @@ abstract final class Catalogs {
     'A': 15,
   };
 
-  /// Catalog 9, why a nota de crédito is issued; the codes xbuilder
-  /// supports (13, correcting the cuotas of a factura, isn't yet:
-  /// docs/DESIGN.md §14)
+  /// Catalog 9, why a nota de crédito is issued (12, IVAP, isn't: the app
+  /// doesn't issue IVAP)
   static const tiposNotaCredito = {
     '01': 'Anulación de la operación',
     '02': 'Anulación por error en el RUC',
@@ -89,6 +88,8 @@ abstract final class Catalogs {
     '08': 'Bonificación',
     '09': 'Disminución en el valor',
     '10': 'Otros conceptos',
+    '11': 'Ajustes de operaciones de exportación',
+    '13': 'Ajuste de montos y/o fechas de pago',
   };
 
   /// Catalog 22, régimen de percepción (rates in perception_retention_draft)
@@ -110,10 +111,12 @@ abstract final class Catalogs {
     '13': 'Otros',
   };
 
-  /// Catalog 10, why a nota de débito is issued; the codes xbuilder supports
+  /// Catalog 10, why a nota de débito is issued (11, IVAP, isn't: the app
+  /// doesn't issue IVAP)
   static const tiposNotaDebito = {
     '01': 'Intereses por mora',
     '02': 'Aumento en el valor',
     '03': 'Penalidades / otros conceptos',
+    '10': 'Ajustes de operaciones de exportación',
   };
 }

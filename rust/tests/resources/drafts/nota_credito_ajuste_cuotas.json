@@ -1,0 +1,52 @@
+{
+  "kind": "CreditNote",
+  "spec": {
+    "serie_numero": "FC01-2",
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "SUPERMERCADOS PERUANOS S.A."
+    },
+    "tipo_nota": "13",
+    "comprobante_afectado_tipo": "01",
+    "comprobante_afectado_serie_numero": "F001-1",
+    "descripcion_sustento": "Nuevas fechas de pago",
+    "detalles": [
+      {
+        "descripcion": "Ajuste de montos y/o fechas de pago",
+        "cantidad": "1",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "0",
+        "igv_tipo": "10",
+        "icb_aplica": false
+      }
+    ],
+    "forma_pago": {
+      "cuotas": [
+        {
+          "importe": "60.00",
+          "fecha_pago": "2099-01-20"
+        },
+        {
+          "importe": "58.00",
+          "fecha_pago": "2099-02-20"
+        }
+      ]
+    }
+  }
+}

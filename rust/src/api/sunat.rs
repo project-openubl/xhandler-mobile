@@ -189,6 +189,15 @@ fn from_client_error(error: SunatClientError) -> Result<SunatResponse, BridgeErr
     Ok(response(status, code, Some(description)))
 }
 
+/// The URL the printed copy of a guía de remisión must encode in its QR, from
+/// the CDR zip SUNAT accepted it with; `None` for other documents
+#[flutter_rust_bridge::frb(sync)]
+pub fn guia_qr_link(cdr_zip: Vec<u8>) -> Result<Option<String>, BridgeError> {
+    CdrMetadata::from_zip_base64(&general_purpose::STANDARD.encode(cdr_zip))
+        .map(|cdr| cdr.document_description)
+        .map_err(BridgeError::other)
+}
+
 fn from_cdr(cdr_base64: &str, cdr: CdrMetadata) -> anyhow::Result<SunatResponse> {
     let status = cdr.status().into();
     Ok(SunatResponse {
@@ -234,7 +243,7 @@ impl From<Status> for SunatStatus {
 
 #[cfg(test)]
 mod tests {
-    use super::{send_document, SunatCredentials, SunatEnvironment, SunatStatus};
+    use super::{guia_qr_link, send_document, SunatCredentials, SunatEnvironment, SunatStatus};
     use crate::api::document::build_document;
     use crate::api::document::tests::{defaults, invoice};
     use crate::api::signer::sign_document;
@@ -248,6 +257,20 @@ mod tests {
             client_id: None,
             client_secret: None,
         }
+    }
+
+    #[test]
+    fn guia_qr_link_is_read_from_the_cdr() {
+        let guia = std::fs::read("tests/resources/cdr/R-20123456789-09-T001-1.zip").unwrap();
+        let factura =
+            std::fs::read("tests/resources/cdr/R-12345678901-01-F001-00000587.zip").unwrap();
+
+        assert_eq!(
+            guia_qr_link(guia).unwrap().as_deref(),
+            Some("https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=abc123")
+        );
+        assert_eq!(guia_qr_link(factura).unwrap(), None);
+        assert!(guia_qr_link(b"not a zip".to_vec()).is_err());
     }
 
     /// Calls SUNAT beta: `cargo test -- --ignored`

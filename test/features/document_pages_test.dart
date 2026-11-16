@@ -518,6 +518,54 @@ void main() {
     await data.unmount(tester);
   });
 
+  testWidgets('type 13 corrects the cuotas of a factura al crédito', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final contado = await acceptedFactura(tester, data, service, bridge);
+    final input = jsonDecode(contado.inputJson) as Map<String, Object?>;
+    (input['spec']! as Map<String, Object?>)['forma_pago'] = {
+      'tipo': 'Credito',
+    };
+    final credito = contado.copyWith(inputJson: jsonEncode(input));
+    final company = (await tester.runAsync(
+      () => data.database.select(data.database.companies).getSingle(),
+    ))!;
+    final ajuste = Catalogs.tiposNotaCredito[ajusteMontosYFechasDePago]!;
+    Future<void> openTipos(Document affected) async {
+      await pumpPage(
+        tester,
+        data,
+        service,
+        bridge,
+        NoteFormPage(company, affected: affected, tipoComprobante: '07'),
+      );
+      await pumpUntil(tester, () => shows('FC01-00000001'));
+      // The first is the dropdown's; the second, the sustento it filled in
+      await tester.tap(find.text(Catalogs.tiposNotaCredito['01']!).first);
+      await pumpUntil(tester, () => shows(Catalogs.tiposNotaCredito['07']!));
+    }
+
+    await openTipos(contado);
+    expect(find.text(ajuste), findsNothing);
+    await tester.tap(find.text(Catalogs.tiposNotaCredito['07']!).last);
+    await tester.pumpAndSettle();
+
+    await openTipos(credito);
+    await tester.tap(find.text(ajuste).last);
+    await pumpUntil(tester, () => shows(Strings.cuotasCorregidas));
+    expect(find.text(Strings.ajusteWithoutCuotas), findsOneWidget);
+    expect(find.text(Strings.freeLine), findsNothing);
+    final emit = find.ancestor(
+      of: find.text(Strings.emit),
+      matching: find.byType(FilledButton),
+    );
+    expect(tester.widget<FilledButton>(emit).onPressed, isNull);
+    await data.unmount(tester);
+  });
+
   testWidgets('a nota de débito needs a line', (tester) async {
     final data = TestData();
     final bridge = FakeBridge();

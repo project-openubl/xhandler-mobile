@@ -339,6 +339,45 @@ class _CuotaDialogState extends State<CuotaDialog> {
   }
 }
 
+/// The installments of a document, with a button to add one
+class CuotasList extends StatelessWidget {
+  const CuotasList({
+    super.key,
+    required this.cuotas,
+    required this.moneda,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<DraftCuota> cuotas;
+  final String moneda;
+  final VoidCallback onAdd;
+  final void Function(int index) onRemove;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final (index, cuota) in cuotas.indexed)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(formatMoney(moneda, cuota.importe)),
+          subtitle: Text('${Strings.fechaPago}: ${cuota.fechaPago}'),
+          trailing: IconButton(
+            tooltip: Strings.delete,
+            icon: const Icon(Icons.close),
+            onPressed: () => onRemove(index),
+          ),
+        ),
+      TextButton.icon(
+        onPressed: onAdd,
+        icon: const Icon(Icons.add),
+        label: const Text(Strings.addCuota),
+      ),
+    ],
+  );
+}
+
 /// The serie to issue with, showing the number it will take
 class SerieDropdown extends StatelessWidget {
   const SerieDropdown({

@@ -14,6 +14,9 @@ abstract final class Strings {
   static const saved = 'Guardado';
   static const retry = 'Reintentar';
   static const unexpectedError = 'Ocurrió un error inesperado';
+  static const guiaWithoutQr =
+      'Esta guía no tiene el código QR de SUNAT, así que no se puede '
+      'imprimir.';
   static const discardChanges = '¿Salir sin guardar? Se perderá lo ingresado.';
   static const discard = 'Salir';
 
@@ -241,6 +244,9 @@ abstract final class Strings {
   static const emit = 'Emitir';
   static const creditoWithoutCuotas =
       'Agrega las cuotas de la venta al crédito.';
+  static const cuotasCorregidas = 'Cuotas corregidas';
+  static const ajusteWithoutCuotas =
+      'Agrega las cuotas que quedan por pagar, con sus nuevas fechas.';
   static String noSerie(String tipo) =>
       'No tienes una serie activa de $tipo. Créala en Empresa → Series.';
   static const pendingDocuments = 'Por enviar';

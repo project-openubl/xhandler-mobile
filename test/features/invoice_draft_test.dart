@@ -296,6 +296,31 @@ void main() {
     );
   });
 
+  test('nota de crédito type 13: the corrected cuotas, at zero', () {
+    expectGolden(
+      'nota_credito_ajuste_cuotas',
+      NoteDraft(
+        tipoComprobante: '07',
+        affected: factura,
+        tipoNota: ajusteMontosYFechasDePago,
+        sustento: 'Nuevas fechas de pago',
+        customer: supermercados,
+        lines: const [
+          DraftLine(
+            descripcion: 'Ajuste de montos y/o fechas de pago',
+            cantidad: '1',
+            precio: '0',
+          ),
+        ],
+        cuotas: const [
+          DraftCuota(importe: '60.00', fechaPago: '2099-01-20'),
+          DraftCuota(importe: '58.00', fechaPago: '2099-02-20'),
+        ],
+      ),
+      'FC01-2',
+    );
+  });
+
   test('nota de débito: late payment interest, without IGV', () {
     expectGolden(
       'nota_debito_mora',

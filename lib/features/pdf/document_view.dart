@@ -108,15 +108,21 @@ const _printableStatuses = {
 };
 
 /// Whether [document] has a valid printed representation. Voiding
-/// documents have none; guías need the QR SUNAT returns in their CDR, not
-/// read yet (docs/DESIGN.md §14).
+/// documents have none, and guías only once accepted: their QR is the link
+/// SUNAT returns in the CDR.
 bool hasPrintedView(Document document) =>
     _titles.containsKey(document.tipoComprobante) &&
-    document.tipoComprobante != '09' &&
-    _printableStatuses.contains(document.status);
+    (document.tipoComprobante == '09'
+        ? acceptedStatuses.contains(document.status)
+        : _printableStatuses.contains(document.status));
 
-/// The printed view of [document], issued by [company]
-DocumentView documentView(Document document, Company company) {
+/// The printed view of [document], issued by [company]. A guía's QR is
+/// [guiaQr], the link in its CDR ([guiaQrLink]).
+DocumentView documentView(
+  Document document,
+  Company company, {
+  String? guiaQr,
+}) {
   final spec =
       (jsonDecode(document.enrichedJson) as Map<String, Object?>)['spec']!
           as Map<String, Object?>;
@@ -137,6 +143,10 @@ DocumentView documentView(Document document, Company company) {
     '20',
     '40',
   }.contains(document.tipoComprobante);
+  // A guía's QR is SUNAT's link to it
+  final consulta = document.tipoComprobante == '09'
+      ? 'con el código QR'
+      : 'en $consultaUrl';
   return DocumentView(
     title: title,
     serieNumero: serieNumero(document.serie, document.numero),
@@ -156,16 +166,18 @@ DocumentView documentView(Document document, Company company) {
         ? 'SON: ${amountInWords(document.total, document.moneda)}'
         : null,
     notes: notes,
-    qr: const {'01', '03', '07', '08'}.contains(document.tipoComprobante)
-        ? _qr(document, company, spec)
-        : null,
+    qr: switch (document.tipoComprobante) {
+      '01' || '03' || '07' || '08' => _qr(document, company, spec),
+      '09' => guiaQr,
+      _ => null,
+    },
     pending: !acceptedStatuses.contains(document.status),
     testMode: document.environment == SunatEnvironment.beta,
     footer: [
       // The signature's digest, also inside the QR
       'Valor resumen: ${document.digestValue}',
       'Representación impresa $article ${title.toLowerCase()}. '
-          'Consulte su validez en $consultaUrl',
+          'Consulte su validez $consulta',
     ].join('\n'),
   );
 }
