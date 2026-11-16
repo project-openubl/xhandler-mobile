@@ -112,33 +112,36 @@ class EmitResultSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = status.color(context);
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Icon(status.icon, size: 48, color: color),
-          const SizedBox(height: 8),
-          Text(
-            status.label,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleLarge
-                ?.copyWith(color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(status.help, textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(Strings.viewDocument),
-          ),
-          const SizedBox(height: 8),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(doneLabel),
-          ),
-        ],
+    // A modal sheet reaches the bottom of the screen, behind the navigation bar
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(status.icon, size: 48, color: color),
+            const SizedBox(height: 8),
+            Text(
+              status.label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(status.help, textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(Strings.viewDocument),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(doneLabel),
+            ),
+          ],
+        ),
       ),
     );
   }

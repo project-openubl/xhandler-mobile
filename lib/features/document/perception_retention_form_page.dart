@@ -8,6 +8,7 @@ import '../../peru_date.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../series/series_repository.dart';
 import 'document_status.dart';
@@ -159,8 +160,7 @@ class _PerceptionRetentionFormPageState
         body: Form(
           onChanged: _edited ? null : () => setState(() => _edited = true),
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: PageListView(
             children: [
               if (widget.company.sunatEnvironment == SunatEnvironment.beta)
                 const TestModeBanner(),

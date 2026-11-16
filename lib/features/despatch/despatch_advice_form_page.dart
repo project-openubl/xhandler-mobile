@@ -10,6 +10,7 @@ import '../../peru_date.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../document/document_status.dart';
 import '../document/emit_flow.dart';
@@ -207,8 +208,7 @@ class _DespatchAdviceFormPageState
           UnsavedChangesGuard(dirty: _hasInput, child: child!),
       child: Scaffold(
         appBar: AppBar(title: const Text(Strings.guia)),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
+        body: PageListView(
           children: [
             if (widget.company.sunatEnvironment == SunatEnvironment.beta)
               const TestModeBanner(),

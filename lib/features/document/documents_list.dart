@@ -93,7 +93,10 @@ class _DocumentsListState extends ConsumerState<DocumentsList> {
                 child: Text(Strings.noResults),
               ),
               final found => ListView(
-                padding: const EdgeInsets.only(bottom: 88),
+                // 88 dp clears the FAB; the inset clears the navigation bar
+                padding:
+                    const EdgeInsets.only(bottom: 88) +
+                    MediaQuery.paddingOf(context),
                 children: [
                   for (final document in found) _DocumentTile(document),
                 ],

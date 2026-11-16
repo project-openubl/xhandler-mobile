@@ -8,6 +8,7 @@ import '../../data/database.dart';
 import '../../data/secure_store.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../company/company_repository.dart';
 import 'delivery_service.dart';
 import 'email_sender.dart';
@@ -123,8 +124,7 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
       ),
       body: Form(
         key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: PageListView(
           children: [
             if (!_loaded) const LinearProgressIndicator(),
             const Padding(

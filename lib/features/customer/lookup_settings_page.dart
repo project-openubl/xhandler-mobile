@@ -8,6 +8,7 @@ import '../../data/database.dart';
 import '../../data/secure_store.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../company/company_repository.dart';
 
 /// Which service fills customer data from their RUC/DNI, and its access
@@ -77,8 +78,7 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
       ),
       body: Form(
         key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: PageListView(
           children: [
             if (!_loaded) const LinearProgressIndicator(),
             RadioGroup<LookupProvider>(

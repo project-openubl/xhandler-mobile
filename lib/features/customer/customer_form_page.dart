@@ -7,6 +7,7 @@ import '../../data/database.dart';
 import '../../src/rust/api/ruc.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import '../company/company_repository.dart';
 import 'customer_lookup.dart';
 import 'customer_repository.dart';
@@ -174,8 +175,7 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
         body: Form(
           onChanged: _edited ? null : () => setState(() => _edited = true),
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: PageListView(
             children: [
               CatalogDropdown(
                 label: Strings.tipoDocumentoIdentidad,

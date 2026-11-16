@@ -7,6 +7,7 @@ import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../../widgets/page_list_view.dart';
 import 'product_repository.dart';
 
 /// Creates a product of [company], or edits [product]
@@ -124,8 +125,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         body: Form(
           onChanged: _edited ? null : () => setState(() => _edited = true),
           key: _form,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+          child: PageListView(
             children: [
               FormTextField(
                 _descripcion,
