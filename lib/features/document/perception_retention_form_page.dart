@@ -101,6 +101,14 @@ class _PerceptionRetentionFormPageState
     );
   }
 
+  /// Labels of the required fields still empty; wrong ones say so in the
+  /// field
+  List<String> get _missing => [
+    if (_customer == null) _isPercepcion ? Strings.customer : Strings.supplier,
+    if (_comprobante.text.trim().isEmpty) Strings.facturaSerieNumero,
+    if (_total.text.trim().isEmpty) Strings.facturaTotal,
+  ];
+
   Future<void> _emit() async {
     final draft = _draft;
     final serie = _serie;
@@ -166,6 +174,7 @@ class _PerceptionRetentionFormPageState
                 const TestModeBanner(),
               if (seriesValue != null && series.isEmpty)
                 MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
+              const RequiredFieldsLegend(),
               SerieDropdown(
                 series: series,
                 value: _serie?.id,
@@ -174,12 +183,13 @@ class _PerceptionRetentionFormPageState
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.business),
-                title: Text(
-                  customer?.nombre ??
-                      (_isPercepcion
-                          ? Strings.selectCustomer
-                          : Strings.selectSupplier),
-                ),
+                title: customer == null
+                    ? RequiredLabel(
+                        _isPercepcion
+                            ? Strings.selectCustomer
+                            : Strings.selectSupplier,
+                      )
+                    : Text(customer.nombre),
                 subtitle: customer == null
                     ? null
                     : Text('RUC ${customer.numeroDocumentoIdentidad}'),
@@ -197,6 +207,7 @@ class _PerceptionRetentionFormPageState
               FormTextField(
                 _comprobante,
                 Strings.facturaSerieNumero,
+                required: true,
                 helperText: 'F001-123',
                 validator: (text) => _facturaSerieNumero.hasMatch(text.trim())
                     ? null
@@ -221,6 +232,7 @@ class _PerceptionRetentionFormPageState
               FormTextField(
                 _total,
                 Strings.facturaTotal,
+                required: true,
                 prefixText: 'S/ ',
                 helperText: Strings.onlySoles,
                 keyboardType: const TextInputType.numberWithOptions(
@@ -266,10 +278,18 @@ class _PerceptionRetentionFormPageState
               const SizedBox(height: 24),
               ListenableBuilder(
                 listenable: Listenable.merge([_comprobante, _total, _importe]),
-                builder: (context, _) => SaveButton(
-                  label: Strings.emit,
-                  filled: true,
-                  onPressed: _draft == null || _serie == null ? null : _emit,
+                builder: (context, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    MissingFieldsHint(_missing),
+                    SaveButton(
+                      label: Strings.emit,
+                      filled: true,
+                      onPressed: _draft == null || _serie == null
+                          ? null
+                          : _emit,
+                    ),
+                  ],
                 ),
               ),
             ],

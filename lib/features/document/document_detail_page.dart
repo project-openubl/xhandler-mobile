@@ -369,7 +369,11 @@ class _VoidDialogState extends State<_VoidDialog> {
               maxLength: 100,
               helperText: Strings.motivoHelp,
               // SUNAT observes reasons under 3 characters
-              validator: (text) => text.length < 3 ? Strings.required : null,
+              validator: (text) => switch (text.length) {
+                0 => Strings.required,
+                < 3 => Strings.motivoTooShort,
+                _ => null,
+              },
             ),
           ],
         ),

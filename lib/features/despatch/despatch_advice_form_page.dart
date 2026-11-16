@@ -137,6 +137,24 @@ class _DespatchAdviceFormPageState
     );
   }
 
+  /// Labels of the required fields still empty; keep in step with
+  /// [DespatchAdviceDraft.problem], which reports the rest once complete
+  List<String> get _missing {
+    final isPrivado = _modalidad == ModalidadTraslado.privado;
+    return [
+      if (_motivo == '13' && _motivoDescripcion.text.trim().isEmpty)
+        Strings.motivoDescripcion,
+      if (_motivo != '04' && _customer == null) Strings.destinatario,
+      if (_peso.text.trim().isEmpty) Strings.pesoTotal,
+      if (_partida == null) Strings.partida,
+      if (_llegada == null) Strings.llegada,
+      if (isPrivado && !_vehiculoM1L && _vehicle == null) Strings.vehicle,
+      if (isPrivado && !_vehiculoM1L && _driver == null) Strings.driver,
+      if (!isPrivado && _transportista == null) Strings.transportePublico,
+      if (_lines.isEmpty) Strings.bienes,
+    ];
+  }
+
   /// Points suggested for [forPartida]: the company's address, or the
   /// customer's
   List<(String, GuiaPoint)> _suggested({required bool forPartida}) {
@@ -196,8 +214,6 @@ class _DespatchAdviceFormPageState
     _serieId = chosenSerieId(series, _serieId, '09');
     final serie = series.where((s) => s.id == _serieId).firstOrNull;
     final related = widget.related;
-    final draft = _draft;
-    final problem = draft?.problem;
     final isPrivado = _modalidad == ModalidadTraslado.privado;
     final customer = _motivo == '04' ? _company : _customer;
 
@@ -214,6 +230,7 @@ class _DespatchAdviceFormPageState
               const TestModeBanner(),
             if (seriesValue != null && series.isEmpty)
               MissingSerieWarning(Strings.noSerie(Strings.guia.toLowerCase())),
+            const RequiredFieldsLegend(),
             SerieDropdown(
               series: series,
               value: serie?.id,
@@ -234,11 +251,17 @@ class _DespatchAdviceFormPageState
               onChanged: (motivo) => setState(() => _motivo = motivo!),
             ),
             if (_motivo == '13')
-              FormTextField(_motivoDescripcion, Strings.motivoDescripcion),
+              FormTextField(
+                _motivoDescripcion,
+                Strings.motivoDescripcion,
+                required: true,
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.person),
-              title: Text(customer?.nombre ?? Strings.selectDestinatario),
+              title: customer == null
+                  ? const RequiredLabel(Strings.selectDestinatario)
+                  : Text(customer.nombre),
               subtitle: customer == null
                   ? null
                   : Text(customer.numeroDocumentoIdentidad),
@@ -282,9 +305,14 @@ class _DespatchAdviceFormPageState
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: Strings.pesoTotal,
+                    decoration: InputDecoration(
+                      label: const RequiredLabel(Strings.pesoTotal),
                       suffixText: 'kg',
+                      errorText:
+                          _peso.text.trim().isEmpty ||
+                              parseAmount(_peso.text) != null
+                          ? null
+                          : Strings.invalidCantidad,
                     ),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -353,7 +381,10 @@ class _DespatchAdviceFormPageState
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.local_shipping),
-                  title: Text(_vehicle?.placa ?? Strings.selectVehicle),
+                  title: switch (_vehicle) {
+                    final vehicle? => Text(vehicle.placa),
+                    null => const RequiredLabel(Strings.selectVehicle),
+                  },
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () async {
                     final vehicle = await pickVehicle(context, widget.company);
@@ -363,10 +394,12 @@ class _DespatchAdviceFormPageState
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.badge),
-                  title: Text(switch (_driver) {
-                    final driver? => '${driver.nombres} ${driver.apellidos}',
-                    null => Strings.selectDriver,
-                  }),
+                  title: switch (_driver) {
+                    final driver? => Text(
+                      '${driver.nombres} ${driver.apellidos}',
+                    ),
+                    null => const RequiredLabel(Strings.selectDriver),
+                  },
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () async {
                     final driver = await pickDriver(context, widget.company);
@@ -378,7 +411,10 @@ class _DespatchAdviceFormPageState
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.local_shipping),
-                title: Text(_transportista?.nombre ?? Strings.selectCarrier),
+                title: switch (_transportista) {
+                  final carrier? => Text(carrier.nombre),
+                  null => const RequiredLabel(Strings.selectCarrier),
+                },
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
                   final carrier = await pickCustomer(
@@ -389,13 +425,9 @@ class _DespatchAdviceFormPageState
                   if (carrier != null) setState(() => _transportista = carrier);
                 },
               ),
-              FormTextField(
-                _mtc,
-                Strings.registroMtc,
-                helperText: Strings.optional,
-              ),
+              FormTextField(_mtc, Strings.registroMtc),
             ],
-            const FormSection(Strings.bienes),
+            const FormSection(Strings.bienes, required: true),
             DraftLinesList(
               lines: _lines,
               moneda: '',
@@ -408,15 +440,32 @@ class _DespatchAdviceFormPageState
               icon: const Icon(Icons.add),
               label: const Text(Strings.addBien),
             ),
-            if (problem != null && _lines.isNotEmpty)
-              DraftWarning(draftProblemMessage(problem)),
-            const SizedBox(height: 24),
-            SaveButton(
-              label: Strings.emit,
-              filled: true,
-              onPressed: draft == null || problem != null || serie == null
-                  ? null
-                  : () => _emit(serie),
+            // The motivo's description doesn't rebuild the page as it's typed
+            ListenableBuilder(
+              listenable: _motivoDescripcion,
+              builder: (context, _) {
+                final missing = _missing;
+                final draft = _draft;
+                final problem = draft?.problem;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Once complete: what SUNAT would still reject
+                    if (problem != null && missing.isEmpty)
+                      DraftWarning(draftProblemMessage(problem)),
+                    const SizedBox(height: 24),
+                    MissingFieldsHint(missing),
+                    SaveButton(
+                      label: Strings.emit,
+                      filled: true,
+                      onPressed:
+                          draft == null || problem != null || serie == null
+                          ? null
+                          : () => _emit(serie),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -442,7 +491,7 @@ class _PointTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.place),
-      title: Text(label),
+      title: RequiredLabel(label),
       subtitle: Text(
         point == null
             ? Strings.selectAddress
@@ -491,14 +540,12 @@ class _GuiaLineDialogState extends State<_GuiaLineDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FormTextField(
-              _descripcion,
-              Strings.descripcion,
-              validator: (text) => text.isEmpty ? Strings.required : null,
-            ),
+            const RequiredFieldsLegend(),
+            FormTextField(_descripcion, Strings.descripcion, required: true),
             FormTextField(
               _cantidad,
               Strings.cantidad,
+              required: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

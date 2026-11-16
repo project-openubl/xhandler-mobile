@@ -99,13 +99,15 @@ class _LookupSettingsPageState extends ConsumerState<LookupSettingsPage> {
               ),
             ),
             const SizedBox(height: 12),
-            if (_provider == LookupProvider.decolecta)
+            if (_provider == LookupProvider.decolecta) ...[
+              const RequiredFieldsLegend(),
               FormTextField(
                 _token,
                 Strings.lookupToken,
+                required: true,
                 obscureText: true,
-                validator: (token) => token.isEmpty ? Strings.required : null,
               ),
+            ],
           ],
         ),
       ),

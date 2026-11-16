@@ -9,6 +9,8 @@ abstract final class Strings {
   static const requiredFieldsLegend = 'Campos obligatorios';
   static const requiredFieldsLegendSemantics =
       'Los campos marcados con asterisco son obligatorios';
+  static String completeToEmit(List<String> fields) =>
+      'Para emitir, completa: ${fields.join(', ')}';
   static const show = 'Mostrar';
   static const hide = 'Ocultar';
   static const saved = 'Guardado';
@@ -295,6 +297,7 @@ abstract final class Strings {
       'Ya compartiste este comprobante con el cliente. Si lo recibió, SUNAT '
       'no permite anularlo: emite una nota de crédito.';
   static const motivo = 'Motivo';
+  static const motivoTooShort = 'Escribe al menos 3 caracteres';
   static const motivoHelp = 'Para tu historial y para SUNAT';
   static const voidingRejected = 'SUNAT rechazó la anulación';
   static const comunicacionBaja = 'Comunicación de baja';
@@ -309,6 +312,7 @@ abstract final class Strings {
   static const retencion = 'Retención';
   static const retencionHelp = 'Pago de una factura a un proveedor';
   static const selectSupplier = 'Elegir proveedor';
+  static const supplier = 'Proveedor';
   static const regimen = 'Régimen';
   static const facturaSerieNumero = 'Serie y número';
   static const invalidSerieNumero = 'Escribe la serie y el número: F001-123';
@@ -330,6 +334,9 @@ abstract final class Strings {
   static const motivoTraslado = 'Motivo del traslado';
   static const motivoDescripcion = 'Descripción del motivo';
   static const selectDestinatario = 'Elegir destinatario';
+  static const destinatario = 'Destinatario';
+  static const vehicle = 'Vehículo';
+  static const driver = 'Conductor';
   static const traslado = 'Traslado';
   static const fechaTraslado = 'Fecha de inicio del traslado';
   static const pesoTotal = 'Peso bruto total';
@@ -347,7 +354,6 @@ abstract final class Strings {
   static const selectDriver = 'Elegir conductor';
   static const selectCarrier = 'Elegir transportista';
   static const registroMtc = 'Registro MTC del transportista';
-  static const optional = 'Opcional';
   static const bienes = 'Bienes';
   static const bien = 'Bien';
   static const addBien = 'Agregar bien';

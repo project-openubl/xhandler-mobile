@@ -134,6 +134,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const RequiredFieldsLegend(),
             if (!editing) ...[
               CatalogDropdown(
                 label: Strings.tipoComprobante,
@@ -147,6 +148,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
               FormTextField(
                 _serie,
                 Strings.serie,
+                required: true,
                 maxLength: 4,
                 validator: _validateSerie,
               ),
@@ -154,6 +156,7 @@ class _SerieDialogState extends ConsumerState<_SerieDialog> {
             FormTextField(
               _nextNumber,
               Strings.nextNumber,
+              required: true,
               digitsOnly: true,
               maxLength: 8,
               validator: (text) => (int.tryParse(text) ?? 0) > 0

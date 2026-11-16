@@ -254,6 +254,12 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         : null;
   }
 
+  /// Labels of the required fields still empty
+  List<String> get _missing => [
+    if (_sustento.text.trim().isEmpty) Strings.sustento,
+    if (_lines.isEmpty) Strings.lines,
+  ];
+
   @override
   Widget build(BuildContext context) {
     // Series loaded after the first frame recompute the preview
@@ -293,6 +299,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
                   '$_letter${widget.tipoComprobante == '07' ? 'C' : 'D'}',
                 ),
               ),
+            const RequiredFieldsLegend(),
             SerieDropdown(
               series: series,
               value: serie?.id,
@@ -309,10 +316,12 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             ),
             TextField(
               controller: _sustento,
-              decoration: const InputDecoration(labelText: Strings.sustento),
+              decoration: const InputDecoration(
+                label: RequiredLabel(Strings.sustento),
+              ),
               onChanged: (_) => _changed(),
             ),
-            const FormSection(Strings.lines),
+            FormSection(Strings.lines, required: editable),
             DraftLinesList(
               lines: _lines,
               moneda: moneda,
@@ -351,6 +360,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             ),
             if (warning != null) DraftWarning(warning),
             const SizedBox(height: 24),
+            MissingFieldsHint(_missing),
             SaveButton(
               label: Strings.emit,
               filled: true,

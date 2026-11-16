@@ -32,6 +32,23 @@ void main() {
       await data.unmount(tester);
     });
 
+    testWidgets('says a required field is empty once it is left', (
+      tester,
+    ) async {
+      final data = TestData();
+      await data.pump(tester, const CompanyFormPage());
+
+      await tester.tap(find.widgetWithText(TextFormField, '${Strings.ruc} *'));
+      await tester.pumpAndSettle();
+      expect(find.text(Strings.required), findsNothing);
+      await tester.tap(
+        find.widgetWithText(TextFormField, '${Strings.razonSocial} *'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(Strings.required), findsOneWidget);
+      await data.unmount(tester);
+    });
+
     testWidgets('saves whether SUNAT made it a percepción/retención agent', (
       tester,
     ) async {
@@ -114,7 +131,7 @@ void main() {
       await tester.tap(find.byTooltip(Strings.addSerie));
       await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(TextFormField, Strings.serie),
+        find.widgetWithText(TextFormField, '${Strings.serie} *'),
         serie,
       );
       await data.tapAndWait(tester);

@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../strings.dart';
 
-/// Labeled text field of the app's forms; [validator] receives trimmed text.
+/// Labeled text field of the app's forms; [validator] receives trimmed text,
+/// and runs when the field is left, so mistakes show before saving.
 /// [obscureText] fields get a show/hide button. [required] fields show an
 /// asterisk after the label (pair them with a [RequiredFieldsLegend]) and
 /// reject empty text before running [validator].
@@ -59,9 +60,10 @@ class _FormTextFieldState extends State<FormTextField> {
             ? [FilteringTextInputFormatter.digitsOnly]
             : null,
         textInputAction: TextInputAction.next,
+        autovalidateMode: AutovalidateMode.onUnfocus,
         decoration: InputDecoration(
           labelText: widget.required ? null : widget.label,
-          label: widget.required ? _RequiredLabel(widget.label) : null,
+          label: widget.required ? RequiredLabel(widget.label) : null,
           helperText: widget.helperText,
           prefixText: widget.prefixText,
           counterText: '',
@@ -100,16 +102,20 @@ class ErrorText extends StatelessWidget {
   );
 }
 
-/// Field label followed by a red asterisk; screen readers announce
-/// "obligatorio" instead of "asterisk"
-class _RequiredLabel extends StatelessWidget {
-  const _RequiredLabel(this.label);
+/// Label followed by a red asterisk, for what must be filled in before
+/// saving: text fields, and the pickers and lists that start empty. Fields
+/// that always have a value (dropdowns, dates, switches) aren't marked.
+/// Screen readers announce "obligatorio" instead of "asterisk".
+class RequiredLabel extends StatelessWidget {
+  const RequiredLabel(this.label, {super.key, this.style});
 
   final String label;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
     return Text.rich(
+      style: style,
       TextSpan(
         text: label,
         children: [
@@ -124,8 +130,7 @@ class _RequiredLabel extends StatelessWidget {
   }
 }
 
-/// Explains the asterisk of [FormTextField.required] fields; goes at the top
-/// of the form
+/// Explains the asterisk of [RequiredLabel]; goes at the top of the form
 class RequiredFieldsLegend extends StatelessWidget {
   const RequiredFieldsLegend({super.key});
 
@@ -218,16 +223,46 @@ class DeleteButton extends StatelessWidget {
   }
 }
 
+/// Title of a group of fields; [required] for a list that needs an entry
 class FormSection extends StatelessWidget {
-  const FormSection(this.title, {super.key});
+  const FormSection(this.title, {super.key, this.required = false});
 
   final String title;
+  final bool required;
 
   @override
   Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.titleMedium;
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 8),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      child: required
+          ? RequiredLabel(title, style: style)
+          : Text(title, style: style),
+    );
+  }
+}
+
+/// What's still missing before the button under it works; nothing when
+/// [missing] is empty
+class MissingFieldsHint extends StatelessWidget {
+  const MissingFieldsHint(this.missing, {super.key});
+
+  /// Labels of the required fields still empty
+  final List<String> missing;
+
+  @override
+  Widget build(BuildContext context) {
+    if (missing.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        Strings.completeToEmit(missing),
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
