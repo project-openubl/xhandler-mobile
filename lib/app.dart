@@ -1,7 +1,15 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
+import 'app_log.dart';
+
+import 'features/lock/app_lock.dart';
+import 'notifications.dart';
 import 'router.dart';
 import 'strings.dart';
+import 'theme/status_colors.dart';
+import 'widgets/readable_width.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -14,7 +22,30 @@ class _AppState extends State<App> {
   final _router = buildRouter();
 
   @override
+  void initState() {
+    super.initState();
+    Notifications.onOpenDocument = _openDocument;
+    unawaited(_listenToNotifications());
+  }
+
+  /// Taps on notifications open their document, also when a tap started
+  /// the app
+  Future<void> _listenToNotifications() async {
+    try {
+      await Notifications.initialize();
+      final launch = await Notifications.launchDocument();
+      if (launch != null) _openDocument(launch);
+    } on Object catch (error, stack) {
+      AppLog.error('Notifications', error, stack);
+    }
+  }
+
+  void _openDocument(String documentId) =>
+      unawaited(_router.push(Routes.document(documentId)));
+
+  @override
   void dispose() {
+    Notifications.onOpenDocument = null;
     _router.dispose();
     super.dispose();
   }
@@ -26,8 +57,14 @@ class _AppState extends State<App> {
       locale: const Locale('es', 'PE'),
       supportedLocales: const [Locale('es', 'PE')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(colorSchemeSeed: Colors.indigo),
+      // Material's own colors; the dark theme follows the phone's setting
+      theme: ThemeData(extensions: const [StatusColors.light]),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        extensions: const [StatusColors.dark],
+      ),
       routerConfig: _router,
+      builder: (_, child) => ReadableWidth(child: AppLock(child: child!)),
     );
   }
 }

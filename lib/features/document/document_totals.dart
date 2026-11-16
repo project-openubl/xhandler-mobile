@@ -20,4 +20,8 @@ class DocumentTotals {
   String get isc => _amount('total_impuestos', 'isc_importe');
   String get icb => _amount('total_impuestos', 'icb_importe');
   String get total => _amount('total_importe', 'importe');
+
+  /// What the customer deposits in the company's Banco de la Nación account,
+  /// out of [total]
+  String get detraccion => _amount('detraccion', 'monto');
 }

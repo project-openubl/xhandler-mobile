@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../catalogs.dart';
 import '../../data/database.dart';
 import '../../strings.dart';
+import '../../theme/status_colors.dart';
 import 'draft_problem.dart';
 import 'sunat_answer.dart';
 import 'voiding.dart';
@@ -52,15 +53,18 @@ extension DocumentStatusView on DocumentStatus {
     DocumentStatus.voided => Icons.block,
   };
 
-  Color color(ColorScheme colors) => switch (this) {
-    DocumentStatus.pendingSend => colors.primary,
-    DocumentStatus.inProgress ||
-    DocumentStatus.voiding => Colors.amber.shade800,
-    DocumentStatus.accepted ||
-    DocumentStatus.acceptedWithObservations => Colors.green.shade700,
-    DocumentStatus.rejected || DocumentStatus.exception => colors.error,
-    DocumentStatus.unknown || DocumentStatus.voided => colors.outline,
-  };
+  Color color(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final status = StatusColors.of(context);
+    return switch (this) {
+      DocumentStatus.pendingSend => colors.primary,
+      DocumentStatus.inProgress || DocumentStatus.voiding => status.warning,
+      DocumentStatus.accepted ||
+      DocumentStatus.acceptedWithObservations => status.success,
+      DocumentStatus.rejected || DocumentStatus.exception => colors.error,
+      DocumentStatus.unknown || DocumentStatus.voided => colors.outline,
+    };
+  }
 }
 
 /// What the user can do about each status: the detail page's button
@@ -127,6 +131,10 @@ String? localCodeMessage(String? code) => switch (code) {
   LocalCodes.betaTicket =>
     'SUNAT recibió la anulación. En modo prueba se da por aceptada: '
         'SUNAT beta no permite consultar su respuesta.',
+  LocalCodes.pastDeadline =>
+    'Venció el plazo para enviarlo a SUNAT y la app dejó de enviarlo. '
+        'Puedes intentar enviarlo ahora; si SUNAT lo rechaza, emite el '
+        'comprobante de nuevo.',
   'HTTP 401' =>
     'SUNAT no aceptó el usuario o la clave SOL (Empresa → Credenciales).',
   _ => null,
@@ -150,7 +158,11 @@ String draftProblemMessage(DraftProblem problem) => switch (problem) {
   DraftProblem.anonymousOver700 =>
     'Las boletas de más de S/ 700 necesitan el DNI del cliente.',
   DraftProblem.cuotasMismatch =>
-    'Las cuotas deben sumar el total y vencer después de hoy.',
+    'Las cuotas deben sumar el total (menos la detracción, si la hay) y '
+        'vencer después de hoy.',
+  DraftProblem.missingDetraccionAccount =>
+    'La factura tiene detracción: registra la cuenta de detracciones del '
+        'Banco de la Nación en Empresa → Datos de la empresa.',
   DraftProblem.noteSerieMismatch =>
     'Las notas de facturas usan series F y las de boletas, series B.',
   DraftProblem.invalidAffectedDocument =>
@@ -173,13 +185,17 @@ class DocumentStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = status.color(Theme.of(context).colorScheme);
+    final color = status.color(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(status.icon, size: 16, color: color),
         const SizedBox(width: 4),
-        Text(status.label, style: TextStyle(color: color, fontSize: 12)),
+        Text(
+          status.label,
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: color),
+        ),
       ],
     );
   }

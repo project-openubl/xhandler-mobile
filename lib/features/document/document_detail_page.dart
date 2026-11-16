@@ -15,10 +15,12 @@ import '../delivery/delivery_service.dart';
 import '../delivery/delivery_sheet.dart';
 import '../despatch/despatch_advice_form_page.dart';
 import '../pdf/document_view.dart';
+import 'deadlines.dart';
 import 'document_repository.dart';
 import 'document_service.dart';
 import 'document_status.dart';
 import 'emit_flow.dart';
+import 'invoice_draft.dart';
 import 'note_form_page.dart';
 import 'sunat_answer.dart';
 import 'voiding.dart';
@@ -31,9 +33,21 @@ class DocumentDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final document = ref.watch(documentProvider(documentId)).value;
-    if (document == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final Document document;
+    switch (ref.watch(documentProvider(documentId))) {
+      case AsyncData(:final value):
+        document = value;
+      // e.g. a notification of a document no longer on this phone
+      case AsyncError():
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: Text(Strings.documentNotFound)),
+        );
+      default:
+        return Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: CircularProgressIndicator()),
+        );
     }
     final events =
         ref.watch(documentEventsProvider(documentId)).value ?? const [];
@@ -41,7 +55,6 @@ class DocumentDetailPage extends ConsumerWidget {
         ref.watch(relatedDocumentsProvider(documentId)).value ?? const [];
     final deliveries =
         ref.watch(deliveriesProvider(documentId)).value ?? const [];
-    final colors = Theme.of(context).colorScheme;
     final notes = document.sunatNotes == null
         ? const <String>[]
         : (jsonDecode(document.sunatNotes!) as List).cast<String>();
@@ -51,13 +64,16 @@ class DocumentDetailPage extends ConsumerWidget {
       if (localMessage != null)
         localMessage
       else ...[
-        if (document.sunatCode != null)
-          '${Strings.sunatAnswer}: ${document.sunatCode}',
+        // Code 0 (accepted) means nothing to people; others are worth
+        // looking up
+        if (document.sunatCode case final code? when code != '0')
+          '${Strings.sunatAnswer}: $code',
         ?document.sunatDescription,
         ...notes,
       ],
     ];
     final action = document.status.actionLabel;
+    final voids = voidingTipos.contains(document.tipoComprobante);
     final company = ref.watch(activeCompanyProvider).value;
     // Documents of the active company in its current environment
     final isActive =
@@ -100,11 +116,11 @@ class DocumentDetailPage extends ConsumerWidget {
             leading: Icon(
               document.status.icon,
               size: 40,
-              color: document.status.color(colors),
+              color: document.status.color(context),
             ),
             title: Text(
               document.status.label,
-              style: TextStyle(color: document.status.color(colors)),
+              style: TextStyle(color: document.status.color(context)),
             ),
             subtitle: Text(document.status.help),
           ),
@@ -162,14 +178,29 @@ class DocumentDetailPage extends ConsumerWidget {
                   ),
                 if (canVoid)
                   OutlinedButton(
-                    onPressed: () => _void(context, ref, document),
+                    onPressed: () => _void(
+                      context,
+                      ref,
+                      document,
+                      delivered: deliveries.isNotEmpty,
+                    ),
                     child: const Text(Strings.voidDocument),
                   ),
               ],
             ),
           ListTile(
             title: Text(tipoComprobanteLabel(document.tipoComprobante)),
-            subtitle: Text('${Strings.fechaEmision}: ${document.fechaEmision}'),
+            subtitle: Text(
+              [
+                '${Strings.fechaEmision}: '
+                    '${formatDate(context, document.fechaEmision)}',
+                // Not at SUNAT yet: by when it must be
+                if (document.status == DocumentStatus.pendingSend ||
+                    document.status == DocumentStatus.exception)
+                  if (sendingDeadline(document) case final deadline?)
+                    Strings.sendingDeadline(formatDate(context, deadline)),
+              ].join('\n'),
+            ),
           ),
           if (affectedId != null)
             _DocumentLink(
@@ -184,15 +215,22 @@ class DocumentDetailPage extends ConsumerWidget {
               (document.status == DocumentStatus.voided ||
                   document.status == DocumentStatus.voiding))
             _DocumentLink(voidedById, label: Strings.voidedBy),
-          ListTile(
-            title: Text(document.clienteNombre),
-            subtitle: Text(
-              '${Catalogs.tiposDocumentoIdentidad[document.clienteTipoDocumento] ?? ''}'
-              ' ${document.clienteNumeroDocumento}',
+          // A voiding document's customer and amount are the voided one's
+          if (!voids)
+            ListTile(
+              title: Text(document.clienteNombre),
+              // "Clientes varios" have no document to show
+              subtitle:
+                  document.clienteTipoDocumento ==
+                      anonymousCustomer.tipoDocumentoIdentidad
+                  ? null
+                  : Text(
+                      '${Catalogs.tiposDocumentoIdentidad[document.clienteTipoDocumento] ?? ''}'
+                      ' ${document.clienteNumeroDocumento}',
+                    ),
             ),
-          ),
           // Guías have no amounts
-          if (document.tipoComprobante != '09')
+          if (!voids && document.tipoComprobante != '09')
             ListTile(
               title: const Text(Strings.total),
               trailing: Text(
@@ -231,7 +269,7 @@ class DocumentDetailPage extends ConsumerWidget {
               dense: true,
               leading: Icon(
                 event.status.icon,
-                color: event.status.color(colors),
+                color: event.status.color(context),
               ),
               title: Text(event.status.label),
               subtitle: Text(
@@ -240,7 +278,9 @@ class DocumentDetailPage extends ConsumerWidget {
                       .formatShortDate(event.updatedAt.toLocal()),
                   TimeOfDay.fromDateTime(event.updatedAt.toLocal())
                       .format(context),
-                  ?localCodeMessage(event.code) ?? event.code,
+                  // Code 0 (accepted) means nothing to people
+                  ?localCodeMessage(event.code) ??
+                      (event.code == '0' ? null : event.code),
                   ?event.message,
                 ].join(' · '),
               ),
@@ -255,11 +295,12 @@ class DocumentDetailPage extends ConsumerWidget {
   Future<void> _void(
     BuildContext context,
     WidgetRef ref,
-    Document document,
-  ) async {
+    Document document, {
+    required bool delivered,
+  }) async {
     final motivo = await showDialog<String>(
       context: context,
-      builder: (_) => const _VoidDialog(),
+      builder: (_) => _VoidDialog(delivered: delivered),
     );
     if (motivo == null || !context.mounted) return;
     final service = ref.read(documentServiceProvider);
@@ -288,7 +329,11 @@ class DocumentDetailPage extends ConsumerWidget {
 
 /// The reason for voiding, which SUNAT asks for
 class _VoidDialog extends StatefulWidget {
-  const _VoidDialog();
+  const _VoidDialog({required this.delivered});
+
+  /// Sent to the customer already: SUNAT only voids documents the customer
+  /// didn't receive
+  final bool delivered;
 
   @override
   State<_VoidDialog> createState() => _VoidDialogState();
@@ -314,7 +359,10 @@ class _VoidDialogState extends State<_VoidDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(Strings.voidHelp),
+            if (widget.delivered)
+              const ErrorText(Strings.voidDelivered)
+            else
+              const Text(Strings.voidHelp),
             FormTextField(
               _motivo,
               Strings.motivo,

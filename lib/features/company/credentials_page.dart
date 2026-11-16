@@ -8,6 +8,7 @@ import '../../data/secure_store.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import 'certificate_status.dart';
 import 'company_repository.dart';
 
 /// SOL user and the API client for guías de remisión, kept in secure storage
@@ -76,6 +77,7 @@ class _CredentialsPageState extends ConsumerState<CredentialsPage> {
       CompanySecret.greClientId: optionalText(_greClientId),
       CompanySecret.greClientSecret: optionalText(_greClientSecret),
     });
+    ref.invalidate(hasSolCredentialsProvider(widget.company.id));
     if (!mounted) return;
     showMessage(context, Strings.saved);
     Navigator.of(context).maybePop();

@@ -15,6 +15,7 @@ import '../product/products_page.dart';
 import '../series/series_repository.dart';
 import 'document_status.dart';
 import 'document_totals.dart';
+import 'draft_problem.dart';
 import 'invoice_draft.dart';
 
 /// Totals of a draft computed by xbuilder shortly after the last change.
@@ -42,6 +43,8 @@ class TotalsPreview {
         totals = await compute();
       } on BridgeError catch (bridgeError) {
         error = documentErrorMessage(bridgeError.message);
+      } on InvalidDraftError catch (invalid) {
+        error = draftProblemMessage(invalid.problem);
       } on Object {
         error = Strings.unexpectedError;
       }
@@ -431,7 +434,7 @@ class DraftLinesList extends StatelessWidget {
             subtitle: Text(
               showPrices
                   ? '${line.cantidad} × ${formatMoney(moneda, line.precio)}'
-                        '${line.precioIncluyeIgv ? '' : ' + IGV'}'
+                        '${line.precioIncluyeIgv ? '' : Strings.plusIgv}'
                   : '${line.cantidad} '
                         '${Catalogs.unidadesMedida[line.unidadMedida] ?? line.unidadMedida}',
             ),
@@ -505,6 +508,15 @@ class TotalsSection extends StatelessWidget {
                 Text(formatMoney(moneda, totals.total), style: bold),
               ],
             ),
+            // Part of the total the customer deposits for SUNAT
+            if (toCents(totals.detraccion) != BigInt.zero)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(Strings.detraccion),
+                  Text(formatMoney(moneda, totals.detraccion)),
+                ],
+              ),
           ],
         ),
       ),
@@ -522,10 +534,7 @@ class DraftWarning extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Text(
-        message,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      ),
+      child: ErrorText(message),
     );
   }
 }

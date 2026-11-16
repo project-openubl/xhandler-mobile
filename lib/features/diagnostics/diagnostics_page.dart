@@ -1,20 +1,23 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../app_log.dart';
 import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import '../../widgets/form_widgets.dart';
 import 'sample_invoice.dart';
 
-/// Checks the whole chain against SUNAT beta: build, sign and send a sample
-/// invoice with SUNAT's demo certificate.
-class SunatBetaCheckPage extends StatefulWidget {
-  const SunatBetaCheckPage({super.key});
+/// Checks the whole chain against SUNAT beta (build, sign and send a sample
+/// invoice with SUNAT's demo certificate) and shares the error log
+class DiagnosticsPage extends StatefulWidget {
+  const DiagnosticsPage({super.key});
 
   @override
-  State<SunatBetaCheckPage> createState() => _SunatBetaCheckPageState();
+  State<DiagnosticsPage> createState() => _DiagnosticsPageState();
 }
 
-class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
+class _DiagnosticsPageState extends State<DiagnosticsPage> {
   String? _progress;
   String? _result;
 
@@ -50,15 +53,38 @@ class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
     });
   }
 
+  Future<void> _shareLog(BuildContext anchor) async {
+    final log = AppLog.file;
+    if (log == null || !log.existsSync() || log.lengthSync() == 0) {
+      showMessage(anchor, Strings.noErrorLog);
+      return;
+    }
+    final box = anchor.findRenderObject() as RenderBox?;
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(log.path, mimeType: 'text/plain')],
+        fileNameOverrides: ['xhandler-errores.log'],
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(Strings.sunatBetaCheckTitle)),
+      appBar: AppBar(title: const Text(Strings.diagnostics)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              Strings.sunatBetaCheckTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
             const Text(Strings.sunatBetaCheckHelp),
             const SizedBox(height: 16),
             FilledButton(
@@ -68,6 +94,16 @@ class _SunatBetaCheckPageState extends State<SunatBetaCheckPage> {
             const SizedBox(height: 16),
             if (_progress != null) Text(_progress!),
             if (_result != null) SelectableText(_result!),
+            const Divider(height: 48),
+            const Text(Strings.shareErrorLogHelp),
+            const SizedBox(height: 16),
+            Builder(
+              // Its own context anchors the share sheet on iPads
+              builder: (anchor) => OutlinedButton(
+                onPressed: () => _shareLog(anchor),
+                child: const Text(Strings.shareErrorLog),
+              ),
+            ),
           ],
         ),
       ),

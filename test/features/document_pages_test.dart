@@ -280,6 +280,36 @@ void main() {
       ))!;
       expect(documents.single.clienteNombre, 'CLIENTES VARIOS');
       expect(documents.single.status, DocumentStatus.accepted);
+
+      // Nothing left to lose after charging: back just leaves
+      await tester.binding.handlePopRoute();
+      await pumpUntil(
+        tester,
+        () => find.byType(QuickSalePage).evaluate().isEmpty,
+        'left without asking',
+      );
+      expect(find.text(Strings.discardChanges), findsNothing);
+      await data.unmount(tester);
+    });
+
+    testWidgets('asks before losing a cart', (tester) async {
+      final data = TestData();
+      final company = await withCoffee(tester, data);
+      final bridge = FakeBridge()..total = '4.00';
+      await pumpPage(
+        tester,
+        data,
+        serviceFor(data, bridge),
+        bridge,
+        QuickSalePage(company),
+      );
+      await pumpUntil(tester, () => shows('Café'));
+      await tester.tap(find.text('Café'));
+      await tester.pump();
+
+      await tester.binding.handlePopRoute();
+      await pumpUntil(tester, () => shows(Strings.discardChanges));
+      expect(find.byType(QuickSalePage), findsOneWidget);
       await data.unmount(tester);
     });
 
@@ -404,6 +434,49 @@ void main() {
       )..where((d) => d.serie.equals('FC01'))).getSingle(),
     ))!;
     expect(note.affectedDocumentId, factura.id);
+    await data.unmount(tester);
+  });
+
+  testWidgets("a nota asks before leaving only once it's edited", (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.companies.watchActive().first,
+    ))!;
+    Future<void> open() async {
+      await pumpPage(
+        tester,
+        data,
+        service,
+        bridge,
+        NoteFormPage(company, affected: factura, tipoComprobante: '07'),
+      );
+      // The copy of the factura, its series and totals preview are loaded
+      await pumpUntil(tester, () => shows('FC01-00000001'));
+      await pumpUntil(tester, () => shows('S/ 118.00'));
+    }
+
+    await open();
+    await tester.binding.handlePopRoute();
+    await pumpUntil(
+      tester,
+      () => find.byType(NoteFormPage).evaluate().isEmpty,
+      'left without asking',
+    );
+    expect(find.text(Strings.discardChanges), findsNothing);
+
+    await open();
+    await tester.enterText(
+      find.widgetWithText(TextField, Strings.sustento),
+      'Descuento por pronto pago',
+    );
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await pumpUntil(tester, () => shows(Strings.discardChanges));
     await data.unmount(tester);
   });
 
@@ -568,6 +641,47 @@ void main() {
     ))!;
     expect(retention.serie, 'R001');
     expect(retention.total, '15.02');
+    await data.unmount(tester);
+  });
+
+  testWidgets('a guía from a factura asks before leaving once typed in', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.companies.watchActive().first,
+    ))!;
+    Future<void> open() async {
+      await pumpPage(
+        tester,
+        data,
+        service,
+        bridge,
+        DespatchAdviceFormPage(company, related: factura),
+      );
+      await pumpUntil(tester, () => shows('T001-00000001'));
+    }
+
+    // The factura's goods and customer aren't the user's input
+    await open();
+    await tester.binding.handlePopRoute();
+    await pumpUntil(
+      tester,
+      () => find.byType(DespatchAdviceFormPage).evaluate().isEmpty,
+      'left without asking',
+    );
+
+    await open();
+    await tester.enterText(
+      find.widgetWithText(TextField, Strings.numeroBultos),
+      '3',
+    );
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await pumpUntil(tester, () => shows(Strings.discardChanges));
     await data.unmount(tester);
   });
 
@@ -770,6 +884,62 @@ void main() {
           find.textContaining('B001-00000001').evaluate().isEmpty &&
           find.textContaining('B001-00000002').evaluate().isNotEmpty,
     );
+    await data.unmount(tester);
+  });
+
+  testWidgets('DocumentsList searches, and notas de crédito subtract', (
+    tester,
+  ) async {
+    final data = TestData();
+    final bridge = FakeBridge();
+    final service = serviceFor(data, bridge);
+    final factura = await acceptedFactura(tester, data, service, bridge);
+    final company = (await tester.runAsync(
+      () => data.companies.watchActive().first,
+    ))!;
+    await tester.runAsync(() async {
+      // A nota de crédito of the whole factura
+      final fc01 = await (data.database.select(
+        data.database.series,
+      )..where((s) => s.serie.equals('FC01'))).getSingle();
+      await service.emit(
+        company: company,
+        serie: fc01,
+        draft: NoteDraft(
+          tipoComprobante: '07',
+          affected: factura,
+          tipoNota: '01',
+          sustento: 'Anulación',
+          customer: const DraftCustomer(
+            tipoDocumentoIdentidad: '6',
+            numeroDocumentoIdentidad: '20100070970',
+            nombre: 'SUPERMERCADOS PERUANOS',
+          ),
+          lines: const [
+            DraftLine(descripcion: 'Café', cantidad: '2', precio: '59'),
+          ],
+        ),
+      );
+    });
+
+    await pumpPage(
+      tester,
+      data,
+      service,
+      bridge,
+      Scaffold(body: DocumentsList(company)),
+    );
+    await pumpUntil(
+      tester,
+      () => shows('F001-00000001 · ${factura.clienteNombre}'),
+    );
+    expect(find.text('S/ 118.00'), findsOneWidget); // the factura
+    expect(find.text('−S/ 118.00'), findsOneWidget); // the nota
+
+    await tester.enterText(find.byType(SearchBar), 'fc01');
+    await tester.pump();
+    expect(find.textContaining('F001-'), findsNothing);
+    expect(find.textContaining('FC01-'), findsOneWidget);
     await data.unmount(tester);
   });
 

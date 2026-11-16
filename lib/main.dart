@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sqlite3/sqlite3.dart' show SqliteException;
 
 import 'app.dart';
+import 'app_log.dart';
 import 'app_restart.dart';
 import 'data/database.dart';
 import 'data/providers.dart';
@@ -16,6 +17,8 @@ import 'widgets/form_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppLog.init();
+  AppLog.catchUncaught();
   await RustLib.init();
   restartApp = _start;
   await _start();

@@ -64,6 +64,20 @@ class FakeBridge implements SunatBridge {
     );
   }
 
+  /// Until when the certificates [inspect] reads are valid
+  DateTime certificateValidUntil = DateTime.utc(2100);
+
+  @override
+  Future<CertificateInfo> inspect(
+    Uint8List certificate,
+    String password,
+  ) async => CertificateInfo(
+    subject: 'CN=EMPRESA',
+    issuer: 'CA',
+    validFrom: DateTime.utc(2000),
+    validUntil: certificateValidUntil,
+  );
+
   @override
   Future<SignedDocument> sign(
     String xml,

@@ -6,6 +6,7 @@ import '../../data/database.dart';
 import '../../peru_date.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import '../../theme/status_colors.dart';
 import '../../widgets/form_widgets.dart';
 import '../document/document_repository.dart';
 import '../pdf/share_document.dart';
@@ -77,9 +78,8 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sales = ref.watch(
-      _salesProvider((company: widget.company, month: _month)),
-    );
+    final query = _salesProvider((company: widget.company, month: _month));
+    final sales = ref.watch(query);
     final rows = sales.value;
     final localizations = MaterialLocalizations.of(context);
     final thisMonth = DateTime.parse(peruToday());
@@ -120,7 +120,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
           ),
           const SizedBox(height: 8),
           if (sales.hasError)
-            const Text(Strings.unexpectedError)
+            ErrorRetry(onRetry: () => ref.invalidate(query))
           else if (rows == null)
             const Center(child: CircularProgressIndicator())
           else if (rows.isEmpty)
@@ -143,7 +143,7 @@ class _ReportsPageState extends ConsumerState<ReportsPage> {
                         Text(
                           Strings.unconfirmedCount(summary.unconfirmed),
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                            color: StatusColors.of(context).warning,
                           ),
                         ),
                       for (final (label, amount) in [

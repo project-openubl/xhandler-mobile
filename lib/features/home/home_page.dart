@@ -8,14 +8,17 @@ import '../../data/database.dart';
 import '../../router.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
+import '../../widgets/form_widgets.dart';
 import '../../widgets/test_mode_banner.dart';
 import '../backup/backup_page.dart';
+import '../company/certificate_status.dart';
 import '../company/company_repository.dart';
 import '../despatch/despatch_advice_form_page.dart';
 import '../document/documents_list.dart';
 import '../document/invoice_form_page.dart';
 import '../document/perception_retention_form_page.dart';
 import '../document/quick_sale_page.dart';
+import 'setup_checklist.dart';
 
 /// The active company's home, or a welcome page before the first company
 class HomePage extends ConsumerWidget {
@@ -26,8 +29,8 @@ class HomePage extends ConsumerWidget {
     return switch (ref.watch(activeCompanyProvider)) {
       AsyncData(value: final company?) => _CompanyHome(company),
       AsyncData() => const _WelcomePage(),
-      AsyncError() => const Scaffold(
-        body: Center(child: Text(Strings.unexpectedError)),
+      AsyncError() => Scaffold(
+        body: ErrorRetry(onRetry: () => ref.invalidate(activeCompanyProvider)),
       ),
       _ => const Scaffold(body: Center(child: CircularProgressIndicator())),
     };
@@ -181,8 +184,11 @@ class _CompanyHome extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (company.sunatEnvironment == SunatEnvironment.beta)
+          if (company.sunatEnvironment == SunatEnvironment.beta) ...[
             const TestModeBanner(),
+            SetupChecklist(company),
+          ],
+          CertificateWarningBanner(company.id),
           Expanded(child: DocumentsList(company)),
         ],
       ),
@@ -253,6 +259,11 @@ class _CompanyDrawer extends ConsumerWidget {
           leading: const Icon(Icons.backup),
           title: const Text(Strings.backupTitle),
           onTap: () => open(Routes.backup),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lock),
+          title: const Text(Strings.security),
+          onTap: () => open(Routes.security),
         ),
       ],
     );

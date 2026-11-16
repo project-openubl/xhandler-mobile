@@ -14,6 +14,8 @@ abstract final class Strings {
   static const saved = 'Guardado';
   static const retry = 'Reintentar';
   static const unexpectedError = 'Ocurrió un error inesperado';
+  static const discardChanges = '¿Salir sin guardar? Se perderá lo ingresado.';
+  static const discard = 'Salir';
 
   // Home
   static const welcomeTitle = 'Bienvenido';
@@ -33,6 +35,17 @@ abstract final class Strings {
       'Se borrarán todos los datos de este dispositivo: empresas, '
       'comprobantes y configuración.';
   static const startupErrorTitle = 'No se pudo iniciar la aplicación';
+  static const setupTitle = 'Para emitir comprobantes reales';
+  static String setupProgress(int done, int total) =>
+      '$done de $total pasos listos';
+  static const setupCertificateHelp =
+      'De una entidad acreditada ante Indecopi, y registrado en SUNAT '
+      'Operaciones en Línea (SOL).';
+  static const setupCredentialsHelp =
+      'Un usuario secundario SOL con el perfil de emisor electrónico.';
+  static const setupProduction = 'Desactivar el modo prueba';
+  static const setupProductionHelp =
+      'En Empresa, cuando el certificado y las credenciales estén listos.';
 
   // Company
   static const companySettings = 'Empresa';
@@ -58,6 +71,11 @@ abstract final class Strings {
   static const contacto = 'Contacto';
   static const telefono = 'Teléfono';
   static const email = 'Correo electrónico';
+  static const detracciones = 'Detracciones';
+  static const cuentaDetracciones =
+      'Cuenta de detracciones (Banco de la Nación)';
+  static const cuentaDetraccionesHelp =
+      'Si vendes bienes o servicios sujetos a detracción';
   static const agenteSunat = 'Percepción y retención';
   static const agentePercepcion = 'Agente de percepción';
   static const agentePercepcionHelp =
@@ -98,6 +116,7 @@ abstract final class Strings {
   static const certificateExpired = 'El certificado está vencido';
   static const certificateExpiresSoon =
       'El certificado vence en menos de 30 días';
+  static const viewCertificate = 'Ver certificado';
   static const certificateTestModeHelp =
       'En modo prueba, sin certificado propio se usa el certificado de '
       'demostración de SUNAT.';
@@ -171,6 +190,11 @@ abstract final class Strings {
   static const codigoSunat = 'Código SUNAT del producto';
   static const invalidDetraccionCodigo = 'El código tiene 3 dígitos';
   static const detraccionCodigo = 'Código de detracción';
+  static const detraccionPorcentaje = 'Porcentaje de detracción (%)';
+  static const detraccionPorcentajeHelp =
+      'El que SUNAT fija para este código, ej. 12';
+  static const invalidDetraccionPorcentaje = 'Entre 0 y 100, ej. 12';
+  static const detraccion = 'Detracción';
   static const deleteProductConfirm = '¿Eliminar este producto?';
 
   // Lookup settings
@@ -184,6 +208,7 @@ abstract final class Strings {
   // Documents
   static const newDocument = 'Nuevo comprobante';
   static const noDocuments = 'Aún no hay comprobantes';
+  static const searchDocuments = 'Buscar por número o cliente';
   static const filterAll = 'Todos';
   static const filterProblems = 'Con problemas';
   static const factura = 'Factura';
@@ -209,6 +234,7 @@ abstract final class Strings {
   static const opInafecta = 'Op. inafecta';
   static const opExportacion = 'Op. exportación';
   static const igv = 'IGV';
+  static const plusIgv = ' + IGV';
   static const isc = 'ISC';
   static const icbper = 'ICBPER';
   static const total = 'Total';
@@ -221,11 +247,17 @@ abstract final class Strings {
   static const acceptedDocuments = 'Aceptados';
   static const missingCertificate =
       'Registra el certificado digital de la empresa para emitir comprobantes reales.';
+  static const expiredCertificate =
+      'El certificado digital venció. Importa el renovado en Empresa → '
+      'Certificado digital para seguir emitiendo.';
   static const viewDocument = 'Ver comprobante';
+  static const documentNotFound = 'El comprobante no está en este teléfono';
   static const done = 'Listo';
   static const timeline = 'Historial';
   static const sunatAnswer = 'Respuesta de SUNAT';
   static const fechaEmision = 'Fecha de emisión';
+  static String sendingDeadline(String date) =>
+      'SUNAT debe recibirlo hasta el $date';
 
   // Notes
   static const notaCredito = 'Nota de crédito';
@@ -243,6 +275,9 @@ abstract final class Strings {
   static const voidHelp =
       'Solo anula comprobantes que el cliente aún no recibió. Si ya lo '
       'recibió, emite una nota de crédito.';
+  static const voidDelivered =
+      'Ya compartiste este comprobante con el cliente. Si lo recibió, SUNAT '
+      'no permite anularlo: emite una nota de crédito.';
   static const motivo = 'Motivo';
   static const motivoHelp = 'Para tu historial y para SUNAT';
   static const voidingRejected = 'SUNAT rechazó la anulación';
@@ -355,7 +390,9 @@ abstract final class Strings {
   static const backupHelp =
       'Guarda todo (empresas, comprobantes, certificados y credenciales) en '
       'un archivo protegido con una contraseña. Guárdalo en un lugar seguro, '
-      'como Google Drive o tu correo, para restaurarlo en otro teléfono.';
+      'como Google Drive o tu correo, para restaurarlo en otro teléfono. '
+      'Los comprobantes (XML y CDR) se deben conservar por varios años: '
+      'haz copias seguido.';
   static const noBackupYet = 'Aún no has hecho una copia de seguridad.';
   static String lastBackup(String date) => 'Última copia: $date';
   static const backupPassword = 'Contraseña de la copia';
@@ -371,6 +408,18 @@ abstract final class Strings {
       'Se reemplazará todo lo que hay en este teléfono por el contenido de '
       'la copia.';
   static const restore = 'Restaurar';
+  static String exportCompany(String name) => 'Exportar solo $name';
+  static const importCompanies = 'Importar empresas de una copia';
+  static const importHelp =
+      'Se agregan las empresas de la copia que no están en este teléfono, '
+      'con sus comprobantes, certificado y credenciales; lo demás no cambia. '
+      'Si una empresa sigue emitiendo en otro teléfono, usa series '
+      'distintas en cada uno.';
+  static const import = 'Importar';
+  static const importing = 'Importando…';
+  static String imported(String names) => 'Se agregó: $names';
+  static const nothingToImport =
+      'Las empresas de la copia ya están en este teléfono.';
   static const restoring = 'Restaurando…';
   static const wrongBackupPassword =
       'La contraseña no es correcta o el archivo está dañado.';
@@ -410,7 +459,30 @@ abstract final class Strings {
   static const noFavorites =
       'Marca productos como favoritos para verlos aquí, o búscalos.';
 
+  // Security
+  static const security = 'Seguridad';
+  static const appLock = 'Bloqueo de la app';
+  static const appLockHelp =
+      'Pide la huella, el rostro o el PIN del teléfono para abrir la app. '
+      'Mientras está activo, la app no se ve en las apps recientes ni en '
+      'capturas de pantalla.';
+  static const lockOff = 'Desactivado';
+  static const lockImmediately = 'Al salir de la app';
+  static String lockAfter(int minutes) => minutes == 1
+      ? 'Tras 1 minuto fuera de la app'
+      : 'Tras $minutes minutos fuera de la app';
+  static const lockNeedsScreenLock =
+      'Configura primero un bloqueo de pantalla en el teléfono.';
+  static const locked = 'XHandler está bloqueado';
+  static const unlock = 'Desbloquear';
+  static const unlockReason = 'Desbloquea XHandler';
+
+  // Notifications
+  static const notificationChannel = 'Respuestas de SUNAT';
+  static const notificationChannelHelp = 'Cuando SUNAT responde un comprobante';
+
   // Diagnostics
+  static const diagnostics = 'Diagnóstico';
   static const sunatBetaCheckTitle = 'Diagnóstico SUNAT beta';
   static const sunatBetaCheckHelp =
       'Crea, firma y envía una factura de prueba a SUNAT beta con el '
@@ -418,4 +490,9 @@ abstract final class Strings {
   static const sunatBetaCheckRun = 'Probar';
   static const sunatBetaCheckBuilding = 'Creando y firmando…';
   static const sunatBetaCheckSending = 'Enviando a SUNAT beta…';
+  static const shareErrorLog = 'Compartir registro de errores';
+  static const shareErrorLogHelp =
+      'Errores que la app no pudo mostrar, para enviarlos a soporte. No '
+      'incluye contraseñas ni certificados.';
+  static const noErrorLog = 'No hay errores registrados';
 }

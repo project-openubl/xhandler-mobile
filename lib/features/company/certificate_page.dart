@@ -13,6 +13,8 @@ import '../../src/rust/api/signer.dart';
 import '../../src/rust/api/sunat.dart';
 import '../../strings.dart';
 import '../../widgets/form_widgets.dart';
+import '../document/sunat_bridge.dart';
+import 'certificate_status.dart';
 import 'company_repository.dart';
 
 /// Imports the company's certificate (.pfx): checks its password and
@@ -29,48 +31,14 @@ class CertificatePage extends ConsumerStatefulWidget {
 class _CertificatePageState extends ConsumerState<CertificatePage> {
   final _password = TextEditingController();
 
-  /// The saved certificate: `null` while loading or when there is none
-  CertificateInfo? _saved;
-  bool _loading = true;
-  bool _savedUnreadable = false;
   Uint8List? _selected;
   String? _selectedName;
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    unawaited(_loadSaved());
-  }
-
-  @override
   void dispose() {
     _password.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadSaved() async {
-    final repository = ref.read(companyRepositoryProvider);
-    final secrets = await repository.readSecrets(widget.company.id);
-    final certificate = secrets.certificate;
-    CertificateInfo? saved;
-    var unreadable = false;
-    if (certificate != null) {
-      try {
-        saved = await inspectCertificate(
-          certificate: certificate,
-          password: secrets.certificatePassword ?? '',
-        );
-      } on BridgeError {
-        unreadable = true;
-      }
-    }
-    if (!mounted) return;
-    setState(() {
-      _saved = saved;
-      _savedUnreadable = unreadable;
-      _loading = false;
-    });
   }
 
   Future<void> _select() async {
@@ -92,10 +60,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
     final repository = ref.read(companyRepositoryProvider);
     final CertificateInfo info;
     try {
-      info = await inspectCertificate(
-        certificate: certificate,
-        password: password,
-      );
+      info = await ref.read(sunatBridgeProvider).inspect(certificate, password);
     } on BridgeError catch (error) {
       if (!mounted) return;
       setState(() {
@@ -129,11 +94,10 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
       CompanySecret.certificate: base64Encode(certificate),
       CompanySecret.certificatePassword: password,
     });
+    ref.invalidate(savedCertificateProvider(widget.company.id));
     if (!mounted) return;
     showMessage(context, Strings.saved);
     setState(() {
-      _saved = info;
-      _savedUnreadable = false;
       _selected = null;
       _selectedName = null;
       _error = null;
@@ -143,22 +107,19 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final saved = _saved;
+    final saved = ref.watch(savedCertificateProvider(widget.company.id));
     final testMode = widget.company.sunatEnvironment == SunatEnvironment.beta;
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.certificate)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (_loading)
-            const LinearProgressIndicator()
-          else if (saved != null)
-            _CertificateSummary(saved)
-          else
-            ListTile(
+          switch (saved) {
+            AsyncData(value: final info?) => _CertificateSummary(info),
+            AsyncData() || AsyncError() => ListTile(
               leading: const Icon(Icons.gpp_maybe),
               title: Text(
-                _savedUnreadable
+                saved.hasError
                     ? Strings.certificateUnreadable
                     : Strings.certificateMissing,
               ),
@@ -166,6 +127,8 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
                   ? const Text(Strings.certificateTestModeHelp)
                   : null,
             ),
+            _ => const LinearProgressIndicator(),
+          },
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: _select,
@@ -182,10 +145,7 @@ class _CertificatePageState extends ConsumerState<CertificatePage> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                child: ErrorText(_error!),
               ),
             SaveButton(onPressed: _save, filled: true),
           ],
@@ -202,13 +162,8 @@ class _CertificateSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final validUntil = info.validUntil.toLocal();
-    final warning = validUntil.isBefore(now)
-        ? Strings.certificateExpired
-        : validUntil.isBefore(now.add(const Duration(days: 30)))
-        ? Strings.certificateExpiresSoon
-        : null;
+    final warning = certificateWarning(validUntil);
     final date = MaterialLocalizations.of(context).formatMediumDate(validUntil);
     // e.g. "CN=EMPRESA S.A.C.,O=..." → "EMPRESA S.A.C."
     final holder =

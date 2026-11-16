@@ -77,8 +77,8 @@ void main() {
       (database.update(database.documents)..where((d) => d.id.equals(id)))
           .write(const DocumentsCompanion(nextAttemptAt: Value(null)));
 
-  Future<String> emit() =>
-      service.emit(company: company, serie: f001, draft: _draft);
+  Future<String> emit([DocumentDraft draft = _draft]) =>
+      service.emit(company: company, serie: f001, draft: draft);
 
   group('emit', () {
     test('takes the next number, signs and stores the document', () async {
@@ -129,9 +129,168 @@ void main() {
       company = company.copyWith(sunatEnvironment: SunatEnvironment.production);
       await expectLater(emit(), throwsA(isA<MissingCertificateError>()));
     });
+
+    test(
+      "doesn't sign with an expired certificate, nor use a number",
+      () async {
+        await SecureStore().writeCompanySecrets(company.id, {
+          CompanySecret.certificate: base64Encode([1, 2, 3]),
+        });
+        bridge.certificateValidUntil = DateTime.utc(2020);
+
+        await expectLater(emit(), throwsA(isA<ExpiredCertificateError>()));
+        expect(await database.select(database.documents).get(), isEmpty);
+      },
+    );
+  });
+
+  group('detracción', () {
+    const subject = InvoiceDraft(
+      tipoComprobante: '01',
+      moneda: 'PEN',
+      customer: _rucCustomer,
+      lines: [
+        DraftLine(
+          descripcion: 'Mantenimiento',
+          cantidad: '1',
+          precio: '1180',
+          detraccionCodigo: '020',
+          detraccionPorcentaje: '12',
+        ),
+      ],
+    );
+
+    Future<void> setAccount(String? account) async {
+      await (database.update(database.companies)
+            ..where((c) => c.id.equals(company.id)))
+          .write(CompaniesCompanion(cuentaDetracciones: Value(account)));
+      company = company.copyWith(cuentaDetracciones: Value(account));
+    }
+
+    Map<String, Object?> lastSpec() =>
+        (jsonDecode(bridge.builtJson.last) as Map)['spec']
+            as Map<String, Object?>;
+
+    test('a factura over S/ 700 carries it, to the company account', () async {
+      await setAccount('00-123-456789');
+      bridge.total = '1180.00';
+      final id = await emit(subject);
+
+      expect(bridge.builtJson, hasLength(2)); // again, with the detracción
+      expect(lastSpec()['detraccion'], {
+        'medio_pago': '001',
+        'cuenta_bancaria': '00-123-456789',
+        'tipo_bien_detraido': '020',
+        'porcentaje': '0.12',
+        'monto': '141.60',
+      });
+      expect((await document(id)).inputJson, contains('"detraccion"'));
+    });
+
+    test('up to S/ 700 there is none', () async {
+      await setAccount('00-123-456789');
+      bridge.total = '700.00';
+      await emit(subject);
+
+      expect(bridge.builtJson, hasLength(1));
+      expect(lastSpec().containsKey('detraccion'), isFalse);
+    });
+
+    test('needs the company account, before using a number', () async {
+      bridge.total = '1180.00';
+      await expectLater(
+        emit(subject),
+        throwsA(
+          isA<InvalidDraftError>().having(
+            (e) => e.problem,
+            'problem',
+            DraftProblem.missingDetraccionAccount,
+          ),
+        ),
+      );
+      expect(await database.select(database.documents).get(), isEmpty);
+    });
+
+    test('credit installments add up to the total less it', () async {
+      await setAccount('00-123-456789');
+      // 10 % of 1001.05 is 100.105: half up, 100.11, everywhere
+      bridge.total = '1001.05';
+      InvoiceDraft credit(String importe) => InvoiceDraft(
+        tipoComprobante: '01',
+        moneda: 'PEN',
+        customer: _rucCustomer,
+        lines: const [
+          DraftLine(
+            descripcion: 'Arrendamiento',
+            cantidad: '1',
+            precio: '1001.05',
+            detraccionCodigo: '019',
+            detraccionPorcentaje: '10',
+          ),
+        ],
+        cuotas: [DraftCuota(importe: importe, fechaPago: '2099-01-01')],
+      );
+
+      await expectLater(
+        emit(credit('1001.05')),
+        throwsA(isA<InvalidDraftError>()),
+      );
+      await emit(credit('900.94'));
+      expect((lastSpec()['detraccion']! as Map)['monto'], '100.11');
+    });
   });
 
   group('send', () {
+    test(
+      'the outbox stops past the deadline; the user can still send',
+      () async {
+        final id = await emit();
+        // Issued days ago and never answered (e.g. the phone was offline)
+        await (database.update(database.documents)
+              ..where((d) => d.id.equals(id)))
+            .write(const DocumentsCompanion(fechaEmision: Value('2020-01-01')));
+
+        expect(await service.send(id), DocumentStatus.exception);
+        expect(bridge.calls, isEmpty);
+        expect((await document(id)).sunatCode, LocalCodes.pastDeadline);
+
+        bridge.responses.add(
+          const SunatResponse(
+            status: SunatStatus.accepted,
+            code: '0',
+            notes: [],
+          ),
+        );
+        expect(await service.send(id, manual: true), DocumentStatus.accepted);
+      },
+    );
+
+    test('documents within the deadline, or sent before, keep going', () async {
+      // Issued today
+      final id = await emit();
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.notDelivered, notes: []),
+      );
+      expect(await service.send(id), DocumentStatus.pendingSend);
+      expect(bridge.calls, hasLength(1));
+
+      // Sent once without an answer, then the deadline passed: SUNAT may
+      // have it, and a resend would recover its CDR
+      await (database.update(
+        database.documents,
+      )..where((d) => d.id.equals(id))).write(
+        const DocumentsCompanion(
+          fechaEmision: Value('2020-01-01'),
+          nextAttemptAt: Value(null),
+        ),
+      );
+      bridge.responses.add(
+        const SunatResponse(status: SunatStatus.accepted, code: '0', notes: []),
+      );
+      expect(await service.send(id), DocumentStatus.accepted);
+      expect(bridge.calls, hasLength(2));
+    });
+
     test('records an accepted document with its CDR', () async {
       final id = await emit();
       bridge.responses.add(

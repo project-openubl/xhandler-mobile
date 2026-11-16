@@ -34,6 +34,8 @@ dependencies:
   mailer: ^7.3.0
   cryptography: ^2.9.0
   archive: ^4.7.1
+  local_auth: ^3.0.2
+  clock: ^1.1.3
 
 dev_dependencies:
   flutter_test:
@@ -44,6 +46,7 @@ dev_dependencies:
     sdk: flutter
   drift_dev: ^2.35.3
   build_runner: ^2.17.1
+  local_auth_platform_interface: ^1.1.0
 
 flutter:
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app_log.dart';
 import '../../data/database.dart';
 import '../../router.dart';
 import '../../strings.dart';
@@ -85,8 +86,8 @@ Future<void> deliverDocument(
     }
   } on EmailException catch (error) {
     if (anchor.mounted) showMessage(anchor, emailErrorMessage(error.error));
-  } on Object catch (error) {
-    debugPrint('Delivery: $error');
+  } on Object catch (error, stack) {
+    AppLog.error('Delivery', error, stack);
     if (anchor.mounted) showMessage(anchor, Strings.unexpectedError);
   } finally {
     _delivering = false;

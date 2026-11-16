@@ -21,6 +21,9 @@ class CompanyFormPage extends ConsumerStatefulWidget {
 }
 
 class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
+  /// Whether the user typed something, to ask before leaving
+  bool _edited = false;
+
   final _form = GlobalKey<FormState>();
   final _controllers = <TextEditingController>[];
   late final _ruc = _controller(widget.company?.ruc);
@@ -35,6 +38,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   late final _codigoLocal = _controller(widget.company?.codigoLocal ?? '0000');
   late final _telefono = _controller(widget.company?.telefono);
   late final _email = _controller(widget.company?.email);
+  late final _cuentaDetracciones = _controller(
+    widget.company?.cuentaDetracciones,
+  );
   late bool _agentePercepcion = widget.company?.esAgentePercepcion ?? false;
   late bool _agenteRetencion = widget.company?.esAgenteRetencion ?? false;
 
@@ -68,6 +74,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       codigoLocal: Value(optionalText(_codigoLocal) ?? '0000'),
       telefono: optional(_telefono),
       email: optional(_email),
+      cuentaDetracciones: optional(_cuentaDetracciones),
       esAgentePercepcion: Value(_agentePercepcion),
       esAgenteRetencion: Value(_agenteRetencion),
     );
@@ -75,7 +82,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
     final existing = widget.company;
     if (existing != null) {
       await repository.update(existing.id, company);
-      if (mounted) showMessage(context, Strings.saved);
+      if (!mounted) return;
+      setState(() => _edited = false); // saved: nothing to lose
+      showMessage(context, Strings.saved);
       return;
     }
 
@@ -93,82 +102,99 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.company != null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(editing ? Strings.companyData : Strings.newCompany),
-        actions: [SaveButton(onPressed: _save)],
-      ),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            const RequiredFieldsLegend(),
-            FormTextField(
-              _ruc,
-              Strings.ruc,
-              required: true,
-              enabled: !editing,
-              digitsOnly: true,
-              maxLength: 11,
-              // The RUC can't change once created
-              validator: editing
-                  ? null
-                  : (ruc) => isRuc(digits: ruc) ? null : Strings.invalidRuc,
-            ),
-            FormTextField(_razonSocial, Strings.razonSocial, required: true),
-            FormTextField(_nombreComercial, Strings.nombreComercial),
-            const FormSection(Strings.domicilioFiscal),
-            FormTextField(_direccion, Strings.direccion),
-            FormTextField(_urbanizacion, Strings.urbanizacion),
-            FormTextField(_distrito, Strings.distrito),
-            FormTextField(_provincia, Strings.provincia),
-            FormTextField(_departamento, Strings.departamento),
-            FormTextField(
-              _ubigeo,
-              Strings.ubigeo,
-              digitsOnly: true,
-              maxLength: 6,
-              validator: (ubigeo) => ubigeo.isEmpty || ubigeo.length == 6
-                  ? null
-                  : Strings.invalidUbigeo,
-            ),
-            FormTextField(
-              _codigoLocal,
-              Strings.codigoLocal,
-              digitsOnly: true,
-              maxLength: 4,
-              validator: (codigo) => codigo.isEmpty || codigo.length == 4
-                  ? null
-                  : Strings.invalidCodigoLocal,
-            ),
-            const FormSection(Strings.contacto),
-            FormTextField(
-              _telefono,
-              Strings.telefono,
-              keyboardType: TextInputType.phone,
-            ),
-            FormTextField(
-              _email,
-              Strings.email,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const FormSection(Strings.agenteSunat),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.agentePercepcion),
-              subtitle: const Text(Strings.agentePercepcionHelp),
-              value: _agentePercepcion,
-              onChanged: (value) => setState(() => _agentePercepcion = value),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text(Strings.agenteRetencion),
-              subtitle: const Text(Strings.agenteRetencionHelp),
-              value: _agenteRetencion,
-              onChanged: (value) => setState(() => _agenteRetencion = value),
-            ),
-          ],
+    return UnsavedChangesGuard(
+      dirty: _edited,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(editing ? Strings.companyData : Strings.newCompany),
+          actions: [SaveButton(onPressed: _save)],
+        ),
+        body: Form(
+          onChanged: _edited ? null : () => setState(() => _edited = true),
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const RequiredFieldsLegend(),
+              FormTextField(
+                _ruc,
+                Strings.ruc,
+                required: true,
+                enabled: !editing,
+                digitsOnly: true,
+                maxLength: 11,
+                // The RUC can't change once created
+                validator: editing
+                    ? null
+                    : (ruc) => isRuc(digits: ruc) ? null : Strings.invalidRuc,
+              ),
+              FormTextField(_razonSocial, Strings.razonSocial, required: true),
+              FormTextField(_nombreComercial, Strings.nombreComercial),
+              const FormSection(Strings.domicilioFiscal),
+              FormTextField(_direccion, Strings.direccion),
+              FormTextField(_urbanizacion, Strings.urbanizacion),
+              FormTextField(_distrito, Strings.distrito),
+              FormTextField(_provincia, Strings.provincia),
+              FormTextField(_departamento, Strings.departamento),
+              FormTextField(
+                _ubigeo,
+                Strings.ubigeo,
+                digitsOnly: true,
+                maxLength: 6,
+                validator: (ubigeo) => ubigeo.isEmpty || ubigeo.length == 6
+                    ? null
+                    : Strings.invalidUbigeo,
+              ),
+              FormTextField(
+                _codigoLocal,
+                Strings.codigoLocal,
+                digitsOnly: true,
+                maxLength: 4,
+                validator: (codigo) => codigo.isEmpty || codigo.length == 4
+                    ? null
+                    : Strings.invalidCodigoLocal,
+              ),
+              const FormSection(Strings.contacto),
+              FormTextField(
+                _telefono,
+                Strings.telefono,
+                keyboardType: TextInputType.phone,
+              ),
+              FormTextField(
+                _email,
+                Strings.email,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const FormSection(Strings.detracciones),
+              FormTextField(
+                _cuentaDetracciones,
+                Strings.cuentaDetracciones,
+                helperText: Strings.cuentaDetraccionesHelp,
+                keyboardType: TextInputType.number,
+              ),
+              const FormSection(Strings.agenteSunat),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(Strings.agentePercepcion),
+                subtitle: const Text(Strings.agentePercepcionHelp),
+                value: _agentePercepcion,
+                onChanged: (value) => setState(() {
+                  _agentePercepcion = value;
+                  _edited = true;
+                }),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(Strings.agenteRetencion),
+                subtitle: const Text(Strings.agenteRetencionHelp),
+                value: _agenteRetencion,
+                onChanged: (value) => setState(() {
+                  _agenteRetencion = value;
+                  _edited = true;
+                }),
+              ),
+            ],
+          ),
         ),
       ),
     );

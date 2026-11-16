@@ -24,6 +24,9 @@ class CustomerFormPage extends ConsumerStatefulWidget {
 }
 
 class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
+  /// Whether the user typed something, to ask before leaving
+  bool _edited = false;
+
   final _form = GlobalKey<FormState>();
   final _controllers = <TextEditingController>[];
   late String _tipo = widget.customer?.tipoDocumentoIdentidad ?? '6';
@@ -151,99 +154,108 @@ class _CustomerFormPageState extends ConsumerState<CustomerFormPage> {
   @override
   Widget build(BuildContext context) {
     final existing = widget.customer;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(existing == null ? Strings.newCustomer : Strings.customer),
-        actions: [
-          if (existing != null)
-            DeleteButton(
-              message: Strings.deleteCustomerConfirm,
-              onDelete: () =>
-                  ref.read(customerRepositoryProvider).delete(existing.id),
-            ),
-          SaveButton(onPressed: _lookingUp ? null : _save),
-        ],
-      ),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            CatalogDropdown(
-              label: Strings.tipoDocumentoIdentidad,
-              value: _tipo,
-              options: Catalogs.tiposDocumentoIdentidad,
-              onChanged: (tipo) {
-                setState(() => _tipo = tipo!);
-                if (_numero.text.isNotEmpty) _form.currentState!.validate();
-              },
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: FormTextField(
-                    _numero,
-                    Strings.numeroDocumento,
-                    key: ValueKey(_tipo),
-                    digitsOnly: _numeric,
-                    maxLength: Catalogs.numeroDocumentoLength[_tipo],
-                    validator: _validateNumero,
-                  ),
-                ),
-                if (_canLookUp)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8, top: 4),
-                    child: _lookingUp
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox.square(
-                              dimension: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : IconButton.filledTonal(
-                            tooltip: Strings.lookup,
-                            icon: const Icon(Icons.travel_explore),
-                            onPressed: _lookUp,
-                          ),
-                  ),
-              ],
-            ),
-            FormTextField(
-              _nombre,
-              Strings.nombre,
-              validator: (nombre) => nombre.isEmpty ? Strings.required : null,
-            ),
-            const FormSection(Strings.direccion),
-            FormTextField(_direccion, Strings.direccion),
-            FormTextField(_distrito, Strings.distrito),
-            FormTextField(_provincia, Strings.provincia),
-            FormTextField(_departamento, Strings.departamento),
-            FormTextField(
-              _ubigeo,
-              Strings.ubigeo,
-              digitsOnly: true,
-              maxLength: 6,
-              validator: (ubigeo) => ubigeo.isEmpty || ubigeo.length == 6
-                  ? null
-                  : Strings.invalidUbigeo,
-            ),
-            const FormSection(Strings.contacto),
-            FormTextField(
-              _email,
-              Strings.email,
-              keyboardType: TextInputType.emailAddress,
-              validator: (email) =>
-                  email.isEmpty || isEmail(email) ? null : Strings.invalidEmail,
-            ),
-            FormTextField(
-              _telefono,
-              Strings.telefono,
-              helperText: Strings.telefonoHelp,
-              keyboardType: TextInputType.phone,
-            ),
+    return UnsavedChangesGuard(
+      dirty: _edited,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            existing == null ? Strings.newCustomer : Strings.customer,
+          ),
+          actions: [
+            if (existing != null)
+              DeleteButton(
+                message: Strings.deleteCustomerConfirm,
+                onDelete: () =>
+                    ref.read(customerRepositoryProvider).delete(existing.id),
+              ),
+            SaveButton(onPressed: _lookingUp ? null : _save),
           ],
+        ),
+        body: Form(
+          onChanged: _edited ? null : () => setState(() => _edited = true),
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              CatalogDropdown(
+                label: Strings.tipoDocumentoIdentidad,
+                value: _tipo,
+                options: Catalogs.tiposDocumentoIdentidad,
+                onChanged: (tipo) {
+                  setState(() => _tipo = tipo!);
+                  if (_numero.text.isNotEmpty) _form.currentState!.validate();
+                },
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: FormTextField(
+                      _numero,
+                      Strings.numeroDocumento,
+                      key: ValueKey(_tipo),
+                      digitsOnly: _numeric,
+                      maxLength: Catalogs.numeroDocumentoLength[_tipo],
+                      validator: _validateNumero,
+                    ),
+                  ),
+                  if (_canLookUp)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8, top: 4),
+                      child: _lookingUp
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox.square(
+                                dimension: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : IconButton.filledTonal(
+                              tooltip: Strings.lookup,
+                              icon: const Icon(Icons.travel_explore),
+                              onPressed: _lookUp,
+                            ),
+                    ),
+                ],
+              ),
+              FormTextField(
+                _nombre,
+                Strings.nombre,
+                validator: (nombre) => nombre.isEmpty ? Strings.required : null,
+              ),
+              const FormSection(Strings.direccion),
+              FormTextField(_direccion, Strings.direccion),
+              FormTextField(_distrito, Strings.distrito),
+              FormTextField(_provincia, Strings.provincia),
+              FormTextField(_departamento, Strings.departamento),
+              FormTextField(
+                _ubigeo,
+                Strings.ubigeo,
+                digitsOnly: true,
+                maxLength: 6,
+                validator: (ubigeo) => ubigeo.isEmpty || ubigeo.length == 6
+                    ? null
+                    : Strings.invalidUbigeo,
+              ),
+              const FormSection(Strings.contacto),
+              FormTextField(
+                _email,
+                Strings.email,
+                keyboardType: TextInputType.emailAddress,
+                validator: (email) => email.isEmpty || isEmail(email)
+                    ? null
+                    : Strings.invalidEmail,
+              ),
+              FormTextField(
+                _telefono,
+                Strings.telefono,
+                helperText: Strings.telefonoHelp,
+                keyboardType: TextInputType.phone,
+              ),
+            ],
+          ),
         ),
       ),
     );

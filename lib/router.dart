@@ -2,7 +2,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'data/database.dart';
-
 import 'features/backup/backup_page.dart';
 import 'features/company/active_company_page.dart';
 import 'features/company/certificate_page.dart';
@@ -12,8 +11,10 @@ import 'features/company/credentials_page.dart';
 import 'features/customer/customers_page.dart';
 import 'features/customer/lookup_settings_page.dart';
 import 'features/delivery/email_settings_page.dart';
-import 'features/diagnostics/sunat_beta_check_page.dart';
+import 'features/diagnostics/diagnostics_page.dart';
+import 'features/document/document_detail_page.dart';
 import 'features/home/home_page.dart';
+import 'features/lock/security_page.dart';
 import 'features/product/products_page.dart';
 import 'features/reports/reports_page.dart';
 import 'features/series/series_page.dart';
@@ -33,6 +34,9 @@ abstract final class Routes {
   static const products = '/company/products';
   static const emailSettings = '/company/email';
   static const backup = '/backup';
+  static const security = '/security';
+  static const documentPattern = '/documents/:id';
+  static String document(String id) => '/documents/$id';
   static const reports = '/company/reports';
 }
 
@@ -62,9 +66,15 @@ GoRouter buildRouter() => GoRouter(
     _companyRoute(Routes.emailSettings, EmailSettingsPage.new),
     _companyRoute(Routes.reports, ReportsPage.new),
     GoRoute(path: Routes.backup, builder: (_, _) => const BackupPage()),
+    GoRoute(path: Routes.security, builder: (_, _) => const SecurityPage()),
+    GoRoute(
+      path: Routes.documentPattern,
+      builder: (_, state) =>
+          DocumentDetailPage(documentId: state.pathParameters['id']!),
+    ),
     GoRoute(
       path: Routes.diagnostics,
-      builder: (_, _) => const SunatBetaCheckPage(),
+      builder: (_, _) => const DiagnosticsPage(),
     ),
   ],
 );

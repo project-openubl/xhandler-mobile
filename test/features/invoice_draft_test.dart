@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/features/despatch/despatch_advice_draft.dart';
@@ -56,6 +57,69 @@ void main() {
           fechaEmision: '2026-11-13',
         ),
       );
+
+  test('detracción: the highest rate, kept out of the lines', () {
+    const service = DraftLine(
+      descripcion: 'Mantenimiento',
+      cantidad: '1',
+      precio: '1000',
+      detraccionCodigo: '020',
+      detraccionPorcentaje: '12',
+    );
+    const transport = DraftLine(
+      descripcion: 'Transporte',
+      cantidad: '1',
+      precio: '500',
+      detraccionCodigo: '027',
+      detraccionPorcentaje: '4',
+    );
+    const draft = InvoiceDraft(
+      tipoComprobante: '01',
+      moneda: 'PEN',
+      customer: DraftCustomer(
+        tipoDocumentoIdentidad: '6',
+        numeroDocumentoIdentidad: '20100070970',
+        nombre: 'Cliente',
+      ),
+      lines: [transport, service],
+    );
+    expect(draft.subjectToDetraccion, isTrue);
+    expect(draft.detraccionLine, service);
+    expect(service.toJson().keys, isNot(contains('detraccion')));
+
+    final json = draft
+        .withDetraccionOn('1500.00')
+        .toDocumentJson(
+          company: _company.copyWith(
+            cuentaDetracciones: const Value('00-123-456789'),
+          ),
+          serieNumero: 'F001-1',
+          fechaEmision: '2026-11-13',
+        );
+    // The Rust tests build it with xbuilder
+    expectGoldenJson('factura_detraccion', json);
+    final spec = (jsonDecode(json) as Map)['spec'] as Map;
+    expect(spec['detraccion'], {
+      'medio_pago': '001',
+      'cuenta_bancaria': '00-123-456789',
+      'tipo_bien_detraido': '020',
+      'porcentaje': '0.12',
+      'monto': '180.00',
+    });
+
+    // Only facturas in soles
+    for (final (tipo, moneda) in [('03', 'PEN'), ('01', 'USD')]) {
+      expect(
+        InvoiceDraft(
+          tipoComprobante: tipo,
+          moneda: moneda,
+          customer: draft.customer,
+          lines: draft.lines,
+        ).subjectToDetraccion,
+        isFalse,
+      );
+    }
+  });
 
   test('factura, payment in full, with a bag and ISC', () {
     expectGolden(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app_log.dart';
 import '../../data/database.dart';
 import '../../data/secure_store.dart';
 import '../../strings.dart';
@@ -104,8 +105,8 @@ class _EmailSettingsPageState extends ConsumerState<EmailSettingsPage> {
       }
     } on EmailException catch (error) {
       if (mounted) showMessage(context, emailErrorMessage(error.error));
-    } on Object catch (error) {
-      debugPrint('Test email: $error');
+    } on Object catch (error, stack) {
+      AppLog.error('Test email', error, stack);
       if (mounted) showMessage(context, Strings.unexpectedError);
     } finally {
       if (mounted) setState(() => _testing = false);

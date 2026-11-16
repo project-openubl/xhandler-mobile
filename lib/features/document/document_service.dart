@@ -13,6 +13,7 @@ import '../../peru_date.dart';
 import '../../src/rust/api/document.dart';
 import '../../src/rust/api/error.dart';
 import '../../src/rust/api/sunat.dart';
+import 'deadlines.dart';
 import 'document_repository.dart';
 import 'document_status.dart';
 import 'document_totals.dart';
@@ -25,6 +26,12 @@ import 'voiding.dart';
 /// The company has no certificate and isn't in test mode
 class MissingCertificateError implements Exception {
   const MissingCertificateError();
+}
+
+/// The company's certificate expired: SUNAT would reject what it signs, and
+/// the number would be lost
+class ExpiredCertificateError implements Exception {
+  const ExpiredCertificateError();
 }
 
 /// SUNAT's public demo certificate, used in test mode without a certificate
@@ -94,17 +101,48 @@ class DocumentService {
     required Serie serie,
     required DocumentDraft draft,
   }) async {
-    final fechaEmision = peruToday();
-    final built = await _bridge.build(
-      draft.toDocumentJson(
-        company: company,
-        serieNumero: '${serie.serie}-${serie.nextNumber}',
-        fechaEmision: fechaEmision,
-      ),
-      _defaults(fechaEmision),
+    final (:spec, inputJson: _, built: _) = await _build(
+      company,
+      draft,
+      serieNumero: '${serie.serie}-${serie.nextNumber}',
+      fechaEmision: peruToday(),
     );
-    final json = jsonDecode(built.enrichedJson) as Map<String, dynamic>;
-    return DocumentTotals(json['spec'] as Map<String, dynamic>);
+    return DocumentTotals(spec);
+  }
+
+  /// Builds [draft] with xbuilder. A factura subject to detracción (SPOT) is
+  /// built again with it once its total is known to be over the threshold.
+  Future<({String inputJson, BuiltDocument built, Map<String, dynamic> spec})>
+  _build(
+    Company company,
+    DocumentDraft draft, {
+    required String serieNumero,
+    required String fechaEmision,
+  }) async {
+    final inputJson = draft.toDocumentJson(
+      company: company,
+      serieNumero: serieNumero,
+      fechaEmision: fechaEmision,
+    );
+    final built = await _bridge.build(inputJson, _defaults(fechaEmision));
+    final spec =
+        (jsonDecode(built.enrichedJson) as Map)['spec'] as Map<String, dynamic>;
+    final total = roundAmount(draft.totalOf(spec));
+    if (draft is InvoiceDraft &&
+        draft.subjectToDetraccion &&
+        draft.detraccionMonto == null &&
+        toCents(total) > toCents(draft.detraccionThreshold)) {
+      if (company.cuentaDetracciones == null) {
+        throw const InvalidDraftError(DraftProblem.missingDetraccionAccount);
+      }
+      return _build(
+        company,
+        draft.withDetraccionOn(total),
+        serieNumero: serieNumero,
+        fechaEmision: fechaEmision,
+      );
+    }
+    return (inputJson: inputJson, built: built, spec: spec);
   }
 
   /// Signs [draft] with the next number of [serie] and stores it, ready to
@@ -144,17 +182,14 @@ class DocumentService {
           ? current.nextNumber
           : lastNumero + 1;
       final fechaEmision = peruToday();
-      final inputJson = draft.toDocumentJson(
-        company: company,
+      final (:inputJson, :built, :spec) = await _build(
+        company,
+        draft,
         serieNumero: '${current.serie}-$numero',
         fechaEmision: fechaEmision,
       );
-      final built = await _bridge.build(inputJson, _defaults(fechaEmision));
-      final spec =
-          (jsonDecode(built.enrichedJson) as Map)['spec']
-              as Map<String, Object?>;
       final total = roundAmount(draft.totalOf(spec));
-      _checkTotals(draft, total, fechaEmision);
+      _checkTotals(draft, spec, total, fechaEmision);
       if (draft is NoteDraft && draft.tipoComprobante == '07') {
         final credited = creditedCents(
           await _documents.related(draft.affected.id),
@@ -392,14 +427,25 @@ class DocumentService {
     }
   }
 
-  void _checkTotals(DocumentDraft draft, String total, String fechaEmision) {
+  void _checkTotals(
+    DocumentDraft draft,
+    Map<String, Object?> spec,
+    String total,
+    String fechaEmision,
+  ) {
     if (exceedsAnonymousLimit(draft.customer, draft.moneda, total)) {
       throw const InvalidDraftError(DraftProblem.anonymousOver700);
     }
     if (draft is! InvoiceDraft || draft.cuotas.isEmpty) return;
     final cuotas = draft.cuotas;
     final sum = cuotas.fold(BigInt.zero, (sum, c) => sum + toCents(c.importe));
-    if (sum != toCents(total) ||
+    // What's still owed: the total less the detracción the customer
+    // deposits (R.S. 193-2020)
+    final detraccion = switch (spec['detraccion']) {
+      {'monto': final Object monto} => toCents(roundAmount('$monto')),
+      _ => BigInt.zero,
+    };
+    if (sum != toCents(total) - detraccion ||
         cuotas.any((c) => c.fechaPago.compareTo(fechaEmision) <= 0)) {
       throw const InvalidDraftError(DraftProblem.cuotasMismatch);
     }
@@ -444,6 +490,23 @@ class DocumentService {
     final now = nowUtc();
     if (!manual && nextAttemptAt != null && nextAttemptAt.isAfter(now)) {
       return found.status;
+    }
+    // Past SUNAT's deadline the outbox stops and says why; the user can
+    // still send it. A document sent before may be at SUNAT already: a
+    // resend recovers its CDR (1033), so those keep going.
+    if (!manual &&
+        found.status == DocumentStatus.pendingSend &&
+        found.attempts == 0 &&
+        pastSendingDeadline(found, peruToday())) {
+      return _record(
+        found,
+        const SunatResponse(
+          status: SunatStatus.exception,
+          code: LocalCodes.pastDeadline,
+          notes: [],
+        ),
+        manual,
+      );
     }
     // Claims it: the app and the background outbox use separate database
     // connections, and only one of them must send it
@@ -712,7 +775,12 @@ class DocumentService {
   ) async {
     final certificate = secrets.certificate;
     if (certificate != null) {
-      return (certificate, secrets.certificatePassword ?? '');
+      final password = secrets.certificatePassword ?? '';
+      final info = await _bridge.inspect(certificate, password);
+      if (info.validUntil.isBefore(DateTime.now())) {
+        throw const ExpiredCertificateError();
+      }
+      return (certificate, password);
     }
     if (company.sunatEnvironment == SunatEnvironment.beta) {
       return (await _loadDemoCertificate(), 'password');

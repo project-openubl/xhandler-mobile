@@ -34,7 +34,7 @@ License: Apache-2.0. UI language: Spanish (Peru). Status: in development, see §
 | Pending PDFs | Allowed, with a "Pendiente de envío a SUNAT" note |
 | Backup | WhatsApp-style, end-to-end encrypted, Google Drive appDataFolder / iCloud. Includes certificate and credentials |
 | Restore | Replace-all from cloud + per-company encrypted export/import file |
-| Reports | Sales summary + CSV + Excel + PLE 14.1 + SIRE RVIE |
+| Reports | Sales summary + CSV + Excel (SIRE builds the sales register from SUNAT's data) |
 | Distribution | Google Play + App Store under the OpenUBL organization |
 | Min OS | Android 8 (API 26), iOS 15 |
 | Signer | xsigner rewritten in pure Rust (Phase 0), no OpenSSL/libxml2 |
@@ -104,7 +104,7 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 
 ## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
-Defined in `lib/data/tables.dart`; schema version 1 (snapshot in `drift_schemas/app/`).
+Defined in `lib/data/tables.dart`; schema version 2 (snapshots in `drift_schemas/app/`).
 Decimals are stored as text to keep them exact; timestamps as ISO-8601 UTC text.
 
 ```
@@ -114,7 +114,7 @@ companies         ruc, razon_social, nombre_comercial, domicilio fiscal (ubigeo,
                   provincia, distrito, direccion, urbanizacion, codigo_local), telefono, email,
                   sunat_environment (beta | production), moneda (of new documents),
                   igv_tipo (of new products), es_agente_percepcion, es_agente_retencion,
-                  lookup_provider (none | decolecta)
+                  lookup_provider (none | decolecta), cuenta_detracciones (v2)
                   UNIQUE(ruc) among the not deleted
 series            company_id, tipo_comprobante, serie, next_number, is_default, active
                   UNIQUE(company_id, tipo_comprobante, serie)
@@ -124,7 +124,7 @@ customers         company_id, tipo_documento_identidad, numero_documento_identid
                   among the not deleted
 products          company_id, codigo, codigo_sunat, descripcion, unidad_medida, precio,
                   precio_incluye_igv, igv_tipo, isc_tipo, isc_tasa, es_bolsa,
-                  detraccion_codigo, favorito
+                  detraccion_codigo, detraccion_porcentaje (v2), favorito
 vehicles          company_id, placa, numero_circulacion                -- GRE transporte privado
 drivers           company_id, tipo_documento_identidad, numero_documento_identidad, nombres,
                   apellidos, licencia                                  -- GRE transporte privado
@@ -234,8 +234,15 @@ Rules:
   taken as accepted (local code `BETA_TICKET`, explained to the user).
 - HTTP 401 may be SUNAT throttling: every SUNAT request waits 3 s after the previous
   one, and a 401 is asked again twice before it's taken as wrong credentials.
-- Sending and voiding deadlines per document type live in one table; documents close to
-  the deadline show a countdown. *(Values to confirm against current SUNAT rules.)*
+- Sending deadlines live in one table (`deadlines.dart`): facturas and their notas 3
+  calendar days after issue (RS 000003-2023), boletas and their notas 7 (SUNAT's
+  orientation on resumen diario, to confirm). While SUNAT hasn't answered, the document page says until when SUNAT must
+  receive it. Past the deadline the outbox stops sending a document it never sent (local
+  code `PAST_DEADLINE`, explained to the user); one sent before keeps going, since SUNAT
+  may have it and a resend recovers the CDR (1033). A manual "send now" still tries. Guías, percepciones,
+  retenciones and voiding documents have no deadline in the app until confirmed.
+- Voiding a document that was already delivered warns that SUNAT only voids documents
+  the customer didn't receive (a nota de crédito is the way then).
 - If a document that was already delivered becomes rejected, the app warns and lists the
   deliveries so the user can notify the customer.
 - Every attempt is recorded in `document_event` and shown as a timeline.
@@ -278,7 +285,7 @@ Progressive disclosure for taxes:
 |---|---|---|
 | IGV type | Product (company default) | Per line chip if not default |
 | ISC, ICB | Product | Automatic |
-| Detracción | Company account + product code | Suggested when a line is subject and total exceeds threshold |
+| Detracción | Company account + product code and rate | Automatic on facturas in soles over S/ 700 with a subject line (built: the highest rate applies, deposit in the Banco de la Nación; installments add up to the total less it) |
 | Percepción | Company flag | Only for agentes de percepción |
 | Exportación | Tipo de operación | Switches IGV to export, foreign customer fields |
 | Anticipos | "Más opciones" | Pick an earlier advance invoice |
@@ -389,12 +396,22 @@ the old one), cancels the background outbox (a run already in progress is a resi
 risk) and starts the app over with a new provider scope. The restored phone gets a new
 `device_id`.
 
+Per company: "Exportar solo …" writes the same file format with the active company
+alone. In the snapshot, the other companies' rows and the device settings are deleted
+and the file is vacuumed, so nothing of theirs is left in free pages. Only that
+company's secrets go in the file, and it doesn't count as the last backup. "Importar
+empresas de una copia" opens a company file or a full backup (an older schema is
+upgraded first) and adds, in one transaction, every company whose RUC and id this phone
+doesn't have, with its rows (copied by column name: migrated and fresh databases order
+columns differently) and secrets. Nothing else changes and the app doesn't restart. A
+company kept on two phones needs different series on each (§4).
+
 ---
 
 ## 10. Reports
 
 - Sales summary by date range, document type, status, currency.
-- Exports: CSV, Excel (`excel`), PLE 14.1 Registro de Ventas, SIRE RVIE replacement file.
+- Exports: CSV, Excel (`excel`). No PLE (replaced by SIRE, §14).
   One generator producing rows, several output formats.
 - Exports are shared through the delivery module.
 
@@ -412,6 +429,20 @@ itself (inline strings, numeric amounts; checked with LibreOffice).
 - Certificate check on import (`inspect_certificate`): password, RUC match, expiry; warning
   30 days before expiry.
 - Encrypted database (SQLite3MultipleCiphers); secrets in Keystore/Keychain; no secrets in logs.
+
+Built so far:
+- **App lock ("Seguridad"):** off by default. When on, the app asks for the phone's own lock
+  (`local_auth`: fingerprint, face, PIN or pattern) at start and after it was in the background
+  for the chosen time (on leaving, or 1, 5 or 15 minutes). There is no app PIN to forget. A
+  phone whose screen lock was removed opens without asking.
+- **Hidden screens:** while the lock is on, the app's screens are hidden from recent apps and
+  screenshots on Android (`FLAG_SECURE`) and covered in the iOS app switcher.
+- **Expired certificates:** the app won't sign with an expired company certificate, so no
+  number is lost to a rejection. The company home warns 30 days before expiry and links to
+  the certificate page.
+- **Error log:** errors the app couldn't show (uncaught errors and the background outbox
+  included) go to a small file, without secrets. Diagnostics shares it with support. There is
+  no crash-reporting service.
 
 ---
 
@@ -456,7 +487,7 @@ cryptography, file_picker, share_plus, pdf, printing, excel.
 | 4 | mobile | Remaining documents: notes, GRE (with vehicle/driver/address catalogs), percepción, retención, voiding (RA/RC/RR) |
 | 5 | mobile | PDF templates + delivery (Gmail, Graph, SMTP, share sheet), delivery log |
 | 6 | mobile | Backup/restore (Drive, iCloud), per-company export/import |
-| 7 | mobile | Reports: summary, CSV, Excel, PLE, SIRE |
+| 7 | mobile | Reports: summary, CSV, Excel |
 | 8 | mobile | Store readiness: privacy policy, data safety/privacy labels, Gmail OAuth verification, export compliance, release CI (Play internal track, TestFlight) |
 
 One PR per phase, each followed by a senior-engineer review.
@@ -469,7 +500,18 @@ the app icon and a manual Release workflow; publishing needs the owner's account
 
 ## 14. Open items
 
-- Confirm SUNAT deadlines (sending, voiding) and the unidentified-customer boleta threshold.
+- Confirm the boletas' 7 days against a resolution, and the deadlines not in
+  `deadlines.dart` yet (guías, percepciones, retenciones, reversiones) and whether the voiding window counts from the issue date or the CDR's.
+- Boletas in other currencies aren't checked against the S/ 700 limit for unidentified
+  customers (needs the exchange rate).
+- Detracción: confirm the thresholds (the app uses S/ 400 for transporte de bienes, 027,
+  and S/ 700 otherwise; Annex 1 goods may have none), whether the amount should be
+  rounded to whole soles (deposits are; the app rounds half up to cents and gives that
+  amount to xbuilder, so XML, installments and PDF agree), and the rule for facturas
+  mixing goods with different rates (the app applies the highest). Facturas in other
+  currencies get none (their amount must be in soles).
+- Reduced IGV for small restaurants and hotels (Ley 31556: 10.5 % in 2026, 15 % in 2027):
+  needs a company flag and confirming how SUNAT expects the rate in the XML.
 - Pick the default free-tier RUC/DNI lookup provider in Phase 2 (check current quota and
   terms). Lookup sits behind one interface, `lookup(tipo, numero) → Cliente?`, implemented
   by Decolecta (company token). Results are cached in `customer`.
@@ -484,12 +526,11 @@ the app icon and a manual Release workflow; publishing needs the owner's account
   the project owner.
 - Automatic backups to Google Drive `appDataFolder` / iCloud Drive and their schedule:
   need a Google Cloud OAuth client and the iCloud entitlement for the app's Apple team.
-  Per-company export/import is also pending.
 - Sales in other currencies in soles (SBS exchange rate of the issue date), as the
   register and the IGV declaration need them.
-- PLE 14.1 and the SIRE RVIE replacement file: SIRE replaced PLE (RS 000125-2026) and
-  builds the sales proposal from the electronic documents SUNAT already has, so a file is
-  rarely needed; both layouts must be checked field by field against SUNAT's current
-  specifications before shipping.
+- PLE 14.1 isn't planned: SIRE replaced it (RS 000125-2026, from the October 2026
+  period; new registrants from June 2026, RS 000075-2026) and builds the sales proposal
+  from the electronic documents SUNAT already has. CSV/Excel stay for the user's own
+  checks; a SIRE RVIE replacement file only if users ask for it.
 - Multi-device sync through `xhandler-ui` (server + SQLite on xhandler-rust): later; the
   schema is ready (§3.1).

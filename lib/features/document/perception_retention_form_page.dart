@@ -40,6 +40,9 @@ final _facturaSerieNumero = RegExp(
 
 class _PerceptionRetentionFormPageState
     extends ConsumerState<PerceptionRetentionFormPage> {
+  /// Whether the user typed something, to ask before leaving
+  bool _edited = false;
+
   final _form = GlobalKey<FormState>();
   String? _serieId;
   Serie? _serie;
@@ -118,7 +121,12 @@ class _PerceptionRetentionFormPageState
       company: widget.company,
       forFactura: true,
     );
-    if (customer != null) setState(() => _customer = customer);
+    if (customer != null) {
+      setState(() {
+        _customer = customer;
+        _edited = true;
+      });
+    }
   }
 
   Future<DateTime?> _pickDate(DateTime initial, {DateTime? first}) =>
@@ -144,118 +152,128 @@ class _PerceptionRetentionFormPageState
         : Catalogs.tiposRegimenRetencion;
     final customer = _customer;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (widget.company.sunatEnvironment == SunatEnvironment.beta)
-              const TestModeBanner(),
-            if (seriesValue != null && series.isEmpty)
-              MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
-            SerieDropdown(
-              series: series,
-              value: _serie?.id,
-              onChanged: (id) => setState(() => _serieId = id),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.business),
-              title: Text(
-                customer?.nombre ??
-                    (_isPercepcion
-                        ? Strings.selectCustomer
-                        : Strings.selectSupplier),
+    return UnsavedChangesGuard(
+      dirty: _edited,
+      child: Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: Form(
+          onChanged: _edited ? null : () => setState(() => _edited = true),
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (widget.company.sunatEnvironment == SunatEnvironment.beta)
+                const TestModeBanner(),
+              if (seriesValue != null && series.isEmpty)
+                MissingSerieWarning(Strings.noSerie(title.toLowerCase())),
+              SerieDropdown(
+                series: series,
+                value: _serie?.id,
+                onChanged: (id) => setState(() => _serieId = id),
               ),
-              subtitle: customer == null
-                  ? null
-                  : Text('RUC ${customer.numeroDocumentoIdentidad}'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _pickCustomer,
-            ),
-            if (regimenes.length > 1)
-              CatalogDropdown(
-                label: Strings.regimen,
-                value: _tipoRegimen,
-                options: regimenes,
-                onChanged: (tipo) => setState(() => _tipoRegimen = tipo!),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.business),
+                title: Text(
+                  customer?.nombre ??
+                      (_isPercepcion
+                          ? Strings.selectCustomer
+                          : Strings.selectSupplier),
+                ),
+                subtitle: customer == null
+                    ? null
+                    : Text('RUC ${customer.numeroDocumentoIdentidad}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _pickCustomer,
               ),
-            const FormSection(Strings.factura),
-            FormTextField(
-              _comprobante,
-              Strings.facturaSerieNumero,
-              helperText: 'F001-123',
-              validator: (text) => _facturaSerieNumero.hasMatch(text.trim())
-                  ? null
-                  : Strings.invalidSerieNumero,
-            ),
-            _DateTile(
-              label: Strings.fechaEmision,
-              date: _fechaComprobante,
-              onTap: () async {
-                final picked = await _pickDate(_fechaComprobante);
-                if (picked != null) {
-                  setState(() {
-                    _fechaComprobante = picked;
-                    if (_fechaOperacion.isBefore(_firstFechaOperacion)) {
-                      _fechaOperacion = _firstFechaOperacion;
-                    }
-                  });
-                }
-              },
-            ),
-            FormTextField(
-              _total,
-              Strings.facturaTotal,
-              prefixText: 'S/ ',
-              helperText: Strings.onlySoles,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+              if (regimenes.length > 1)
+                CatalogDropdown(
+                  label: Strings.regimen,
+                  value: _tipoRegimen,
+                  options: regimenes,
+                  onChanged: (tipo) => setState(() => _tipoRegimen = tipo!),
+                ),
+              const FormSection(Strings.factura),
+              FormTextField(
+                _comprobante,
+                Strings.facturaSerieNumero,
+                helperText: 'F001-123',
+                validator: (text) => _facturaSerieNumero.hasMatch(text.trim())
+                    ? null
+                    : Strings.invalidSerieNumero,
               ),
-              validator: (text) =>
-                  parseAmount(text) == null ? Strings.invalidPrecio : null,
-            ),
-            FormSection(_isPercepcion ? Strings.cobro : Strings.pago),
-            FormTextField(
-              _importe,
-              Strings.importe,
-              prefixText: 'S/ ',
-              helperText: Strings.importeHelp,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+              _DateTile(
+                label: Strings.fechaEmision,
+                date: _fechaComprobante,
+                onTap: () async {
+                  final picked = await _pickDate(_fechaComprobante);
+                  if (picked != null) {
+                    setState(() {
+                      _edited = true;
+                      _fechaComprobante = picked;
+                      if (_fechaOperacion.isBefore(_firstFechaOperacion)) {
+                        _fechaOperacion = _firstFechaOperacion;
+                      }
+                    });
+                  }
+                },
               ),
-              validator: (text) => text.isEmpty || parseAmount(text) != null
-                  ? null
-                  : Strings.invalidPrecio,
-            ),
-            _DateTile(
-              label: _isPercepcion ? Strings.fechaCobro : Strings.fechaPago,
-              date: _fechaOperacion,
-              onTap: () async {
-                final picked = await _pickDate(
-                  _fechaOperacion,
-                  first: _firstFechaOperacion,
-                );
-                if (picked != null) setState(() => _fechaOperacion = picked);
-              },
-            ),
-            FormTextField(_observaciones, Strings.observaciones),
-            ListenableBuilder(
-              listenable: Listenable.merge([_comprobante, _total, _importe]),
-              builder: (context, _) => _Summary(_draft),
-            ),
-            const SizedBox(height: 24),
-            ListenableBuilder(
-              listenable: Listenable.merge([_comprobante, _total, _importe]),
-              builder: (context, _) => SaveButton(
-                label: Strings.emit,
-                filled: true,
-                onPressed: _draft == null || _serie == null ? null : _emit,
+              FormTextField(
+                _total,
+                Strings.facturaTotal,
+                prefixText: 'S/ ',
+                helperText: Strings.onlySoles,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (text) =>
+                    parseAmount(text) == null ? Strings.invalidPrecio : null,
               ),
-            ),
-          ],
+              FormSection(_isPercepcion ? Strings.cobro : Strings.pago),
+              FormTextField(
+                _importe,
+                Strings.importe,
+                prefixText: 'S/ ',
+                helperText: Strings.importeHelp,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (text) => text.isEmpty || parseAmount(text) != null
+                    ? null
+                    : Strings.invalidPrecio,
+              ),
+              _DateTile(
+                label: _isPercepcion ? Strings.fechaCobro : Strings.fechaPago,
+                date: _fechaOperacion,
+                onTap: () async {
+                  final picked = await _pickDate(
+                    _fechaOperacion,
+                    first: _firstFechaOperacion,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _fechaOperacion = picked;
+                      _edited = true;
+                    });
+                  }
+                },
+              ),
+              FormTextField(_observaciones, Strings.observaciones),
+              ListenableBuilder(
+                listenable: Listenable.merge([_comprobante, _total, _importe]),
+                builder: (context, _) => _Summary(_draft),
+              ),
+              const SizedBox(height: 24),
+              ListenableBuilder(
+                listenable: Listenable.merge([_comprobante, _total, _importe]),
+                builder: (context, _) => SaveButton(
+                  label: Strings.emit,
+                  filled: true,
+                  onPressed: _draft == null || _serie == null ? null : _emit,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

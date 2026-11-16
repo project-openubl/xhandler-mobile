@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app_log.dart';
 import '../../data/providers.dart';
 import 'background_outbox.dart';
 import 'document_service.dart';
@@ -32,7 +33,7 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     // While closed, the work goes on in the background
     unawaited(
       scheduleBackgroundOutbox().catchError(
-        (Object error) => debugPrint('Background outbox: $error'),
+        (Object error) => AppLog.error('Scheduling the outbox', error),
       ),
     );
   }
@@ -61,7 +62,7 @@ class _OutboxRunnerState extends ConsumerState<OutboxRunner> {
     ref
         .read(documentServiceProvider)
         .sendDue()
-        .catchError((Object error) => debugPrint('Outbox: $error')),
+        .catchError((Object error) => AppLog.error('Outbox', error)),
   );
 
   @override

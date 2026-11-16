@@ -161,9 +161,12 @@ DocumentView documentView(Document document, Company company) {
         : null,
     pending: !acceptedStatuses.contains(document.status),
     testMode: document.environment == SunatEnvironment.beta,
-    footer:
-        'Representación impresa $article ${title.toLowerCase()}. '
-        'Consulte su validez en $consultaUrl',
+    footer: [
+      // The signature's digest, also inside the QR
+      'Valor resumen: ${document.digestValue}',
+      'Representación impresa $article ${title.toLowerCase()}. '
+          'Consulte su validez en $consultaUrl',
+    ].join('\n'),
   );
 }
 
@@ -228,6 +231,20 @@ _Parts _invoice(Document document, Map<String, Object?> spec) {
         ' vence ${cuota['fecha_pago']}',
       );
     }
+  }
+  if (spec['detraccion'] case {
+    'tipo_bien_detraido': final Object codigo,
+    'porcentaje': final Object porcentaje,
+    'monto': final Object monto,
+    'cuenta_bancaria': final Object cuenta,
+  }) {
+    notes.add(
+      'Operación sujeta al Sistema de Pago de Obligaciones Tributarias con '
+      'el Gobierno Central. Detracción (código $codigo, '
+      '${fractionToPercent('$porcentaje')} %): '
+      '${formatMoney('PEN', roundAmount('$monto'))}. '
+      'Cuenta en el Banco de la Nación: $cuenta.',
+    );
   }
   if (spec['comprobante_afectado_serie_numero'] case final String afectado) {
     final tipoNota = '${spec['tipo_nota']}';

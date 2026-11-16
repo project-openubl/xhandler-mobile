@@ -87,6 +87,19 @@ class _FormTextFieldState extends State<FormTextField> {
   }
 }
 
+/// A message about something wrong, in the theme's error color
+class ErrorText extends StatelessWidget {
+  const ErrorText(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    message,
+    style: TextStyle(color: Theme.of(context).colorScheme.error),
+  );
+}
+
 /// Field label followed by a red asterisk; screen readers announce
 /// "obligatorio" instead of "asterisk"
 class _RequiredLabel extends StatelessWidget {
@@ -304,4 +317,52 @@ bool isEmail(String text) => RegExp(r'^\S+@\S+\.\S+$').hasMatch(text);
 String? optionalText(TextEditingController controller) {
   final text = controller.text.trim();
   return text.isEmpty ? null : text;
+}
+
+/// Asks before leaving a form whose changes would be lost; [dirty] once
+/// the user changed something. Forms that pop themselves after saving
+/// aren't asked.
+class UnsavedChangesGuard extends StatelessWidget {
+  const UnsavedChangesGuard({
+    super.key,
+    required this.dirty,
+    required this.child,
+  });
+
+  final bool dirty;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: !dirty,
+    onPopInvokedWithResult: (didPop, _) async {
+      if (didPop) return;
+      final discard = await confirm(
+        context,
+        message: Strings.discardChanges,
+        accept: Strings.discard,
+      );
+      if (discard && context.mounted) Navigator.of(context).pop();
+    },
+    child: child,
+  );
+}
+
+/// Something couldn't be loaded, and a way to try again
+class ErrorRetry extends StatelessWidget {
+  const ErrorRetry({super.key, required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(Strings.unexpectedError),
+        const SizedBox(height: 8),
+        TextButton(onPressed: onRetry, child: const Text(Strings.retry)),
+      ],
+    ),
+  );
 }

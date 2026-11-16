@@ -30,8 +30,13 @@ enum DraftProblem {
   /// Boletas over S/ 700 need an identified customer
   anonymousOver700,
 
-  /// Installments must add up to the total, after the issue date
+  /// Installments must add up to what's owed (the total less any
+  /// detracción), after the issue date
   cuotasMismatch,
+
+  /// A factura with detracción needs the company's Banco de la Nación
+  /// account
+  missingDetraccionAccount,
 
   /// Notas of facturas use F series, notas of boletas B series
   noteSerieMismatch,

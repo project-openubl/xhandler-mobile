@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:xhandler_mobile/data/database.dart';
 import 'package:xhandler_mobile/features/backup/backup_page.dart';
 import 'package:xhandler_mobile/features/backup/backup_service.dart';
+import 'package:xhandler_mobile/features/document/document_detail_page.dart';
 import 'package:xhandler_mobile/features/home/home_page.dart';
 import 'package:xhandler_mobile/features/reports/reports_page.dart';
 import 'package:xhandler_mobile/strings.dart';
@@ -83,6 +84,20 @@ void main() {
   });
 
   group('BackupPage', () {
+    testWidgets('exports the active company alone, and imports companies', (
+      tester,
+    ) async {
+      final data = TestData();
+      await tester.runAsync(data.createCompany);
+      await data.pump(tester, const BackupPage(), settle: false);
+      await data.waitFor(
+        tester,
+        find.text(Strings.exportCompany('Empresa 20123456789')),
+      );
+      expect(find.text(Strings.importCompanies), findsOneWidget);
+      await data.unmount(tester);
+    });
+
     testWidgets('says no backup was made yet', (tester) async {
       final data = TestData();
       await data.pump(tester, const BackupPage(), settle: false);
@@ -134,5 +149,18 @@ void main() {
       expect(find.text(Strings.noBackupYet), findsNothing);
       await data.unmount(tester);
     });
+  });
+
+  testWidgets("DocumentDetailPage says when the document isn't here", (
+    tester,
+  ) async {
+    final data = TestData();
+    await data.pump(
+      tester,
+      const DocumentDetailPage(documentId: 'missing'),
+      settle: false,
+    );
+    await data.waitFor(tester, find.text(Strings.documentNotFound));
+    await data.unmount(tester);
   });
 }

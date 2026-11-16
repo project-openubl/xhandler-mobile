@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
-
 import '../../src/rust/api/document.dart';
 import '../../src/rust/api/signer.dart';
 import '../../src/rust/api/sunat.dart';
@@ -15,6 +14,10 @@ class SunatBridge {
 
   Future<BuiltDocument> build(String documentJson, DocumentDefaults defaults) =>
       buildDocument(documentJson: documentJson, defaults: defaults);
+
+  /// Who a certificate belongs to and until when it's valid
+  Future<CertificateInfo> inspect(Uint8List certificate, String password) =>
+      inspectCertificate(certificate: certificate, password: password);
 
   Future<SignedDocument> sign(
     String xml,
