@@ -104,7 +104,7 @@ struct SunatResponse { status, code, description, notes, cdr_zip, ticket }
 
 ## 3. Data model (SQLite / Drift, encrypted with SQLite3MultipleCiphers)
 
-Defined in `lib/data/tables.dart`; schema version 3 (snapshots in `drift_schemas/app/`).
+Defined in `lib/data/tables.dart`; schema version 1 (snapshots in `drift_schemas/app/`; it changes in place until a store build publishes it).
 Decimals are stored as text to keep them exact; timestamps as ISO-8601 UTC text.
 
 ```

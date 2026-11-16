@@ -31,26 +31,15 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
-  /// Bump it with an `onUpgrade` step, a new snapshot in drift_schemas/app/
-  /// and the generated test helpers (see test/data/migration_test.dart).
+  /// The version a store build ships. Until a build with it is published
+  /// (alphas on TestFlight or Play internal testing count), change the
+  /// tables in place and re-dump its snapshot, with no upgrade step. After
+  /// that it's frozen: the next change bumps it, adds an `onUpgrade` step
+  /// (override `migration`) and a new snapshot in drift_schemas/app/, and
+  /// regenerates the test helpers (see test/data/migration_test.dart).
   /// New tables with company data also go in backup_service.dart's lists.
   @override
-  int get schemaVersion => 3;
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onUpgrade: (m, from, to) async {
-      // Detracciones: the company's account and each product's rate
-      if (from < 2) {
-        await m.addColumn(companies, companies.cuentaDetracciones);
-        await m.addColumn(products, products.detraccionPorcentaje);
-      }
-      // Documents in other currencies: their exchange rate
-      if (from < 3) {
-        await m.addColumn(documents, documents.tipoCambio);
-      }
-    },
-  );
+  int get schemaVersion => 1;
 
   /// Updates a row that isn't deleted and stamps `updated_at`. `id` and
   /// `deleted_at` in [changes] are ignored.

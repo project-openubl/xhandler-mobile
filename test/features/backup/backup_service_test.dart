@@ -9,8 +9,6 @@ import 'package:xhandler_mobile/data/secure_store.dart';
 import 'package:xhandler_mobile/features/backup/backup_service.dart';
 import 'package:xhandler_mobile/src/rust/api/sunat.dart';
 
-import '../../data/generated/schema_v1.dart';
-
 void main() {
   late Directory directory;
   late Directory temporary;
@@ -305,27 +303,4 @@ void main() {
       expect(await other.select(other.deliveries).get(), hasLength(1));
     },
   );
-
-  test('importing an older backup upgrades it first', () async {
-    final key = await store.databaseKey(databaseExists: true);
-    // A company in a schema 1 database, as an older backup holds
-    final old = File('${directory.path}/v1.db');
-    final v1 = DatabaseAtV1(openEncryptedDatabase(old, key));
-    await v1.customStatement(
-      'INSERT INTO companies (id, created_at, updated_at, ruc, razon_social) '
-      "VALUES ('old', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', "
-      "'20601030013', 'Antigua S.A.C.')",
-    );
-    await v1.close();
-
-    expect(await service.merge(OpenedBackup(old, const {}), database), [
-      'Antigua S.A.C.',
-    ]);
-    final imported = await (database.select(
-      database.companies,
-    )..where((c) => c.id.equals('old'))).getSingle();
-    expect(imported.ruc, '20601030013');
-    expect(imported.cuentaDetracciones, isNull);
-    expect(imported.esAgentePercepcion, isFalse);
-  });
 }
