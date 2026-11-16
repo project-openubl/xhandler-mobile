@@ -34,7 +34,18 @@ class AppDatabase extends _$AppDatabase {
   /// Bump it with an `onUpgrade` step, a new snapshot in drift_schemas/app/
   /// and the generated test helpers (see test/data/migration_test.dart)
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      // Detracciones: the company's account and each product's rate
+      if (from < 2) {
+        await m.addColumn(companies, companies.cuentaDetracciones);
+        await m.addColumn(products, products.detraccionPorcentaje);
+      }
+    },
+  );
 
   /// Updates a row that isn't deleted and stamps `updated_at`. `id` and
   /// `deleted_at` in [changes] are ignored.

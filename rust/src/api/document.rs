@@ -112,6 +112,19 @@ pub(crate) mod tests {
         assert!(built >= 3);
     }
 
+    /// xbuilder keeps the detracción the app computed for its factura,
+    /// prints that exact amount and sets operation type 1001
+    #[test]
+    fn build_document_keeps_the_detraccion() {
+        let json =
+            std::fs::read_to_string("tests/resources/drafts/factura_detraccion.json").unwrap();
+        let built = build_document(json, defaults()).unwrap();
+        let enriched: serde_json::Value = serde_json::from_str(&built.enriched_json).unwrap();
+        assert_eq!(enriched["spec"]["tipo_operacion"], "1001");
+        assert!(built.xml.contains(">180.00</cbc:Amount>"), "{}", built.xml);
+        assert!(built.xml.contains("00-123-456789"));
+    }
+
     #[test]
     fn build_document_rejects_unknown_kinds() {
         let json = r#"{"kind": "Unknown", "spec": {}}"#;

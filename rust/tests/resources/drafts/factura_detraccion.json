@@ -1,0 +1,55 @@
+{
+  "kind": "Invoice",
+  "spec": {
+    "serie_numero": "F001-1",
+    "tipo_comprobante": "01",
+    "fecha_emision": "2026-11-13",
+    "moneda": "PEN",
+    "proveedor": {
+      "ruc": "20123456789",
+      "razon_social": "Empresa S.A.C.",
+      "nombre_comercial": "Empresa",
+      "direccion": {
+        "ubigeo": "150122",
+        "departamento": "LIMA",
+        "provincia": "LIMA",
+        "distrito": "MIRAFLORES",
+        "direccion": "AV. LARCO 123",
+        "codigo_local": "0000"
+      }
+    },
+    "cliente": {
+      "tipo_documento_identidad": "6",
+      "numero_documento_identidad": "20100070970",
+      "nombre": "Cliente"
+    },
+    "detalles": [
+      {
+        "descripcion": "Transporte",
+        "cantidad": "1",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "500",
+        "igv_tipo": "10",
+        "icb_aplica": false
+      },
+      {
+        "descripcion": "Mantenimiento",
+        "cantidad": "1",
+        "unidad_medida": "NIU",
+        "precio_con_impuestos": "1000",
+        "igv_tipo": "10",
+        "icb_aplica": false
+      }
+    ],
+    "detraccion": {
+      "medio_pago": "001",
+      "cuenta_bancaria": "00-123-456789",
+      "tipo_bien_detraido": "020",
+      "porcentaje": "0.12",
+      "monto": "180.00"
+    },
+    "forma_pago": {
+      "tipo": "Contado"
+    }
+  }
+}

@@ -38,6 +38,9 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
   late final _codigoLocal = _controller(widget.company?.codigoLocal ?? '0000');
   late final _telefono = _controller(widget.company?.telefono);
   late final _email = _controller(widget.company?.email);
+  late final _cuentaDetracciones = _controller(
+    widget.company?.cuentaDetracciones,
+  );
   late bool _agentePercepcion = widget.company?.esAgentePercepcion ?? false;
   late bool _agenteRetencion = widget.company?.esAgenteRetencion ?? false;
 
@@ -71,6 +74,7 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
       codigoLocal: Value(optionalText(_codigoLocal) ?? '0000'),
       telefono: optional(_telefono),
       email: optional(_email),
+      cuentaDetracciones: optional(_cuentaDetracciones),
       esAgentePercepcion: Value(_agentePercepcion),
       esAgenteRetencion: Value(_agenteRetencion),
     );
@@ -160,6 +164,13 @@ class _CompanyFormPageState extends ConsumerState<CompanyFormPage> {
                 _email,
                 Strings.email,
                 keyboardType: TextInputType.emailAddress,
+              ),
+              const FormSection(Strings.detracciones),
+              FormTextField(
+                _cuentaDetracciones,
+                Strings.cuentaDetracciones,
+                helperText: Strings.cuentaDetraccionesHelp,
+                keyboardType: TextInputType.number,
               ),
               const FormSection(Strings.agenteSunat),
               SwitchListTile(

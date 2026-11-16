@@ -31,6 +31,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   late final _codigoSunat = _controller(widget.product?.codigoSunat);
   late final _precio = _controller(widget.product?.precio);
   late final _iscTasa = _controller(widget.product?.iscTasa);
+  late final _detraccionPorcentaje = _controller(
+    widget.product?.detraccionPorcentaje,
+  );
   late final _detraccionCodigo = _controller(widget.product?.detraccionCodigo);
   late String _unidadMedida = widget.product?.unidadMedida ?? 'NIU';
 
@@ -70,6 +73,11 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
       iscTasa: Value(_iscTipo == null ? null : parseAmount(_iscTasa.text)),
       esBolsa: Value(_esBolsa),
       detraccionCodigo: Value(optionalText(_detraccionCodigo)),
+      detraccionPorcentaje: Value(
+        optionalText(_detraccionCodigo) == null
+            ? null
+            : parseAmount(_detraccionPorcentaje.text),
+      ),
       favorito: Value(_favorito),
     );
     final repository = ref.read(productRepositoryProvider);
@@ -204,6 +212,22 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     validator: (codigo) => codigo.isEmpty || codigo.length == 3
                         ? null
                         : Strings.invalidDetraccionCodigo,
+                  ),
+                  FormTextField(
+                    _detraccionPorcentaje,
+                    Strings.detraccionPorcentaje,
+                    helperText: Strings.detraccionPorcentajeHelp,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    // Needed with a code
+                    validator: (tasa) => optionalText(_detraccionCodigo) == null
+                        ? null
+                        : switch (parseAmount(tasa)) {
+                            final rate? when toCents(rate) < toCents('100') =>
+                              null,
+                            _ => Strings.invalidDetraccionPorcentaje,
+                          },
                   ),
                 ],
               ),
