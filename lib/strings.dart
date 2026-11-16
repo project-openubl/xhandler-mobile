@@ -214,6 +214,9 @@ abstract final class Strings {
   static const searchDocuments = 'Buscar por número o cliente';
   static const filterAll = 'Todos';
   static const filterProblems = 'Con problemas';
+  static const filterType = 'Tipo';
+  static const voidingDocuments = 'Bajas y resúmenes';
+  static const clearFilter = 'Limpiar';
   static const factura = 'Factura';
   static const facturaHelp = 'Para clientes con RUC';
   static const boletaHelp = 'Para personas, con o sin DNI';
