@@ -3070,12 +3070,12 @@ dependencies = [
 
 [[package]]
 name = "xhandler"
-version = "6.0.0-alpha.1"
+version = "6.0.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24ef81e68a7a16c3f1e85cf59421ac858d9c8785ddf301fb889528099dfd06b0"
+checksum = "441d7844677d413d58131ed1a938b4ada07a0ccde4aa903a2f4a2a7439167185"
 dependencies = [
  "anyhow",
- "base64 0.22.1",
+ "base64 0.23.1",
  "chrono",
  "encoding_rs",
  "lazy_static",
