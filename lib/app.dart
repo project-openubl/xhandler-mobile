@@ -9,6 +9,7 @@ import 'notifications.dart';
 import 'router.dart';
 import 'strings.dart';
 import 'theme/status_colors.dart';
+import 'widgets/readable_width.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -63,7 +64,7 @@ class _AppState extends State<App> {
         extensions: const [StatusColors.dark],
       ),
       routerConfig: _router,
-      builder: (_, child) => AppLock(child: child!),
+      builder: (_, child) => ReadableWidth(child: AppLock(child: child!)),
     );
   }
 }
